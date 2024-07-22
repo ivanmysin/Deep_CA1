@@ -3,7 +3,7 @@ import pandas as pd
 # import matplotlib.pyplot as plt
 import pickle
 
-conn_path = "/home/ivan/Data/Hippocampome/Full_Hippocampus_Parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv"
+conn_path = "DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv"
 CONN_TABLE = pd.read_csv(conn_path, header=0)
 
 
@@ -29,7 +29,7 @@ CA3_IN_POP = 375
 MEC_IN_POP = 70
 LEC_IN_POP = 70
 
-with open("neurons.pickle", mode="br") as file:
+with open("../presimulation_files/neurons.pickle", mode="br") as file:
     neuron_populations = pickle.load(file)
 
 
@@ -151,5 +151,5 @@ for pre_idx, presyn in enumerate(neuron_populations):
     print(presyn['type'], " processed!")
 
 print(len(connections))
-with open("connections.pickle", mode="bw") as file:
+with open("../presimulation_files/connections.pickle", mode="bw") as file:
     pickle.dump(connections, file)
