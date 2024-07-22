@@ -4,10 +4,10 @@ parameters_files = ["pyramidal_cells.pickle", "interneurons.pickle", "ca3_genera
 neurons = []
 
 for pfile in parameters_files:
-    with open(pfile, mode="br") as file:
+    with open("../presimulation_files/" + pfile, mode="br") as file:
         neuron = pickle.load(file)
     neurons.extend(neuron)
 
 print(len(neurons))
-with open("neurons.pickle", mode="bw") as file:
+with open("../presimulation_files/neurons.pickle", mode="bw") as file:
     pickle.dump(neurons, file)

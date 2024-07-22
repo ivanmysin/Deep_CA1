@@ -9,7 +9,7 @@ THETA_R_SLOPE_DV = -6.25e-05 # 1 / mkm (по оси DV)
 THETA_R_0 = 0.35
 
 
-filepath = "/home/ivan/Data/Large_scale_CA1/CA1_anatomy.csv"
+filepath = "CA1_anatomy.csv"
 CA1_flat = pd.read_csv(filepath, header=0)
 StepH = CA1_flat["H"][1] - CA1_flat["H"][0]
 
@@ -37,7 +37,7 @@ for slice_idx, l in enumerate(CA1_flat["L"]):
 points = np.stack([coodinates_x, coodinates_y]).transpose()
 
 
-interneurons_types = pd.read_excel("/home/ivan/Data/Large_scale_CA1/interneurons.xlsx", sheet_name="Sheet2", header=0)
+interneurons_types = pd.read_excel("interneurons.xlsx", sheet_name="Sheet2", header=0)
 interneurons = []
 
 for type_idx, cells_pop in interneurons_types.iterrows():
@@ -75,5 +75,5 @@ for type_idx, cells_pop in interneurons_types.iterrows():
 
 
 
-with open("interneurons.pickle", mode="bw") as file:
+with open("../presimulation_files/interneurons.pickle", mode="bw") as file:
     pickle.dump(interneurons, file)

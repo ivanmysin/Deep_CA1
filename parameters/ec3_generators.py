@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 
-INPUT_TYPE = "lec"
+INPUT_TYPE = "ca3"
 # Hyperparameters
 Npyrlec = 200
 TRACK_LENGTH = 200 # cm
@@ -112,5 +112,5 @@ for cell_pos_dv in range(0, DV_LENGTH+100, 100):
 
         generators.append(mec3cell)
 
-with open(f"{INPUT_TYPE}_generators.pickle", mode="bw") as file:
+with open(f"../presimulation_files/{INPUT_TYPE}_generators.pickle", mode="bw") as file:
     pickle.dump(generators, file)
