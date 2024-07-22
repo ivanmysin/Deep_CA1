@@ -1,6 +1,8 @@
 # user deleted
 /output/
 !*/output/.gitkeep
+/presimulation_files/
+!*/presimulation_files/.gitkeep
 .idea/
 .~*
 .directory

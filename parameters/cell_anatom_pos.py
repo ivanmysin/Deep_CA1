@@ -39,7 +39,7 @@ THETA_LOCALPHASE_SUP = np.pi # rad
 
 
 
-filepath = "/home/ivan/Data/Large_scale_CA1/CA1_anatomy.csv"
+filepath = "./CA1_anatomy.csv"
 
 CA1_flat = pd.read_csv(filepath, header=0)
 StepH = CA1_flat["H"][1] - CA1_flat["H"][0]
@@ -129,7 +129,7 @@ for radial_axis in ["deep", "sup"]:
 
         pyramidal_cells.append(pyr_cell)
 
-with open("pyramidal_cells.pickle", mode="bw") as file:
+with open("../presimulation_files/pyramidal_cells.pickle", mode="bw") as file:
     pickle.dump(pyramidal_cells, file)
 
 print(pyr_coodinates_x.size, Npyrdeep)
