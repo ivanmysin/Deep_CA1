@@ -102,8 +102,8 @@ for radial_axis in ["deep", "sup"]:
         else:
             phase_precession_slope = 0.0
 
-        place_size = PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_MEAN
-        place_size_std = PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_STD
+        place_size = (PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_MEAN) / 6
+        place_size_std = (PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_STD) / 6
 
         pyr_cell = {
             "type" : "CA1 Pyramidal",

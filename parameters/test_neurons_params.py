@@ -9,22 +9,15 @@ with open("../presimulation_files/neurons.pickle", mode="br") as file:
 
 types = set( [n["type"] for n in neurons] )
 
-neuron_of_type = pd.DataFrame.from_dict(neurons)
+neurons = pd.DataFrame.from_dict(neurons)
 
-#
-# for type in types:
-#
-#     neuron_of_type = None
-#
-#     for neuron in neurons:
-#         if neuron["type"] == type:
-#
-#             if neuron_of_type is None:
-#                 neuron_of_type = pd.DataFrame.from_dict(neuron)
-#             else:
-#                 neuron = pd.Series(neuron)
-#                 neuron_of_type = pd.concat([neuron_of_type, neuron], ignore_index=True, sort=False)
+for type in types:
+
+    neuron_of_type = neurons[neurons["type"] == type]
 
 
-plt.scatter(neuron_of_type["x_anat"], neuron_of_type["OutPlaceFiringRate"])
-plt.show()
+    fig, axis = plt.subplots(nrows=2)
+    axis[0].set_title(type)
+    axis[0].scatter(neuron_of_type["x_anat"], neuron_of_type["OutPlaceThetaPhase"])
+    axis[1].scatter(neuron_of_type["y_anat"], neuron_of_type["OutPlaceThetaPhase"])
+    plt.show()
