@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 bessel_i0 = tf.math.bessel_i0
 sqrt = tf.math.sqrt
 exp = tf.math.exp
+log = tf.math.log
 cos = tf.math.cos
 sin = tf.math.sin
 maximum = tf.math.maximum
@@ -106,7 +107,7 @@ class SpatialThetaGenerators(CommonGenerator):
         self.mult4time = tf.constant(2 * PI * self.ThetaFreq * 0.001, dtype=tf.float64)
 
         I0 = bessel_i0(self.kappa)
-        self.normalizator = self.OutPlaceFiringRate / I0 * 0.001
+        self.normalizator = self.OutPlaceFiringRate / I0
     def get_firings(self, t):
         ampl4gauss = 2 * (self.InPlacePeakRate - self.OutPlaceFiringRate) / (self.OutPlaceFiringRate + 1) #  range [-1, inf]
 
@@ -118,7 +119,8 @@ class SpatialThetaGenerators(CommonGenerator):
                 1.0 + end_place / (self.ALPHA + abs(end_place)))
 
         precession = self.SlopePhasePrecession * inplace
-        phases = self.OutPlaceThetaPhase * (1 - inplace) + self.PrecessionOnset * inplace #!!!!
+        #phases = self.OutPlaceThetaPhase * (1 - inplace) + self.PrecessionOnset * inplace #!!!!
+        phases = self.OutPlaceThetaPhase
 
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
@@ -134,8 +136,8 @@ class SpatialThetaGenerators(CommonGenerator):
         loss = tf.keras.losses.logcosh(target_firings, selected_firings)
         return loss
 #########################################################################
-class VonMisesLoss(tf.Module):
-    def __init__(self, params, mask=None):
+class VonMisesLoss(CommonGenerator):
+    def __init__(self, params, mask=None, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
         super(VonMisesLoss, self).__init__(params, mask)
 
 
@@ -157,17 +159,28 @@ class VonMisesLoss(tf.Module):
         self.ThetaPhase = tf.constant(ThetaPhase, dtype=tf.float64)
         self.R = tf.constant(Rs, dtype=tf.float64)
 
+        tw = tf.range(-3*sigma_low, 3-sigma_low, 0.001*dt, dtype=tf.float64)
+
+        self.gauss_low =  exp(-0.5 * (tw/sigma_low)**2 )
+        self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
+        self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
+
+        self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
+        self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
+        self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
+
     def precomute(self):
         self.kappa = self.r2kappa(self.R)
 
         self.mult4time = tf.constant(2 * PI * self.ThetaFreq * 0.001, dtype=tf.float64)
 
         I0 = bessel_i0(self.kappa)
-        self.normalizator = self.OutPlaceFiringRate / I0 * 0.001
+        self.normalizator = self.MeanFiringRate / I0 # * 0.001
 
     def get_firings(self, t):
-        firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.phase) )
+        firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.ThetaPhase) )
         return firings
+
     def get_loss(self, simulated_firings, t):
         t = tf.reshape(t, shape=(-1, 1))
         target_firings = self.get_firings(t)
@@ -175,24 +188,36 @@ class VonMisesLoss(tf.Module):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=0)
 
 
-        loss = tf.reduce_sum( target_firings * selected_firings )
+        low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME', data_format="NWC")
+        filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
+        filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME', data_format="NWC")
+        loss = tf.keras.losses.cosine_similarity(filtered_firings, target_firings)
+
         return loss
 #########################################################################
 default_params = {
             "R": 0.25,
-            "OutPlaceFiringRate" : 0.5,
-            "OutPlaceThetaPhase" : 3.14,
-            "InPlacePeakRate" : 8.0,
+            "OutPlaceFiringRate" : 5.0,
+            "OutPlaceThetaPhase" : 2.0, #3.14,
+            "InPlacePeakRate" : 15.0,
             "CenterPlaceField" : 5000.0,
             "SigmaPlaceField" : 500,
-            "SlopePhasePrecession" : np.deg2rad(10)*10 * 0.001,
-            "PrecessionOnset" : -1.57,
+            "SlopePhasePrecession" : 0.0, #np.deg2rad(10)*10 * 0.001,
             "ThetaFreq" : 8.0,
+            "PrecessionOnset" : -1.57,
+}
+
+von_mises_params = {
+            "R": 0.25,
+            "ThetaPhase" : 3.14,
+            "ThetaFreq" : 8.0,
+            "MeanFiringRate" : 5.0,
 }
 
 params = []
 
-mask = tf.constant( [True, True, False, False, True], dtype=tf.dtypes.bool)
+#mask = tf.constant( [True, True, False, False, True], dtype=tf.dtypes.bool)
+mask = tf.constant( [True, ], dtype=tf.dtypes.bool)
 
 for _ in range(tf.reduce_sum(tf.cast(mask, dtype=tf.dtypes.int16))):
     params.append(default_params)
@@ -203,8 +228,54 @@ t = tf.range(0, 10000.0, 0.1, dtype=tf.float64)
 genrators = SpatialThetaGenerators(params, mask)
 genrators.precomute()
 
-simulated_firings = tf.random.uniform( shape=(5, tf.size(t)), maxval=1.0, dtype=tf.dtypes.float64)
-loss = genrators.get_loss(simulated_firings, t)
+vonmises_gen = VonMisesLoss([von_mises_params, ], mask)
+vonmises_gen.precomute()
+simulated_firings = genrators.get_firings(tf.reshape(t, shape=(-1, 1))) #exp(-0.5 * ((t - 5000)/300)**2) * cos(2*PI*6*t*0.001) #
+# tf.random.uniform( shape=(5, tf.size(t)), maxval=1.0, dtype=tf.dtypes.float64))
+#loss = genrators.get_loss(simulated_firings, t)
 
-print(loss)
+scale = 0.2
+w0 = 6
+tw = tf.range(-1.5, 1.5, 0.0001, dtype=tf.float64)
+morlet = exp(-0.5 * (tw/scale)**2 )  #* PI**(-0.25) *  cos(2*PI*w0*tw/scale)
+morlet = morlet / tf.reduce_sum(morlet)
 
+simulated_firings = tf.reshape(simulated_firings, shape=(1, -1, 1))
+morlet = tf.reshape(morlet, shape=(-1, 1, 1))
+
+W = tf.nn.conv1d(simulated_firings, morlet, stride=1, padding='SAME', data_format="NWC")
+
+W = tf.reshape(W, shape=(-1, ))
+simulated_firings = tf.reshape(simulated_firings, shape=(-1, ))
+#print(loss)
+
+# simulated_firings = np.asarray(simulated_firings).ravel()
+morlet = np.asarray(morlet).ravel()
+#
+# Wnp = np.convolve(simulated_firings, morlet, mode="same")
+
+filtered_firings = (simulated_firings - W) + tf.reduce_mean(W)
+#filtered_firings = tf.nn.softmax(0.01 * (simulated_firings - W))
+
+target_firings = vonmises_gen.get_firings(t)
+#target_firings = tf.nn.softmax(0.01 * target_firings )
+
+
+#print(tf.reduce_sum(filtered_firings*target_firings))
+
+
+
+l = tf.keras.losses.cosine_similarity(filtered_firings, target_firings)
+print(l)
+
+print(tf.reduce_mean(simulated_firings))
+robast_mean = exp( tf.reduce_mean( log(simulated_firings) ) )
+print(robast_mean)
+
+fig, axes = plt.subplots(nrows=3)
+axes[0].plot(t, simulated_firings)
+axes[1].plot(tw, morlet)
+axes[0].plot(t, W, linewidth=1)
+plt.plot(t, filtered_firings, linewidth=2)
+plt.plot(t, target_firings, linewidth=2)
+plt.show()
