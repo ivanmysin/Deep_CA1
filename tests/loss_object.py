@@ -193,6 +193,10 @@ class VonMisesLoss(CommonGenerator):
         filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME', data_format="NWC")
         loss = tf.keras.losses.cosine_similarity(filtered_firings, target_firings)
 
+        robast_mean = exp(tf.reduce_mean(log(simulated_firings), axis=-1)) #!!!!
+
+        loss = loss + tf.keras.losses.MSE(self.MeanFiringRate, robast_mean)
+
         return loss
 #########################################################################
 default_params = {
