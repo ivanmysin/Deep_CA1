@@ -23,8 +23,10 @@ PI = np.pi
 class CommonGenerator(tf.Module):
     def __init__(self, params, mask=None):
         super(CommonGenerator, self).__init__()
-        self.mask = mask
+        self.mask = tf.constant(mask, dtype=tf.dtypes.bool)
 
+    def precomute(self):
+        pass
     def r2kappa(self, R):
         """
         recalulate kappa from R for von Misses function
@@ -115,9 +117,9 @@ class SpatialThetaGenerators(CommonGenerator):
     def get_loss(self, simulated_firings, t):
         t = tf.reshape(t, shape=(-1, 1))
         target_firings = self.get_firings(t)
-        target_firings = tf.transpose(target_firings)
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=0)
-        loss = tf.keras.losses.logcosh(target_firings, selected_firings)
+        target_firings = tf.reshape(target_firings, shape=(1, tf.size(t), tf.size(self.ThetaFreq)))
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+        loss = tf.reduce_mean( tf.keras.losses.logcosh(target_firings, selected_firings) )
         return loss
 #########################################################################
 class VonMisesLoss(CommonGenerator):
@@ -140,19 +142,21 @@ class VonMisesLoss(CommonGenerator):
 
         self.ThetaFreq = tf.constant(ThetaFreq, dtype=tf.float64)
         self.MeanFiringRate = tf.constant(MeanFiringRate, dtype=tf.float64)
+        self.MeanFiringRate = tf.reshape(self.MeanFiringRate, shape=(1, -1))
         self.ThetaPhase = tf.constant(ThetaPhase, dtype=tf.float64)
         self.R = tf.constant(Rs, dtype=tf.float64)
 
-        tw = tf.range(-3*sigma_low, 3-sigma_low, 0.001*dt, dtype=tf.float64)
+        tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=tf.float64)
 
-        self.gauss_low =  exp(-0.5 * (tw/sigma_low)**2 )
+        self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
         self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
         self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
+        self.gauss_low = tf.concat( int(tf.size(self.R))*(self.gauss_low, ), axis=2)
 
         self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
         self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
         self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
-
+        self.gauss_high = tf.concat( int(tf.size(self.R)) * (self.gauss_high,), axis=2)
     def precomute(self):
         self.kappa = self.r2kappa(self.R)
 
@@ -168,17 +172,16 @@ class VonMisesLoss(CommonGenerator):
     def get_loss(self, simulated_firings, t):
         t = tf.reshape(t, shape=(-1, 1))
         target_firings = self.get_firings(t)
-        target_firings = tf.transpose(target_firings)
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=0)
-
+        target_firings = tf.reshape(target_firings, shape=(1, tf.size(t), tf.size(self.ThetaFreq)))
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME', data_format="NWC")
         filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
         filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME', data_format="NWC")
-        loss = tf.keras.losses.cosine_similarity(filtered_firings, target_firings)
+        loss = tf.reduce_mean( tf.keras.losses.cosine_similarity(filtered_firings, target_firings) )
 
-        robast_mean = exp(tf.reduce_mean(log(simulated_firings), axis=-1)) #!!!!
 
+        robast_mean = exp(tf.reduce_mean(log(selected_firings), axis=1))
         loss = loss + tf.keras.losses.MSE(self.MeanFiringRate, robast_mean)
 
         return loss
@@ -205,20 +208,20 @@ class PhaseLockingLoss(CommonGenerator):
         self.R = tf.constant(Rs, dtype=tf.float64)
 
     def get_loss(self, simulated_firings, t):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=0)
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         t = tf.reshape(t, shape=(-1, 1))
 
         theta_phases = 2 * PI * 0.001 * t * self.ThetaFreq
         real = cos(theta_phases)
         imag = sin(theta_phases)
 
-        selected_firings = selected_firings / tf.math.reduce_sum(selected_firings, axis=-1)  #
-
-        Rsim = sqrt(tf.math.reduce_sum(selected_firings * real)**2 + tf.math.reduce_sum(selected_firings * imag)**2)
+        normed_firings = selected_firings / tf.math.reduce_sum(selected_firings, axis=1)
+        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real)**2 + tf.math.reduce_sum(normed_firings * imag)**2)
 
         loss = tf.keras.losses.MSE(Rsim, self.R)
 
-        loss += tf.reduce_sum( tf.keras.activations.relu( selected_firings, threshold=self.HighFiringRateBound) )
-        loss += tf.reduce_sum( tf.keras.activations.relu( self.LowFiringRateBound-selected_firings) )
+        mean_firings = tf.reduce_mean(selected_firings, axis=1)
+        loss += tf.reduce_sum( tf.nn.relu( mean_firings - self.HighFiringRateBound) )
+        loss += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - mean_firings) )
 
         return loss
