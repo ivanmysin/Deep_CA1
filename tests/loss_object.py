@@ -199,6 +199,49 @@ class VonMisesLoss(CommonGenerator):
 
         return loss
 #########################################################################
+class LockingLoss(CommonGenerator):
+    def __init__(self, params, mask=None, dt=0.1):
+        super(LockingLoss, self).__init__(params, mask)
+
+        Rs = []
+        ThetaFreq = []
+
+        LowFiringRateBound = []
+        HighFiringRateBound = []
+
+        for p in params:
+            Rs.append(p["R"])
+            ThetaFreq.append(p["ThetaFreq"])
+            LowFiringRateBound.append(p["LowFiringRateBound"])
+            HighFiringRateBound.append(p["HighFiringRateBound"])
+
+        self.ThetaFreq = tf.constant(ThetaFreq, dtype=tf.float64)
+        self.LowFiringRateBound = tf.constant(LowFiringRateBound, dtype=tf.float64)
+        self.HighFiringRateBound = tf.constant(HighFiringRateBound, dtype=tf.float64)
+        self.R = tf.constant(Rs, dtype=tf.float64)
+
+    def get_loss(self, simulated_firings, t):
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=0)
+        t = tf.reshape(t, shape=(-1, 1))
+
+        theta_phases = 2 * PI * 0.001 * t * self.ThetaFreq
+        real = cos(theta_phases)
+        imag = sin(theta_phases)
+
+        selected_firings = selected_firings / tf.math.reduce_sum(selected_firings, axis=-1)  #
+
+        Rsim = sqrt(tf.math.reduce_sum(selected_firings * real) ** 2 + tf.math.reduce_sum(selected_firings * imag) ** 2)
+
+        loss = tf.keras.losses.MSE(Rsim, self.R)
+
+        loss += tf.keras.activations.relu( selected_firings, threshold=self.HighFiringRateBound)
+        loss += tf.keras.activations.relu( self.LowFiringRateBound-selected_firings)
+
+        return loss
+
+
+
+#############################################################################
 default_params = {
             "R": 0.25,
             "OutPlaceFiringRate" : 5.0,
