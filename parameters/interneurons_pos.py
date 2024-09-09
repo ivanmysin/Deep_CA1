@@ -37,7 +37,7 @@ for slice_idx, l in enumerate(CA1_flat["L"]):
 points = np.stack([coodinates_x, coodinates_y]).transpose()
 
 
-interneurons_types = pd.read_excel("interneurons.xlsx", sheet_name="Sheet2", header=0)
+interneurons_types = pd.read_excel("neurons_parameters.xlsx", sheet_name="Sheet2", header=0)
 interneurons = []
 
 for type_idx, cells_pop in interneurons_types.iterrows():
