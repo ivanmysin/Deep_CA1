@@ -3,6 +3,8 @@
 !*/output/.gitkeep
 /presimulation_files/
 !*/presimulation_files/.gitkeep
+/population_datasets/
+!*/population_datasets/.gitkeep
 .idea/
 .~*
 .directory
