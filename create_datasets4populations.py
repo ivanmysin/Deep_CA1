@@ -46,14 +46,14 @@ def add_units(value, key):
 def run_izhikevich_neurons(params, duration, N, filepath):
 
     #defaultclock.dt = 0.1 * ms
-    tau_min = 0.5 # ms
-    tau_max = 100.0 # ms
+    tau_min = 1.5 # ms
+    tau_max = 20.0 # ms
 
-    ampl_max_exc = float(params['Cm']/uF) / tau_min / 12
-    ampl_min_exc = float(params['Cm']/uF) / tau_max / 12
+    ampl_max_exc = float(params['Cm']/uF) / tau_min
+    ampl_min_exc = float(params['Cm']/uF) / tau_max
 
-    ampl_min_inh = 2 * ampl_min_exc
-    ampl_max_inh = 2 * ampl_max_exc
+    ampl_min_inh = 0.5 * ampl_min_exc
+    ampl_max_inh = 0.5 * ampl_max_exc
 
     g_params = {
         "omega_1_e": randinterval(0.2, 2.0) * Hz,  # [0.2 2],

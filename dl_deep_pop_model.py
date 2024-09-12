@@ -30,7 +30,7 @@ def get_dataset(path, train2testratio):
             batch_idx = 0
 
         filepath = "{path}{file}".format(path=path, file=datafile)
-        with h5py.File(filepath, mode='r') as h5file:
+        with (h5py.File(filepath, mode='r') as h5file):
 
             if idx == 0:
                 N_in_time = h5file["gexc"].size # 20000
@@ -50,27 +50,35 @@ def get_dataset(path, train2testratio):
 
                 if idx <= Niter_train:
 
-                    gexc = h5file["gexc"][0, idx_b : e_idx].ravel()
-                    ginh = h5file["ginh"][0, idx_b : e_idx].ravel()
-                    Erevsyn = (gexc*0 + -75*ginh)  / (gexc + ginh)
+                    #gexc = h5file["gexc"][0, idx_b : e_idx].ravel()
+                    #ginh = h5file["ginh"][0, idx_b : e_idx].ravel()
+                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
 
                     Erevsyn = 2.0*(Erevsyn/75.0 + 1)
 
-                    logtausyn = np.log( 0.1 / (gexc + ginh + 0.0001) + 1)
+                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    print(logtausyn.min(), logtausyn.max())
+                    logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
+                    # logtausyn = logtausyn / 10.0
+                    #print(logtausyn.min(), logtausyn.max())
 
                     Xtrain[batch_idx, : , 0] = Erevsyn # h5file["gexc"][0, idx_b : e_idx].ravel() #/ 80.0
                     Xtrain[batch_idx, : , 1] = logtausyn #/ 50.0
 
                     #target_firing_rate.append(h5file["firing_rate"][idx_b : e_idx].ravel())
 
-                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
+                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                 else:
+                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
+                    Erevsyn = 2.0*(Erevsyn/75.0 + 1)
 
-                    Xtest[batch_idx, : , 0] = h5file["gexc"][0, idx_b : e_idx].ravel() #/ 80.0
-                    Xtest[batch_idx, : , 1] = h5file["ginh"][0, idx_b : e_idx].ravel() #/ 50.0
-                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
+                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+
+                    logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
+
+                    Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
+                    Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
+                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
 
 
 
@@ -104,7 +112,7 @@ else:
     #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['log_cosh',])
 
 if IS_FIT_MODEL:
-    for idx in range(10):
+    for idx in range(5):
         # model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.save("./pretrained_models/pv_bas.keras")
