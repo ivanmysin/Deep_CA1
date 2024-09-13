@@ -107,14 +107,15 @@ else:
 
     # model.add( Dense(2, activation='relu', kernel_initializer=keras.initializers.HeUniform()) )
     model.add( Input(shape=(None, 2)) )
-    model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) )
+    #model.add(Dense(32, activation='sigmoid'))  #
+    model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) )
     model.add( Dense(1, activation='relu') ) #
 
     model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0003), metrics = ['mae', 'mean_squared_logarithmic_error'])
     #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['log_cosh',])
 
 if IS_FIT_MODEL:
-    for idx in range(15):
+    for idx in range(5):
         # model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.save("./pretrained_models/pv_bas.keras")
@@ -125,7 +126,7 @@ Y_pred = model.predict(Xtest)
 
 t = np.linspace(0, 0.1*Y_pred.shape[1], Y_pred.shape[1])
 for idx in range(100):
-    fig, axes = plt.subplots(nrows=2)
+    fig, axes = plt.subplots(nrows=3)
 
     axes[0].set_title(idx)
     axes[0].plot(t, Ytest[idx, :, 0], label="Izhikevich model", color="red")
@@ -134,12 +135,13 @@ for idx in range(100):
 
     axes[0].legend(loc="upper right")
 
-    axes[1].plot(t, Xtest[idx, :, 0], label="Ext conductance", color="orange")
-    axes[1].plot(t, Xtest[idx, :, 1], label="Inh conductance", color="blue")
+    axes[1].plot(t, Xtest[idx, :, 0], label="Synaptic Erev", color="orange")
+    axes[2].plot(t, Xtest[idx, :, 1], label="Synaptic tau", color="blue")
 
     axes[1].legend(loc="upper right")
+    axes[2].legend(loc="upper right")
 
     plt.show(block=True)
 
-    if idx > 20:
-        break
+    # if idx > 20:
+    #     break

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.special import softmax
 from scipy.signal.windows import parzen
 from brian2 import NeuronGroup, Network, SpikeMonitor, StateMonitor
-from brian2 import ms, mV, nF, uF, mS, uA
+from brian2 import ms, mV, nF, uF, mS, uA, second
 from brian2 import defaultclock
 import h5py
 import os
@@ -127,6 +127,9 @@ def run_izhikevich_neurons(params, duration, N, filepath):
     # dbins = bins[1] - bins[0]
     population_firing_rate = population_firing_rate / N  # spikes in bin   #/ (0.001 * dbins) # spikes per second
 
+    if np.mean(population_firing_rate)/(defaultclock.dt / second) < 0.2:
+        return False
+
     # ###### smoothing of population firing rate #########
     win = parzen(101)
     win = win / np.sum(win)
@@ -151,11 +154,16 @@ def run_izhikevich_neurons(params, duration, N, filepath):
 
     file.close()
 
+    return True
+
 
 def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
-    for idx in range(Niter):
+    idx = 0
+    while (idx < Niter):
         filepath = '{path}/{i}.hdf5'.format(path=path, i=idx)
-        run_izhikevich_neurons(params, duration, NN, filepath)
+        res = run_izhikevich_neurons(params, duration, NN, filepath)
+        if res:
+            idx += 1
 
 
 def create_all_types_dataset(all_params, NN):

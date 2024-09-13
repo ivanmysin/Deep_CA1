@@ -1,5 +1,4 @@
 import tensorflow as tf
-from keras.src.ops import dtype
 from tensorflow.keras.layers import Layer, RNN
 exp = tf.math.exp
 
@@ -74,17 +73,19 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         gsyn = tf.nn.relu(self.gsyn_max) * X
 
-        g_tot = tf.reduce_sum(gsyn)
-        E = tf.reduce_sum(gsyn * self.Erev) / g_tot
+        g_tot = tf.reduce_sum(gsyn, axis=1)
+        E = tf.reduce_sum(gsyn * self.Erev, axis=1) / g_tot
         tau = self.Cm / g_tot
 
-        output = tf.stack([E, tau], axis=0)
+        output = tf.stack([E, tau], axis=1)
 
 
         return output, [R, U, X]
 
     def get_initial_state(self, batch_size=None):
         shape = [batch_size, self.units]
+
+        print(batch_size)
 
         R = tf.ones( shape, dtype=tf.float32)
         U = tf.zeros( shape, dtype=tf.float32)
