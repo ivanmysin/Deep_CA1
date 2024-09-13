@@ -73,11 +73,11 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         gsyn = tf.nn.relu(self.gsyn_max) * X
 
-        g_tot = tf.reduce_sum(gsyn, axis=1)
-        E = tf.reduce_sum(gsyn * self.Erev, axis=1) / g_tot
+        g_tot = tf.reduce_sum(gsyn, axis=-1)
+        E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
         tau = self.Cm / g_tot
 
-        output = tf.stack([E, tau], axis=1)
+        output = tf.stack([E, tau], axis=-1)
 
 
         return output, [R, U, X]

@@ -44,7 +44,7 @@ if True:
 
     model.build(input_shape=input_shape)
 
-    X = np.random.rand(50).reshape(1, 10, 5)
+    X = np.random.rand(150).reshape(1, 10, 5)
 
     Y = model.predict(X)
 

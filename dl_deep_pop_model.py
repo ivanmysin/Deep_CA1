@@ -50,8 +50,8 @@ def get_dataset(path, train2testratio):
 
                 if idx <= Niter_train:
 
-                    #gexc = h5file["gexc"][0, idx_b : e_idx].ravel()
-                    #ginh = h5file["ginh"][0, idx_b : e_idx].ravel()
+                    gexc = h5file["gexc"][idx_b : e_idx]
+                    ginh = h5file["ginh"][idx_b : e_idx]
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
 
                     #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
@@ -63,13 +63,19 @@ def get_dataset(path, train2testratio):
                     # logtausyn = logtausyn / 10.0
                     #print(logtausyn.min(), logtausyn.max())
 
-                    Xtrain[batch_idx, : , 0] = Erevsyn # h5file["gexc"][0, idx_b : e_idx].ravel() #/ 80.0
-                    Xtrain[batch_idx, : , 1] = logtausyn #/ 50.0
+                    # Xtrain[batch_idx, : , 0] = Erevsyn # h5file["gexc"][0, idx_b : e_idx].ravel() #/ 80.0
+                    # Xtrain[batch_idx, : , 1] = logtausyn #/ 50.0
+
+                    Xtrain[batch_idx, : , 0] =  gexc / 80.0
+                    Xtrain[batch_idx, : , 1] =  ginh / 80.0
 
                     #target_firing_rate.append(h5file["firing_rate"][idx_b : e_idx].ravel())
 
                     Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                 else:
+                    gexc = h5file["gexc"][idx_b : e_idx]
+                    ginh = h5file["ginh"][idx_b : e_idx]
+
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
                     #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
                     Erevsyn = 1 + Erevsyn / 75.0
@@ -78,8 +84,11 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
 
-                    Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
-                    Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
+                    # Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
+                    # Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
+
+                    Xtest[batch_idx, : , 0] =  gexc / 80.0
+                    Xtest[batch_idx, : , 1] =  ginh / 80.0
                     Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
 
 
@@ -108,7 +117,7 @@ else:
     # model.add( Dense(2, activation='relu', kernel_initializer=keras.initializers.HeUniform()) )
     model.add( Input(shape=(None, 2)) )
     #model.add(Dense(32, activation='sigmoid'))  #
-    model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) )
+    model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
     model.add( Dense(1, activation='relu') ) #
 
     model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0003), metrics = ['mae', 'mean_squared_logarithmic_error'])
