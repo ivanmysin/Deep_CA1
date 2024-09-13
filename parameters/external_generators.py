@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 import myconfig
+import os
 
 
 def main():
@@ -114,8 +115,9 @@ def main():
 
                 generators.append(mec3cell)
 
-        with open(f"../presimulation_files/{INPUT_TYPE}_generators.pickle", mode="bw") as file:
+        with open(myconfig.STRUCTURESOFNET + f"{INPUT_TYPE}_generators.pickle", mode="bw") as file:
             pickle.dump(generators, file)
 
 if __name__ == "__main__":
+    os.chdir("../")
     main()
