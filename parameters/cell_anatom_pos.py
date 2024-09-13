@@ -42,7 +42,7 @@ def main():
 
 
 
-    filepath = "./CA1_anatomy.csv"
+    filepath = myconfig.SCRIPTS4PARAMSGENERATION + "CA1_anatomy.csv"
 
     CA1_flat = pd.read_csv(filepath, header=0)
     StepH = CA1_flat["H"][1] - CA1_flat["H"][0]
@@ -132,7 +132,7 @@ def main():
 
             pyramidal_cells.append(pyr_cell)
 
-    os.chdir("../")
+
     with open(myconfig.STRUCTURESOFNET + "pyramidal_cells.pickle", mode="bw") as file:
         pickle.dump(pyramidal_cells, file)
 
@@ -140,7 +140,7 @@ def main():
 
 
 if __name__ == "__main__":
-
+    os.chdir("../")
     pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, right_bound, left_bound, CA1_flat = main()
     #print(pyr_coodinates_x.size, pyr_coodinates_x.size//2)
 

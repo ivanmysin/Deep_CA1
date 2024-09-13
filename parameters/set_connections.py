@@ -6,7 +6,7 @@ import myconfig
 
 def main():
 
-    conn_path = "DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv"
+    conn_path = myconfig.SCRIPTS4PARAMSGENERATION + "DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv"
     CONN_TABLE = pd.read_csv(conn_path, header=0)
 
 
@@ -32,7 +32,7 @@ def main():
     MEC_IN_POP = 70
     LEC_IN_POP = 70
 
-    with open("../presimulation_files/neurons.pickle", mode="br") as file:
+    with open(myconfig.STRUCTURESOFNET + "neurons.pickle", mode="br") as file:
         neuron_populations = pickle.load(file)
 
 
@@ -154,7 +154,7 @@ def main():
         print(presyn['type'], " processed!")
 
     #print(len(connections))
-    with open("../presimulation_files/connections.pickle", mode="bw") as file:
+    with open( myconfig.STRUCTURESOFNET + "connections.pickle", mode="bw") as file:
         pickle.dump(connections, file)
 
 if __name__ == '__main__':

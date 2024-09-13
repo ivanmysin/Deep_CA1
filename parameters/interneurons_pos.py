@@ -13,7 +13,7 @@ def main():
     THETA_R_0 = 0.35
 
 
-    filepath = "CA1_anatomy.csv"
+    filepath = myconfig.SCRIPTS4PARAMSGENERATION + "CA1_anatomy.csv"
     CA1_flat = pd.read_csv(filepath, header=0)
     StepH = CA1_flat["H"][1] - CA1_flat["H"][0]
 
@@ -41,7 +41,7 @@ def main():
     points = np.stack([coodinates_x, coodinates_y]).transpose()
 
 
-    interneurons_types = pd.read_excel("neurons_parameters.xlsx", sheet_name="Sheet2", header=0)
+    interneurons_types = pd.read_excel( myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2", header=0)
     interneurons = []
 
     for type_idx, cells_pop in interneurons_types.iterrows():
@@ -79,5 +79,5 @@ def main():
 
 
 
-    with open("../presimulation_files/interneurons.pickle", mode="bw") as file:
+    with open(myconfig.STRUCTURESOFNET +  "interneurons.pickle", mode="bw") as file:
         pickle.dump(interneurons, file)
