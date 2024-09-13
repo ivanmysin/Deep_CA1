@@ -97,7 +97,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     params = params | g_params
 
 
-    neuron = NeuronGroup(N, eqs, method='heun', threshold='V > Vpeak', reset="V = Vmin; U = U + d", namespace=params)
+    neuron = NeuronGroup(NN, eqs, method='heun', threshold='V > Vpeak', reset="V = Vmin; U = U + d", namespace=params)
 
     neuron.V = params["Vrest"]
     neuron.U = 0 * uA
@@ -122,7 +122,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
 
     population_firing_rate, bins = np.histogram(firing_monitor.t / ms, range=[0, duration], bins=int(duration/(defaultclock.dt / ms) ))
     # dbins = bins[1] - bins[0]
-    population_firing_rate = population_firing_rate / N  # spikes in bin   #/ (0.001 * dbins) # spikes per second
+    population_firing_rate = population_firing_rate / NN  # spikes in bin   #/ (0.001 * dbins) # spikes per second
 
     if np.mean(population_firing_rate)/(defaultclock.dt / second) < 0.2:
         return False
