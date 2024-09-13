@@ -63,15 +63,15 @@ def get_dataset(path, train2testratio):
                     # logtausyn = logtausyn / 10.0
                     #print(logtausyn.min(), logtausyn.max())
 
-                    # Xtrain[batch_idx, : , 0] = Erevsyn # h5file["gexc"][0, idx_b : e_idx].ravel() #/ 80.0
-                    # Xtrain[batch_idx, : , 1] = logtausyn #/ 50.0
+                    Xtrain[batch_idx, : , 0] = Erevsyn
+                    Xtrain[batch_idx, : , 1] = logtausyn
 
-                    Xtrain[batch_idx, : , 0] =  gexc / 80.0
-                    Xtrain[batch_idx, : , 1] =  ginh / 80.0
+                    # Xtrain[batch_idx, : , 0] =  gexc #/ 80.0
+                    # Xtrain[batch_idx, : , 1] =  ginh #/ 80.0
 
                     #target_firing_rate.append(h5file["firing_rate"][idx_b : e_idx].ravel())
 
-                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
+                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
                 else:
                     gexc = h5file["gexc"][idx_b : e_idx]
                     ginh = h5file["ginh"][idx_b : e_idx]
@@ -84,12 +84,12 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
 
-                    # Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
-                    # Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
+                    Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
+                    Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
 
-                    Xtest[batch_idx, : , 0] =  gexc / 80.0
-                    Xtest[batch_idx, : , 1] =  ginh / 80.0
-                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
+                    # Xtest[batch_idx, : , 0] =  gexc # / 80.0
+                    # Xtest[batch_idx, : , 1] =  ginh # / 80.0
+                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
 
 
 
@@ -120,8 +120,8 @@ else:
     model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
     model.add( Dense(1, activation='relu') ) #
 
-    model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0003), metrics = ['mae', 'mean_squared_logarithmic_error'])
-    #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['log_cosh',])
+    model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mean_squared_logarithmic_error'])
+    #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
 if IS_FIT_MODEL:
     for idx in range(5):
