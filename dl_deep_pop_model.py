@@ -114,7 +114,7 @@ else:
     #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['log_cosh',])
 
 if IS_FIT_MODEL:
-    for idx in range(5):
+    for idx in range(15):
         # model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
         model.save("./pretrained_models/pv_bas.keras")
