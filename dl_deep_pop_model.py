@@ -54,7 +54,8 @@ def get_dataset(path, train2testratio):
                     #ginh = h5file["ginh"][0, idx_b : e_idx].ravel()
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
 
-                    Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                    #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                    Erevsyn = 1 + Erevsyn/75.0
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
@@ -70,7 +71,8 @@ def get_dataset(path, train2testratio):
                     Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                 else:
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                    #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                    Erevsyn = 1 + Erevsyn / 75.0
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
