@@ -45,15 +45,16 @@ def main():
     interneurons = []
 
     for type_idx, cells_pop in interneurons_types.iterrows():
+        if str(cells_pop["neurons"]) == "CA1 Pyramidal": continue
         if not cells_pop["is_include"]: continue
 
-        print(cells_pop["Interneurons"])
+        #print(cells_pop["neurons"])
 
         selected, _ = kmeans(points, cells_pop["Npops"])
 
         for cell_idx in range(cells_pop["Npops"]):
             int_cell = {
-                "type": cells_pop["Interneurons"],
+                "type": cells_pop["neurons"],
 
                 "x_anat": selected[cell_idx, 0],
                 "y_anat": selected[cell_idx, 1],
