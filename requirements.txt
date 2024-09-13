@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+tensorflow
+brian2
+h5py
+pandas
+openpyxl
