@@ -6,7 +6,7 @@ asttokens==2.4.1
 astunparse==1.6.3
 attrs==23.2.0
 Babel==2.10.3
-bcc==0.29.1
+bcc==0.1.9
 beautifulsoup4==4.12.3
 bleach==6.1.0
 blinker==1.7.0
