@@ -40,7 +40,7 @@ def add_units(value, key):
     return value
 
 
-def run_izhikevich_neurons(params, duration, N, filepath):
+def run_izhikevich_neurons(params, duration, NN, filepath):
 
     defaultclock.dt = myconfig.DT * ms
     tau_min = 1.5 # ms
