@@ -1,19 +1,16 @@
 import pandas as pd
-from brian2 import *
-from brian2.units.allunits import *
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.special import softmax
 from scipy.signal.windows import parzen
 from brian2 import NeuronGroup, Network, SpikeMonitor, StateMonitor
-from brian2 import ms, mV, nF, uF, mS, uA, second
+from brian2 import ms, mV, nF, uF, mS, uS, uA, pA, second, Hz
 from brian2 import defaultclock
 import h5py
 import os
 import pprint
+import myconfig
 
 
-PATH4SAVING = "./population_datasets/"
+PATH4SAVING = myconfig.DATASETS4POPULATIONMODELS
 
 
 def randinterval(minv, maxv):
@@ -45,7 +42,7 @@ def add_units(value, key):
 
 def run_izhikevich_neurons(params, duration, N, filepath):
 
-    #defaultclock.dt = 0.1 * ms
+    defaultclock.dt = myconfig.DT * ms
     tau_min = 1.5 # ms
     tau_max = 20.0 # ms
 
@@ -173,12 +170,11 @@ def create_all_types_dataset(all_params, NN):
         if not os.path.isdir(path):
            os.mkdir(path)
 
-        create_single_type_dataset(item, path, NN=NN)
+        create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
 
 
-
-if __name__ == '__main__':
-    NN = 4000
+def main():
+    NN = myconfig.NUMBERNEURONSINPOP
     default_params = {
         "Cm": 114, # * uF,  # /cm**2,
         "k": 1.19, # * mS / mV,
@@ -196,13 +192,13 @@ if __name__ == '__main__':
         "sigma": 0.4 * mV,
 
     }
-    filepath = './parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv'
+    filepath = myconfig.IZHIKEVICNNEURONSPARAMS
     syndata = pd.read_csv(filepath)
     syndata = syndata.fillna(-1)
     syndata = syndata.rename(columns={'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin',})
     syndata = syndata.drop(['CARLsim_default', 'E/I', 'Population Size', 'Refractory Period', 'rank'], axis=1)
 
-    neurons_types = pd.read_excel("./parameters/neurons_parameters.xlsx", sheet_name="Sheet2", header=0)
+    neurons_types = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name="Sheet2", header=0)
     simutated_population_types = neurons_types[neurons_types["is_include"] == 1]["neurons"].to_list()
 
 
@@ -213,8 +209,8 @@ if __name__ == '__main__':
         if not populations_params["Neuron Type"] in simutated_population_types:
             continue
 
-        if populations_params["Neuron Type"] != "CA1 Basket": ######!!!!!!!!!!!!!!!!!!!!!
-            continue
+        # if populations_params["Neuron Type"] != "CA1 Basket": ######!!!!!!!!!!!!!!!!!!!!!
+        #     continue
 
 
         neuron_opt_params = default_params.copy()
@@ -230,3 +226,7 @@ if __name__ == '__main__':
         all_params[neuron_type] = neuron_opt_params
 
     create_all_types_dataset(all_params, NN)
+
+
+if __name__ == '__main__':
+    main()

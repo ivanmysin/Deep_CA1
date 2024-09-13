@@ -44,6 +44,8 @@ if True:
 
     model.build(input_shape=input_shape)
 
+    print(model.summary())
+
     X = np.random.rand(150).reshape(1, 10, 5)
 
     Y = model.predict(X)

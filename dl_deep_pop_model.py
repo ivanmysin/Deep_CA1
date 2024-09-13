@@ -8,6 +8,7 @@ from tensorflow.keras.saving import load_model
 import h5py
 import matplotlib.pyplot as plt
 import os
+import myconfig
 
 USE_SAVED_MODEL = False
 IS_FIT_MODEL = True
@@ -50,8 +51,8 @@ def get_dataset(path, train2testratio):
 
                 if idx <= Niter_train:
 
-                    gexc = h5file["gexc"][idx_b : e_idx]
-                    ginh = h5file["ginh"][idx_b : e_idx]
+                    # gexc = h5file["gexc"][idx_b : e_idx]
+                    # ginh = h5file["ginh"][idx_b : e_idx]
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
 
                     #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
@@ -73,8 +74,8 @@ def get_dataset(path, train2testratio):
 
                     Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
                 else:
-                    gexc = h5file["gexc"][idx_b : e_idx]
-                    ginh = h5file["ginh"][idx_b : e_idx]
+                    # gexc = h5file["gexc"][idx_b : e_idx]
+                    # ginh = h5file["ginh"][idx_b : e_idx]
 
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
                     #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
@@ -98,59 +99,70 @@ def get_dataset(path, train2testratio):
     return Xtrain, Ytrain, Xtest, Ytest
 
 #######################################################################################
-datapath = "population_datasets/CA1 Basket/"
-train2testratio = 0.7
-Xtrain, Ytrain, Xtest, Ytest = get_dataset(datapath, train2testratio)
+def fit_dl_model_of_population(datapath, targetpath):
+
+    train2testratio = myconfig.TRAIN2TESTRATIO
+    Xtrain, Ytrain, Xtest, Ytest = get_dataset(datapath, train2testratio)
 
 
 
-if USE_SAVED_MODEL:
-    model = load_model("pv_bas.keras")
-else:
+    if USE_SAVED_MODEL:
+        model = load_model("pv_bas.keras")
+    else:
 
-    # create and fit the LSTM network
-    model = Sequential()
-    # model.add(LSTM(32, input_shape=(None, 2), return_sequences=True, kernel_regularizer=l2(0.01), recurrent_regularizer=l2(0.01), bias_regularizer=l2(0.01) ))
-    # model.add(LSTM(32, input_shape=(None, 2), return_sequences=True, kernel_regularizer=l2(0.01), recurrent_regularizer=l2(0.01), bias_regularizer=l2(0.01) ))
-    # model.add(Dense(1, activation='relu'))
+        # create and fit the LSTM network
+        model = Sequential()
+        model.add( Input(shape=(None, 2)) )
+        #model.add(Dense(32, activation='sigmoid'))  #
+        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( Dense(1, activation='relu') ) #
 
-    # model.add( Dense(2, activation='relu', kernel_initializer=keras.initializers.HeUniform()) )
-    model.add( Input(shape=(None, 2)) )
-    #model.add(Dense(32, activation='sigmoid'))  #
-    model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-    model.add( Dense(1, activation='relu') ) #
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mean_squared_logarithmic_error'])
+        #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
-    model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mean_squared_logarithmic_error'])
-    #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
+    if IS_FIT_MODEL:
+        hist = model.fit(Xtrain, Ytrain, epochs=myconfig.NEPOCHES, batch_size=myconfig.BATCHSIZE, verbose=myconfig.VERBOSETRANINGPOPMODELS, validation_data=(Xtest, Ytest))
+        model.save(targetpath)
 
-if IS_FIT_MODEL:
-    for idx in range(5):
-        # model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
-        model.fit(Xtrain, Ytrain, epochs=20, batch_size=100, verbose=2, validation_data=(Xtest, Ytest))
-        model.save("./pretrained_models/pv_bas.keras")
-        print(idx+1, " epochs fitted!")
+        print("Training of ", datapath, "finished!")
+        print("Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], "Val_mae = ", hist.history['val_mae'][-1])
 
 
-Y_pred = model.predict(Xtest)
+def main():
 
-t = np.linspace(0, 0.1*Y_pred.shape[1], Y_pred.shape[1])
-for idx in range(100):
-    fig, axes = plt.subplots(nrows=3)
-
-    axes[0].set_title(idx)
-    axes[0].plot(t, Ytest[idx, :, 0], label="Izhikevich model", color="red")
-    axes[0].plot(t, Y_pred[idx, :, 0], label="LSTM", color="green")
+    for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
+        datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath
+        if not os.path.isdir(datapath):
+            continue
 
 
-    axes[0].legend(loc="upper right")
+        targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.h5"
+        fit_dl_model_of_population(datapath, targetpath)
 
-    axes[1].plot(t, Xtest[idx, :, 0], label="Synaptic Erev", color="orange")
-    axes[2].plot(t, Xtest[idx, :, 1], label="Synaptic tau", color="blue")
 
-    axes[1].legend(loc="upper right")
-    axes[2].legend(loc="upper right")
+if __name__ == '__main__':
+    main()
 
-    plt.show(block=True)
-
-    # if idx > 20:
-    #     break
+# Y_pred = model.predict(Xtest)
+#
+# t = np.linspace(0, 0.1*Y_pred.shape[1], Y_pred.shape[1])
+# for idx in range(100):
+#     fig, axes = plt.subplots(nrows=3)
+#
+#     axes[0].set_title(idx)
+#     axes[0].plot(t, Ytest[idx, :, 0], label="Izhikevich model", color="red")
+#     axes[0].plot(t, Y_pred[idx, :, 0], label="LSTM", color="green")
+#
+#
+#     axes[0].legend(loc="upper right")
+#
+#     axes[1].plot(t, Xtest[idx, :, 0], label="Synaptic Erev", color="orange")
+#     axes[2].plot(t, Xtest[idx, :, 1], label="Synaptic tau", color="blue")
+#
+#     axes[1].legend(loc="upper right")
+#     axes[2].legend(loc="upper right")
+#
+#     plt.show(block=True)
+#
+#     # if idx > 20:
+#     #     break
