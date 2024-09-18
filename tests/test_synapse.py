@@ -75,7 +75,7 @@ for key in selected_synparam.keys():
     synparam[key] = np.asarray(selected_synparam[key])
 synparam["Cm"] = 0.144 #!!!!!!!!!!! взять из параметров нейронов
 
-pprint(synparam)
+## pprint(synparam)
 
 input_shape = [1, None, 2]
 synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
