@@ -15,12 +15,14 @@ class BaseSynapse(Layer):
         self.Erev = tf.convert_to_tensor( params['Erev'], dtype=tf.float32 )
         self.Cm = tf.convert_to_tensor( params['Cm'], dtype=tf.float32 )
 
+        self.units = tf.size(self.pconn)
+
         if mask is None:
             self.mask = tf.ones([self.units, ], dtype=tf.dtypes.bool)
         else:
             self.mask = tf.convert_to_tensor(mask)
 
-        self.units = tf.size(self.pconn)
+
 
         self.output_size = 2
         self.state_size = []
@@ -58,20 +60,20 @@ class TsodycsMarkramSynapse(BaseSynapse):
         FR = tf.boolean_mask(inputs, self.mask, axis=1)
         R = states[0]
         U = states[1]
-        X = states[2]
+        A = states[2]
 
         FRpre_normed =  FR * self.pconn
 
-        y_ = R * self.exp_tau_d
-
-        x_ = 1 + (X - 1 + self.tau1r * U) * self.exp_tau_r - self.tau1r * U
-
+        a_ = A * self.exp_tau_d
+        r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
         u_ = U * self.exp_tau_f
-        U = u_ + self.Uinc * (1 - u_) * FRpre_normed
-        R = y_ + U * x_ * FRpre_normed
-        X = x_ - U * x_ * FRpre_normed
 
-        gsyn = tf.nn.relu(self.gsyn_max) * X
+        U = u_ + self.Uinc * (1 - u_) * FRpre_normed
+        A = a_ + U * r_ * FRpre_normed
+        R = r_ - U * r_ * FRpre_normed
+
+
+        gsyn = tf.nn.relu(self.gsyn_max) * A
 
         g_tot = tf.reduce_sum(gsyn, axis=-1)
         E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
@@ -79,18 +81,17 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         output = tf.stack([E, tau], axis=-1)
 
-
-        return output, [R, U, X]
+        return output, [R, U, A]
 
     def get_initial_state(self, batch_size=None):
         shape = [batch_size, self.units]
 
-        print(batch_size)
+        #print(batch_size)
 
         R = tf.ones( shape, dtype=tf.float32)
         U = tf.zeros( shape, dtype=tf.float32)
-        X = tf.zeros( shape, dtype=tf.float32)
-        initial_state = [R, U, X]
+        A = tf.zeros( shape, dtype=tf.float32)
+        initial_state = [R, U, A]
 
         return initial_state
 

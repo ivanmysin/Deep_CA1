@@ -94,6 +94,7 @@ class SpatialThetaGenerators(CommonGenerator):
 
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
+
     def get_firings(self, t):
         ampl4gauss = 2 * (self.InPlacePeakRate - self.OutPlaceFiringRate) / (self.OutPlaceFiringRate + 1) #  range [-1, inf]
 
