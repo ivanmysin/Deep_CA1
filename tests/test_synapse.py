@@ -56,7 +56,7 @@ synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pcon
 synparams['Erev'] = np.zeros( len(synparams), dtype=np.float64)
 #print(synparams.keys())
 
-neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, names=["Neuron Type", "E/I", "Izh C"], index_col=False)
+neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, usecols=["Neuron Type", "E/I", "Izh C"])
 neurons_params.rename({"Neuron Type" : "Presynaptic Neuron Type"}, axis=1, inplace=True)
 #print(neurons_params.head(5))
 
@@ -73,9 +73,10 @@ selected_synparam["pconn"] = 1.0
 synparam = {}
 for key in selected_synparam.keys():
     synparam[key] = np.asarray(selected_synparam[key])
-synparam["Cm"] = 0.144 #!!!!!!!!!!! взять из параметров нейронов
 
-## pprint(synparam)
+#print(neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"])
+synparam["Cm"] = float( 0.001 * neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"].values[0] )
+# pprint(synparam)
 
 input_shape = [1, None, 2]
 synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
