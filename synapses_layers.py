@@ -14,6 +14,8 @@ class BaseSynapse(Layer):
         self.pconn = tf.convert_to_tensor( params['pconn'], dtype=tf.float32 )
         self.Erev = tf.convert_to_tensor( params['Erev'], dtype=tf.float32 )
         self.Cm = tf.convert_to_tensor( params['Cm'], dtype=tf.float32 )
+        self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=tf.float32 )
+        self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=tf.float32 )
 
         self.units = tf.size(self.pconn)
 
@@ -40,11 +42,11 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         super(TsodycsMarkramSynapse, self).__init__(params, dt=dt, mask=mask, **kwargs)
 
-        self.gsyn_max = tf.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=tf.float32 )
-        self.tau_f = tf.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=tf.float32)
-        self.tau_d = tf.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=tf.float32 )
-        self.tau_r = tf.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=tf.float32 )
-        self.Uinc  = tf.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=tf.float32 )
+        self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=tf.float32 )
+        self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=tf.float32)
+        self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=tf.float32 )
+        self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=tf.float32 )
+        self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=tf.float32 )
 
         self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
         self.state_size = [self.units, self.units, self.units]
@@ -53,7 +55,12 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.exp_tau_f = exp(-self.dt / self.tau_f)
         self.exp_tau_r = exp(-self.dt / self.tau_r)
 
-
+    # def build(self, input_shape):
+    #     super(TsodycsMarkramSynapse, self).build(input_shape)
+    #
+    #     #self.gsyn_max = tf.Variable(self.gsyn_max, name="gsyn_max", trainable=True, dtype=tf.float32)
+    #
+    #     self.built = True
 
 
     def call(self, inputs, states):
@@ -77,7 +84,12 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         g_tot = tf.reduce_sum(gsyn, axis=-1)
         E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
+
+        E = (E - self.Erev_min) / (self.Erev_max - self.Erev_min) #- 1
+
         tau = self.Cm / g_tot
+
+        tau = tf.math.log(tau + 1.0)
 
         output = tf.stack([E, tau], axis=-1)
 

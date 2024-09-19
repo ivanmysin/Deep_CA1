@@ -1,14 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from keras.src.backend import shape
-from keras.src.ops import dtype
-from tensorflow.keras.layers import Layer, RNN
+from tensorflow.keras.layers import Layer, RNN, Input
 
 from synapses_layers import TsodycsMarkramSynapse
 import genloss
 import pandas as pd
 import matplotlib.pyplot as plt
 from pprint import pprint
+from tensorflow.keras.saving import load_model
 
 params = [
 
@@ -79,16 +78,33 @@ synparam["Cm"] = float( 0.001 * neurons_params[neurons_params["Presynaptic Neuro
 synparam["Erev_min"] = -75.0
 synparam["Erev_max"] = 0.0
 synparam["gsyn_max"][-1] *= 10.0
-
-
-# pprint(synparam)
+pprint(synparam)
 
 input_shape = [1, None, 2]
 synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
+population_model = load_model("../pretrained_models/CA1 Basket.keras")
 
 model = tf.keras.Sequential()
+#model.add(Input(shape=(2, )))
 model.add(synapses_layer)
+model.add( tf.keras.models.clone_model(population_model.layers[0]) )
+model.add( tf.keras.models.clone_model(population_model.layers[1]) )
+#model.layers[0].trainable = True
+model.layers[1].trainable = False
+model.layers[2].trainable = False
+
 model.build(input_shape=input_shape)
+
+model.layers[1].set_weights(population_model.layers[0].get_weights())
+model.layers[2].set_weights(population_model.layers[1].get_weights())
+
+
+
+
+#print( model.layers[0].get_weights() )
+
+print(model.summary())
+print(model.trainable_weights)
 
 #########################################
 X = np.zeros([1, len(t), 2], dtype=np.float32)
@@ -97,10 +113,10 @@ X[0, :, :] = firings.numpy() # !!!!
 
 Y = model.predict(X)
 
-fig, axes = plt.subplots(nrows=3)
+fig, axes = plt.subplots(nrows=2, sharex=True)
 axes[0].plot(t, firings)
 axes[1].plot(t, Y[0, :, 0])
-axes[2].plot(t, Y[0, :, 1])
-axes[2].set_ylim(0, 80)
+# axes[2].plot(t, Y[0, :, 1])
+# axes[2].set_ylim(0, 80)
 
 plt.show()

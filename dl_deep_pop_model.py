@@ -131,12 +131,12 @@ def fit_dl_model_of_population(datapath, targetpath):
 def main():
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
-        datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath
+        datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath + "/"
         if not os.path.isdir(datapath):
             continue
 
 
-        targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.h5"
+        targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
         fit_dl_model_of_population(datapath, targetpath)
 
 
