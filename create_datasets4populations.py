@@ -150,7 +150,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     net = Network(neuron)  # automatically include G and S
     net.add(monitors)  # manually add the monitors
 
-    net.run(duration * ms, report='text')
+    net.run(duration * ms) #, report='text'
 
     #Varr = np.asarray(M_full_V.V / mV)
 
