@@ -8,7 +8,7 @@ import h5py
 import os
 import pprint
 import myconfig
-
+import matplotlib.pyplot as plt
 
 PATH4SAVING = myconfig.DATASETS4POPULATIONMODELS
 
@@ -38,6 +38,34 @@ def add_units(value, key):
     if key == "d":
         return value * pA
     return value
+
+
+def check_gparams(params, duration):
+
+    t = np.arange(0, duration,  myconfig.DT) * 0.001
+
+    g_exc = 0
+    g_inh = 0
+    for idx in range(1, 5):
+        ge = params[f"ampl_{idx}_e"]/mS * 0.5 * ( np.cos(2*np.pi*t*params[f"omega_{idx}_e"]/Hz + params[f"phase0_{idx}_e"] ) + 1)
+        gi = params[f"ampl_{idx}_i"]/mS * 0.5 * ( np.cos(2*np.pi*t*params[f"omega_{idx}_i"]/Hz + params[f"phase0_{idx}_i"] ) + 1)
+
+        g_exc += ge
+        g_inh += gi
+
+    Erev = (params["Eexc"] / mV * g_exc + params["Einh"] / mV * g_inh) / (g_exc + g_inh)
+    tau_syn = float(params['Cm'] / uF) / (g_exc + g_inh + 0.0001)
+
+    #isupthresh = Erev > params["Vth_mean"] #/ mV)
+    isupthresh = tau_syn < 10 #/ mV)
+
+    # level = float(params["Vth_mean"])
+    # print(np.sum(isupthresh))
+    # plt.plot(t, Erev)
+    # plt.hlines(level , 0, t[-1])
+    # plt.show()
+    return np.mean(isupthresh)
+
 
 
 def run_izhikevich_neurons(params, duration, NN, filepath):
@@ -84,6 +112,9 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
         "phase0_4_i": randinterval(-np.pi, np.pi),  # [-pi pi],
     }
 
+
+
+
     eqs = '''
     dV/dt = (k*(V - Vrest)*(V - Vth) - U + Iexc + Iinh)/Cm + sigma*xi/ms**0.5 : volt
     dU/dt = a * (b * (V - Vrest) - U) : ampere
@@ -95,6 +126,9 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     '''
 
     params = params | g_params
+    # res = check_gparams(params, duration)
+    # print(res)
+    #return True
 
 
     neuron = NeuronGroup(NN, eqs, method='heun', threshold='V > Vpeak', reset="V = Vmin; U = U + d", namespace=params)
@@ -104,7 +138,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     neuron.Vth = np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV
 
 
-    M_full_V = StateMonitor(neuron, 'V', record=np.arange(10))
+    M_full_V = StateMonitor(neuron, 'V', record=np.arange(NN))
     # M_full_U = StateMonitor(neuron, 'U', record=np.arange(N))
     gexc_monitor = StateMonitor(neuron, 'gexc', record=0)
     ginh_monitor = StateMonitor(neuron, 'ginh', record=0)
@@ -124,7 +158,9 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     # dbins = bins[1] - bins[0]
     population_firing_rate = population_firing_rate / NN  # spikes in bin   #/ (0.001 * dbins) # spikes per second
 
-    if np.mean(population_firing_rate)/(defaultclock.dt / second) < 0.2:
+    Nspikes = np.asarray(firing_monitor.t).size
+    if Nspikes/NN/(duration * 0.001) < 0.2:
+        print("A lot of spikes!!!! Do not save simulation!!!!!")
         return False
 
     # ###### smoothing of population firing rate #########
@@ -170,6 +206,7 @@ def create_all_types_dataset(all_params, NN):
         if not os.path.isdir(path):
            os.mkdir(path)
 
+        print(key)
         create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
 
 
