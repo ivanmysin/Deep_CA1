@@ -74,11 +74,11 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     tau_min = 1.5 # ms
     tau_max = 20.0 # ms
 
-    ampl_max_exc = float(params['Cm']/uF) / tau_min
-    ampl_min_exc = float(params['Cm']/uF) / tau_max
+    ampl_max_exc = 0.1 * float(params['Cm']/uF) / tau_min
+    ampl_min_exc = 0.1 * float(params['Cm']/uF) / tau_max
 
-    ampl_min_inh = 0.5 * ampl_min_exc
-    ampl_max_inh = 0.5 * ampl_max_exc
+    ampl_min_inh = 1.0 * ampl_min_exc
+    ampl_max_inh = 1.0 * ampl_max_exc
 
     g_params = {
         "omega_1_e": randinterval(0.2, 2.0) * Hz,  # [0.2 2],
@@ -137,7 +137,6 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     neuron.U = 0 * uA
     neuron.Vth = np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV
 
-
     M_full_V = StateMonitor(neuron, 'V', record=np.arange(NN))
     # M_full_U = StateMonitor(neuron, 'U', record=np.arange(N))
     gexc_monitor = StateMonitor(neuron, 'gexc', record=0)
@@ -158,6 +157,10 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     # dbins = bins[1] - bins[0]
     population_firing_rate = population_firing_rate / NN  # spikes in bin   #/ (0.001 * dbins) # spikes per second
 
+    # fig, axes = plt.subplots(nrows=2)
+    # axes[0].plot()
+    # plt.show()
+    #
     Nspikes = np.asarray(firing_monitor.t).size
     if Nspikes/NN/(duration * 0.001) < 0.2:
         print("A lot of spikes!!!! Do not save simulation!!!!!")
@@ -198,6 +201,7 @@ def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
         if res:
             idx += 1
 
+        break
 
 def create_all_types_dataset(all_params, NN):
     for n, (key, item) in enumerate(all_params.items()):
@@ -235,6 +239,8 @@ def main():
     syndata = syndata.rename(columns={'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin',})
     syndata = syndata.drop(['CARLsim_default', 'E/I', 'Population Size', 'Refractory Period', 'rank'], axis=1)
 
+    ###syndata["k"] *= 10
+
     neurons_types = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name="Sheet2", header=0)
     simutated_population_types = neurons_types[neurons_types["is_include"] == 1]["neurons"].to_list()
 
@@ -246,7 +252,7 @@ def main():
         if not populations_params["Neuron Type"] in simutated_population_types:
             continue
 
-        # if populations_params["Neuron Type"] != "CA1 Basket": ######!!!!!!!!!!!!!!!!!!!!!
+        # if not populations_params["Neuron Type"] in ["CA1 OR-LM", "CA1 Trilaminar"]: ######!!!!!!!!!!!!!!!!!!!!!
         #     continue
 
 
@@ -254,7 +260,7 @@ def main():
         neuron_type = populations_params["Neuron Type"]
         del populations_params["Neuron Type"]
 
-        pprint.pprint(populations_params)
+        #pprint.pprint(populations_params)
         for key, val in populations_params.items():
              neuron_opt_params[key] = add_units(val, key)
 
