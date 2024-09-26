@@ -18,6 +18,10 @@ def get_dataset(path, train2testratio):
 
     datafiles = [file for file in os.listdir(path) if file[-5:] ==".hdf5"]
 
+    if len(datafiles) < 2:
+        print(f"Empty folder!!! {path}")
+        return None
+
     Niter_train =  int(train2testratio * len(datafiles))
     Niter_test = int( len(datafiles) - Niter_train)
 
@@ -106,7 +110,7 @@ def fit_dl_model_of_population(datapath, targetpath):
 
 
     if USE_SAVED_MODEL:
-        model = load_model(f"{datapath}.keras")
+        model = load_model(targetpath)
     else:
 
         # create and fit the LSTM network
@@ -138,7 +142,6 @@ def main():
         datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath + "/"
         if not os.path.isdir(datapath):
             continue
-
 
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
         fit_dl_model_of_population(datapath, targetpath)
