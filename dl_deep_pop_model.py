@@ -105,8 +105,11 @@ def get_dataset(path, train2testratio):
 def fit_dl_model_of_population(datapath, targetpath):
 
     train2testratio = myconfig.TRAIN2TESTRATIO
-    Xtrain, Ytrain, Xtest, Ytest = get_dataset(datapath, train2testratio)
+    dataset = get_dataset(datapath, train2testratio)
+    if dataset is None:
+        return
 
+    Xtrain, Ytrain, Xtest, Ytest = dataset
 
 
     if USE_SAVED_MODEL:
