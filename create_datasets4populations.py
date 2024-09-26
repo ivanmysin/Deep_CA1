@@ -201,7 +201,7 @@ def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
         if res:
             idx += 1
 
-        break
+
 
 def create_all_types_dataset(all_params, NN):
     for n, (key, item) in enumerate(all_params.items()):
