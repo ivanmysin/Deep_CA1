@@ -119,7 +119,6 @@ def fit_dl_model_of_population(datapath, targetpath):
         # create and fit the LSTM network
         model = Sequential()
         model.add( Input(shape=(None, 2)) )
-        #model.add(Dense(32, activation='sigmoid'))  #
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
 
@@ -128,7 +127,7 @@ def fit_dl_model_of_population(datapath, targetpath):
         # model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mean_squared_logarithmic_error'])
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
