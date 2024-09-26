@@ -142,6 +142,9 @@ def main():
 
     logfilepath = myconfig.DATASETS4POPULATIONMODELS + "logfitmodels.txt"
 
+    logfile = open(logfilepath, mode="a")
+    logfile.write("#######################################\n")
+
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
         datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath + "/"
@@ -149,8 +152,9 @@ def main():
             continue
 
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
-        fit_dl_model_of_population(datapath, targetpath, logfilepath)
+        fit_dl_model_of_population(datapath, targetpath, logfile)
 
+    logfile.close()
 
 if __name__ == '__main__':
     main()
