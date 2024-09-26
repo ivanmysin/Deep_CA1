@@ -2,8 +2,7 @@ import numpy as np
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
-from tensorflow.keras.layers import LSTM
-from keras.regularizers import l2
+from tensorflow.keras.layers import LSTM, GRU
 from tensorflow.keras.saving import load_model
 import h5py
 import matplotlib.pyplot as plt
@@ -60,7 +59,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
+                    logtausyn = np.exp(-myconfig.DT/logtausyn) #np.log( logtausyn + 1.0 ) #### !!!!
                     # logtausyn = logtausyn / 10.0
                     #print(logtausyn.min(), logtausyn.max())
 
@@ -83,7 +82,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = np.log( logtausyn + 1.0 ) #### !!!!
+                    logtausyn = np.exp(-myconfig.DT / logtausyn)
 
                     Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
                     Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
@@ -107,15 +106,20 @@ def fit_dl_model_of_population(datapath, targetpath):
 
 
     if USE_SAVED_MODEL:
-        model = load_model("pv_bas.keras")
+        model = load_model(f"{datapath}.keras")
     else:
 
         # create and fit the LSTM network
         model = Sequential()
         model.add( Input(shape=(None, 2)) )
         #model.add(Dense(32, activation='sigmoid'))  #
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-        model.add( Dense(1, activation='relu') ) #
+        # model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        # model.add( Dense(1, activation='relu') ) #
+
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        # model.add( Dense(1, activation='relu') ) #
 
         model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])

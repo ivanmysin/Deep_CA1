@@ -253,7 +253,7 @@ def main():
             continue
 
         # if not populations_params["Neuron Type"] in ["CA1 OR-LM", "CA1 Trilaminar"]: ######!!!!!!!!!!!!!!!!!!!!!
-        #     continue
+        #      continue
 
 
         neuron_opt_params = default_params.copy()
