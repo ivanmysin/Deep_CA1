@@ -63,7 +63,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = np.exp(-myconfig.DT/logtausyn) #np.log( logtausyn + 1.0 ) #### !!!!
+                    logtausyn = 1 / np.exp(-myconfig.DT/logtausyn) # np.log( logtausyn + 1.0 ) #### !!!!
                     # logtausyn = logtausyn / 10.0
                     #print(logtausyn.min(), logtausyn.max())
 
@@ -86,7 +86,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = np.exp(-myconfig.DT / logtausyn)
+                    logtausyn =  1 / np.exp(-myconfig.DT / logtausyn)  ##np.log( logtausyn + 1.0 ) ####
 
                     Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
                     Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
