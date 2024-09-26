@@ -102,7 +102,7 @@ def get_dataset(path, train2testratio):
     return Xtrain, Ytrain, Xtest, Ytest
 
 #######################################################################################
-def fit_dl_model_of_population(datapath, targetpath):
+def fit_dl_model_of_population(datapath, targetpath, logfile):
 
     train2testratio = myconfig.TRAIN2TESTRATIO
     dataset = get_dataset(datapath, train2testratio)
@@ -119,13 +119,13 @@ def fit_dl_model_of_population(datapath, targetpath):
         # create and fit the LSTM network
         model = Sequential()
         model.add( Input(shape=(None, 2)) )
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-        model.add( Dense(1, activation='relu') ) #
-
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-        # model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        # model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
+
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( Dense(1, activation='relu') ) #
 
         model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
@@ -134,11 +134,14 @@ def fit_dl_model_of_population(datapath, targetpath):
         hist = model.fit(Xtrain, Ytrain, epochs=myconfig.NEPOCHES, batch_size=myconfig.BATCHSIZE, verbose=myconfig.VERBOSETRANINGPOPMODELS, validation_data=(Xtest, Ytest))
         model.save(targetpath)
 
-        print("Training of ", datapath, "finished!")
-        print("Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], "Val_mae = ", hist.history['val_mae'][-1])
+        #print("Training of ", datapath, file=logfile)
+        print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], "Val_mae = ", hist.history['val_mae'][-1], file=logfile)
 
 
 def main():
+
+    logfilepath = myconfig.DATASETS4POPULATIONMODELS + "logfitmodels.txt"
+
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
         datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath + "/"
@@ -146,7 +149,7 @@ def main():
             continue
 
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
-        fit_dl_model_of_population(datapath, targetpath)
+        fit_dl_model_of_population(datapath, targetpath, logfilepath)
 
 
 if __name__ == '__main__':
