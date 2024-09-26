@@ -140,7 +140,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
 def main():
 
-    logfilepath = myconfig.DATASETS4POPULATIONMODELS + "logfitmodels.txt"
+    logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.txt"
 
     logfile = open(logfilepath, mode="a")
     logfile.write("#######################################\n")
