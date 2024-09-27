@@ -20,6 +20,8 @@ if True:
         'pconn' : np.zeros(Ns, dtype=np.float32) + 1.0,
         'Erev' : np.zeros(Ns, dtype=np.float32),
         'Cm' : 0.114,
+        'Erev_min' : -75.0,
+        'Erev_max' : 0.0,
     }
     dt = 0.1
     mask = np.ones(Ns, dtype=bool)
@@ -36,17 +38,19 @@ if True:
     model = tf.keras.Sequential()
     model.add(synapses_layer)
 
-    model.add( tf.keras.models.clone_model(population_model.layers[0]) )
-    model.add( tf.keras.models.clone_model(population_model.layers[1]) )
+    for layer in population_model.layers:
+        model.add( tf.keras.models.clone_model(layer) )
 
-    model.layers[1].trainable = False
-    model.layers[2].trainable = False
+
+    for layer in model.layers[1:]:
+        layer.trainable = False
+
 
     model.build(input_shape=input_shape)
 
     print(model.summary())
 
-    X = np.random.rand(150).reshape(1, 10, 5)
+    X = np.random.rand(50).reshape(1, 10, 5)
 
     Y = model.predict(X)
 

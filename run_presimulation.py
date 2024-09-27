@@ -19,8 +19,8 @@ join_neurons.main()
 print("Generation synapses parameters")
 set_connections.main()
 
-print("Run comuputation datasets for population models")
-create_datasets4populations.main()
-
-print("Run fitting of population models")
-dl_deep_pop_model.main()
+# print("Run comuputation datasets for population models")
+# create_datasets4populations.main()
+#
+# print("Run fitting of population models")
+# dl_deep_pop_model.main()
