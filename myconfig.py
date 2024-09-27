@@ -7,6 +7,7 @@ STRUCTURESOFNET = "./presimulation_files/"  # Path to files with parameters of f
 DATASETS4POPULATIONMODELS = "./population_datasets/"  # Path to files with datasets for traning models of populations
 
 IZHIKEVICNNEURONSPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv'
+TSODYCSMARKRAMPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv'
 FIRINGSNEURONPARAMS = "./parameters/neurons_parameters.xlsx"
 
 

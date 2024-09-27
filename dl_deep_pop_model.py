@@ -16,7 +16,7 @@ def get_dataset(path, train2testratio):
 
 
 
-    datafiles = [file for file in os.listdir(path) if file[-5:] ==".hdf5"]
+    datafiles = sorted( [file for file in os.listdir(path) if file[-5:] ==".hdf5"] )
 
     if len(datafiles) < 2:
         print(f"Empty folder!!! {path}")
@@ -63,7 +63,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = 1 / np.exp(-myconfig.DT/logtausyn) # np.log( logtausyn + 1.0 ) #### !!!!
+                    logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
                     # logtausyn = logtausyn / 10.0
                     #print(logtausyn.min(), logtausyn.max())
 
@@ -86,7 +86,7 @@ def get_dataset(path, train2testratio):
 
                     logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn =  1 / np.exp(-myconfig.DT / logtausyn)  ##np.log( logtausyn + 1.0 ) ####
+                    logtausyn =  2 * np.exp(-myconfig.DT / logtausyn) - 1 ##np.log( logtausyn + 1.0 ) ####
 
                     Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
                     Xtest[batch_idx, : , 1] = logtausyn #/ 50.0

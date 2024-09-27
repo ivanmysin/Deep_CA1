@@ -50,6 +50,7 @@ def main():
     for pre_idx, presyn in enumerate(neuron_populations):
         for post_idx, postsyn in enumerate(neuron_populations):
 
+
             if presyn["type"] == "CA1 Pyramidal" and postsyn["type"] == "CA1 Pyramidal":
                 ## set pyr to pyr connections
                 if presyn["z_anat"] * postsyn["z_anat"] < 0:
@@ -61,16 +62,24 @@ def main():
             elif presyn["type"] == "CA1 Pyramidal" and postsyn["type"] in INTERNEURONS_TYPES:
                 ## set pyr to int connctions
 
+                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == presyn["type"]) & ( \
+                            CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
+
+                if len(conn) == 0:
+                    continue
+
                 dist = np.sqrt((presyn["x_anat"] - postsyn["x_anat"])**2 + (presyn["y_anat"] - postsyn["y_anat"])**2 )
                 pconn = AMPL_PYR2INT_CONNECTIONS * np.exp(-0.5 * (dist / SIGMA_PYR2INT_CONNECTIONS)**2 )
 
             elif presyn["type"] in INTERNEURONS_TYPES: # and postsyn["type"] in INTERNEURONS_TYPES
                 ## Set interneurons connections to all
+
                 conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == presyn["type"]) & ( \
-                                   CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
+                            CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
 
                 if len(conn) == 0:
                     continue
+
 
                 pconn = INTsIN_POP * conn["Connection Probability"].iloc[0]
                 #print(pconn)
