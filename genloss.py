@@ -20,9 +20,13 @@ PI = np.pi
 
 
 
-class CommonGenerator(tf.Module):
+class CommonGenerator(tf.keras.Model):
     def __init__(self, params, mask=None):
         super(CommonGenerator, self).__init__()
+
+        if mask is None:
+            mask = np.ones(len(params), dtype='bool')
+
         self.mask = tf.constant(mask, dtype=tf.dtypes.bool)
 
     def precomute(self):

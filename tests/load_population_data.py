@@ -1,7 +1,4 @@
 import os
-
-from keras.src.ops import dtype
-
 os.chdir("../")
 import numpy as np
 import tensorflow as tf
@@ -22,8 +19,8 @@ pop_types_models = {}
 for pop_idx, pop_type in pop_params.iterrows():
     pop_name = pop_type["neurons"]
 
-    #!!!!!!!!! modelfile = myconfig.PRETRANEDMODELS + pop_type["neurons"] + ".keras"
-    modelfile = myconfig.PRETRANEDMODELS + "pv_bas" + ".keras"
+    modelfile = myconfig.PRETRANEDMODELS + pop_type["neurons"] + ".keras"
+    ###modelfile = myconfig.PRETRANEDMODELS + "pv_bas" + ".keras"
 
     try:
         pop_types_models[pop_name] = tf.keras.models.load_model(modelfile)
@@ -113,10 +110,5 @@ for pop_idx, pop in enumerate(neurons_populations_params):
             continue
         layer.trainable = False
         layer.set_weights(pop_types_models[pop_type].layers[l_idx-1].get_weights())
-
-
-    #print(model.summary())
-
-    break # !!!!!!!!!!!!!!!!!!!!
 
 

@@ -7,7 +7,7 @@ import os
 
 
 def main():
-    Npyr = 2200 # Всего пирамидных нейронов 159000, по 70 в каждом кластере
+    Npyr = 50 # !!!! 2200 # Всего пирамидных нейронов 159000, по 70 в каждом кластере
     Npyrdeep = Npyrsup = Npyr // 2
 
 
@@ -133,7 +133,7 @@ def main():
             pyramidal_cells.append(pyr_cell)
 
 
-    with open(myconfig.STRUCTURESOFNET + "pyramidal_cells.pickle", mode="bw") as file:
+    with open(myconfig.STRUCTURESOFNET + "_pyramidal_cells.pickle", mode="bw") as file:
         pickle.dump(pyramidal_cells, file)
 
     return pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, right_bound, left_bound, CA1_flat

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 # import matplotlib.pyplot as plt
 import pickle
+import os
 import myconfig
 
 def main():
@@ -32,7 +33,7 @@ def main():
     MEC_IN_POP = 70
     LEC_IN_POP = 70
 
-    with open(myconfig.STRUCTURESOFNET + "neurons.pickle", mode="br") as file:
+    with open(myconfig.STRUCTURESOFNET + "_neurons.pickle", mode="br") as file:
         neuron_populations = pickle.load(file)
 
 
@@ -160,11 +161,12 @@ def main():
 
             connections.append(conn)
 
-        print(presyn['type'], " processed!")
+        #print(presyn['type'], " processed!")
 
     #print(len(connections))
-    with open( myconfig.STRUCTURESOFNET + "connections.pickle", mode="bw") as file:
+    with open( myconfig.STRUCTURESOFNET + "_connections.pickle", mode="bw") as file:
         pickle.dump(connections, file)
 
 if __name__ == '__main__':
+    os.chdir("../")
     main()

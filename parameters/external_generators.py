@@ -8,11 +8,14 @@ import os
 
 def main():
     TRACK_LENGTH = 200 # cm
-    for INPUT_TYPE in ["mec", "lec", "ca3"]:
+    THETA_FREQ = 6 # Hz
+
+
+    for INPUT_TYPE in ["MEC", "LEC", "CA3"]:
 
         # Hyperparameters
-        if INPUT_TYPE == "mec":
-            Npyr = 200
+        if INPUT_TYPE == "MEC":
+            Npyr = 200 ###!!!!!!!!! 200
 
             PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.
             PLACESIZE_STD = 5  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
@@ -33,8 +36,8 @@ def main():
             PHASEPREC_ONSET = THETA_PHASE_0 - 0.5
             PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
 
-        elif INPUT_TYPE == "lec":
-            Npyr = 200
+        elif INPUT_TYPE == "LEC":
+            Npyr = 50 ###!!!!!!!!! 200
 
             PLACESIZE_MEAN = 30  # см, Средний размер поля места в дорсальном гиппокампе.
             PLACESIZE_STD = 10  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
@@ -55,8 +58,8 @@ def main():
             PHASEPREC_ONSET = THETA_PHASE_0 - 0.5
             PHASEPRECPROB = 0.0  # Вероятность обнаружить фазовую прецессию у клетки места
 
-        elif INPUT_TYPE == "ca3":
-            Npyr = 200
+        elif INPUT_TYPE == "CA3":
+            Npyr = 50 ###!!!!!!!!! 200
 
             PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.
             PLACESIZE_STD = 5  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
@@ -79,7 +82,7 @@ def main():
 
 
         generators = []
-        Nsteps = int( Npyr / (DV_LENGTH+100) / 100)
+        Nsteps = int( Npyr / (DV_LENGTH+100) / 100) + 1
         for cell_pos_dv in range(0, DV_LENGTH+100, 100):
 
             place_size = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_MEAN) / 6
@@ -92,7 +95,7 @@ def main():
                 phase_precession_slope = 0.0
 
             for idx in range(Nsteps):
-                mec3cell = {
+                gencell = {
                     "type" : f"{INPUT_TYPE}_generator",
 
                     "x_anat": 0,
@@ -110,12 +113,14 @@ def main():
                     "SlopePhasePrecession": phase_precession_slope,  # DV
                     "PrecessionOnset": THETA_SLOPE_DV * cell_pos_dv + PHASEPREC_ONSET,
 
+                    "ThetaFreq" : THETA_FREQ,
+
 
                 }
 
-                generators.append(mec3cell)
+                generators.append(gencell)
 
-        with open(myconfig.STRUCTURESOFNET + f"{INPUT_TYPE}_generators.pickle", mode="bw") as file:
+        with open(myconfig.STRUCTURESOFNET + f"_{INPUT_TYPE}_generators.pickle", mode="bw") as file:
             pickle.dump(generators, file)
 
 if __name__ == "__main__":

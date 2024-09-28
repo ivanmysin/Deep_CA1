@@ -50,6 +50,8 @@ def main():
 
         #print(cells_pop["neurons"])
 
+        cells_pop["Npops"] = 2 #!!!!
+
         selected, _ = kmeans(points, cells_pop["Npops"])
 
         for cell_idx in range(cells_pop["Npops"]):
@@ -80,5 +82,11 @@ def main():
 
 
 
-    with open(myconfig.STRUCTURESOFNET +  "interneurons.pickle", mode="bw") as file:
+    with open(myconfig.STRUCTURESOFNET +  "_interneurons.pickle", mode="bw") as file:
         pickle.dump(interneurons, file)
+
+
+
+if __name__ == "__main__":
+    os.chdir("../")
+    main()
