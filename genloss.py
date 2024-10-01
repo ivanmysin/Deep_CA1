@@ -31,6 +31,7 @@ class CommonGenerator(tf.keras.Model):
 
     def precomute(self):
         pass
+
     def r2kappa(self, R):
         """
         recalulate kappa from R for von Misses function
@@ -81,15 +82,15 @@ class SpatialThetaGenerators(CommonGenerator):
             ThetaFreq.append( p["ThetaFreq"] )
 
 
-        self.ThetaFreq = tf.constant(ThetaFreq, dtype=tf.float64)
-        self.OutPlaceFiringRate = tf.constant(OutPlaceFiringRate, dtype=tf.float64)
-        self.OutPlaceThetaPhase = tf.constant(OutPlaceThetaPhase, dtype=tf.float64)
-        self.R = tf.constant(Rs, dtype=tf.float64)
-        self.InPlacePeakRate = tf.constant(InPlacePeakRate, dtype=tf.float64)
-        self.CenterPlaceField = tf.constant(CenterPlaceField, dtype=tf.float64)
-        self.SigmaPlaceField = tf.constant(SigmaPlaceField, dtype=tf.float64)
-        self.SlopePhasePrecession = tf.constant(SlopePhasePrecession, dtype=tf.float64)
-        self.PrecessionOnset = tf.constant(PrecessionOnset, dtype=tf.float64)
+        self.ThetaFreq = tf.reshape( tf.constant(ThetaFreq, dtype=tf.float64), [-1, ])
+        self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=tf.float64), [-1, ])
+        self.OutPlaceThetaPhase = tf.reshape( tf.constant(OutPlaceThetaPhase, dtype=tf.float64), [-1, ])
+        self.R = tf.reshape( tf.constant(Rs, dtype=tf.float64), [-1, ])
+        self.InPlacePeakRate = tf.reshape( tf.constant(InPlacePeakRate, dtype=tf.float64), [-1, ])
+        self.CenterPlaceField = tf.reshape(  tf.constant(CenterPlaceField, dtype=tf.float64), [-1, ])
+        self.SigmaPlaceField = tf.reshape( tf.constant(SigmaPlaceField, dtype=tf.float64), [-1, ])
+        self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=tf.float64), [-1, ])
+        self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=tf.float64), [-1, ])
 
     def precomute(self):
         self.kappa = self.r2kappa(self.R)
@@ -99,13 +100,18 @@ class SpatialThetaGenerators(CommonGenerator):
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
 
+
+
+
     def get_firings(self, t):
+
         ampl4gauss = 2 * (self.InPlacePeakRate - self.OutPlaceFiringRate) / (self.OutPlaceFiringRate + 1) #  range [-1, inf]
 
         multip = (1 + ampl4gauss * exp(-0.5 * ((t - self.CenterPlaceField) / self.SigmaPlaceField) ** 2))
 
         start_place = t - self.CenterPlaceField - 3 * self.SigmaPlaceField
         end_place = t - self.CenterPlaceField + 3 * self.SigmaPlaceField
+
         inplace = 0.25 * (1.0 - (start_place / (self.ALPHA + np.abs(start_place)))) * (
                 1.0 + end_place / (self.ALPHA + abs(end_place)))
 
@@ -126,6 +132,8 @@ class SpatialThetaGenerators(CommonGenerator):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         loss = tf.reduce_mean( tf.keras.losses.logcosh(target_firings, selected_firings) )
         return loss
+
+
 #########################################################################
 class VonMisesLoss(CommonGenerator):
     def __init__(self, params, mask=None, sigma_low=0.2, sigma_hight=0.01, dt=0.1):

@@ -88,7 +88,7 @@ def main():
             place_size = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_MEAN) / 6
             place_size_std = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_STD) / 6
 
-            center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1)
+            center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1).ravel()
             if PHASEPRECPROB < np.random.uniform():
                 phase_precession_slope = PHASEPREC_SLOPE + cell_pos_dv*PHASEPREC_SLOPE_DECREASE_DV
             else:

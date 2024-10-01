@@ -85,7 +85,7 @@ def main():
                 pconn = INTsIN_POP * conn["Connection Probability"].iloc[0]
                 #print(pconn)
 
-            elif presyn["type"] == "ca3_generator" and postsyn["type"] == "CA1 Pyramidal":
+            elif presyn["type"] == "CA3_generator" and postsyn["type"] == "CA1 Pyramidal":
 
                 conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == "CA3 Pyramidal") & ( \
                                    CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
@@ -100,7 +100,7 @@ def main():
                 else: # for superficial pyramidal cells
                     pconn = CA3_IN_POP * conn["Connection Probability"].iloc[0]
 
-            elif presyn["type"] == "ca3_generator" and postsyn["type"] in INTERNEURONS_TYPES:
+            elif presyn["type"] == "CA3_generator" and postsyn["type"] in INTERNEURONS_TYPES:
                 conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == "CA3 Pyramidal") & ( \
                             CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
                 if len(conn) == 0:
@@ -108,7 +108,7 @@ def main():
 
                 pconn = CA3_IN_POP * conn["Connection Probability"].iloc[0]
 
-            elif presyn["type"] == "mec_generator":
+            elif presyn["type"] == "MEC_generator":
                 conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == "EC LIII Pyramidal") & ( \
                             CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
                 if len(conn) == 0:
@@ -123,7 +123,7 @@ def main():
                 if postsyn["z_anat"] < 0: # for superficial pyramidal cells
                     pconn = pconn * 0.2
 
-            elif presyn["type"] == "lec_generator":
+            elif presyn["type"] == "LEC_generator":
                 conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == "EC LIII Pyramidal") & ( \
                             CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
                 if len(conn) == 0:

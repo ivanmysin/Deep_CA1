@@ -48,7 +48,7 @@ def main():
         if str(cells_pop["neurons"]) == "CA1 Pyramidal": continue
         if not cells_pop["is_include"]: continue
 
-        #print(cells_pop["neurons"])
+        if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
 
         cells_pop["Npops"] = 2 #!!!!
 

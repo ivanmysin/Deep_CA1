@@ -1,9 +1,9 @@
 import tensorflow as tf
+from keras.src.ops import dtype
 from tensorflow.keras.layers import Layer, RNN
 exp = tf.math.exp
 
-# Задачи
-# * Задать начальное состояние
+from pprint import pprint
 
 
 class BaseSynapse(Layer):
@@ -48,6 +48,11 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=tf.float32 )
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=tf.float32 )
 
+
+
+    def build(self, input_shape):
+        super(TsodycsMarkramSynapse, self).build(input_shape)
+
         self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
         self.state_size = [self.units, self.units, self.units]
 
@@ -55,19 +60,54 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.exp_tau_f = exp(-self.dt / self.tau_f)
         self.exp_tau_r = exp(-self.dt / self.tau_r)
 
-    # def build(self, input_shape):
-    #     super(TsodycsMarkramSynapse, self).build(input_shape)
-    #
-    #     #self.gsyn_max = tf.Variable(self.gsyn_max, name="gsyn_max", trainable=True, dtype=tf.float32)
-    #
-    #     self.built = True
+        self.built = True
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "gsyn_max": self.gsyn_max,
+            "tau_f": self.tau_f,
+            "tau_d": self.tau_d,
+            "tau_r": self.tau_r,
+            "Uinc": self.Uinc,
+            "pconn": self.pconn,
+            "Erev": self.Erev,
+            "Erev_min": self.Erev_min,
+            "Erev_max": self.Erev_max,
+            "Cm": self.Cm,
+            "dt" : self.dt,
+            "mask" : self.mask,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        ##pprint(config)
+        params = {}
+
+        params['gsyn_max'] = config['gsyn_max']['config']["value"]
+        params['tau_f'] = config['tau_f']['config']["value"]
+        params['tau_d'] = config['tau_d']['config']["value"]
+        params['tau_r'] = config['tau_r']['config']["value"]
+        params['Uinc'] = config['Uinc']['config']["value"]
+        params['pconn'] = config['pconn']['config']["value"]
+        params['Erev'] = config['Erev']['config']["value"]
+        params['Erev_min'] = config['Erev_min']['config']["value"]
+        params['Erev_max'] = config['Erev_max']['config']["value"]
+        params['Cm'] = config['Cm']['config']["value"]
+        dt = config['dt']['config']["value"]
+        mask = config['mask']['config']["value"]
+
+        return cls(params, dt=dt, mask=mask)
 
 
     def call(self, inputs, states):
         FR = tf.boolean_mask(inputs, self.mask, axis=1)
+
         R = states[0]
         U = states[1]
         A = states[2]
+
 
         FRpre_normed =  FR * self.pconn
 
