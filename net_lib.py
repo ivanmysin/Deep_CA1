@@ -1,14 +1,74 @@
 import numpy as np
 import tensorflow as tf
+from keras import saving
 import pandas as pd
 import pickle
+
 import myconfig
 from synapses_layers import TsodycsMarkramSynapse
 from genloss import SpatialThetaGenerators
 import os
+tf.keras.backend.set_floatx('float32')
+
+from pprint import pprint
+
+class PopModelLayer(tf.keras.layers.Layer):
+
+    def __init__(self, synapse_layer, pop_layers):
+        super(PopModelLayer, self).__init__()
+        self.synapses = synapse_layer
+        self.pop_layers = pop_layers
+
+    def build(self, input_shape):
+        self.synapses.build(input_shape)
+        self.built = True
+    #     prev_units = 2
+    #     for l in self.pop_layers:
+    #         input_shape = (1, None, prev_units)
+    #         prev_units = l.units
+    #
+    #         l.build(input_shape)
 
 
+    def call(self, firings):
 
+        x = self.synapses(firings)
+        for l in self.pop_layers:
+            x = l(x)
+
+        return x
+
+
+    def get_config(self):
+        config = super().get_config()
+
+        pop_layers_config = []
+        for l in self.pop_layers:
+            pop_layers_config.append( saving.serialize_keras_object(l)  )
+
+        config.update({
+            "synapses_config": saving.serialize_keras_object(self.synapses),
+            "pop_layers_config" : pop_layers_config,
+
+        })
+
+        ## pprint(config)
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+
+        #pprint(config)
+
+        synapses = saving.deserialize_keras_object( config.pop("synapses_config") )
+
+        pop_layers = []
+        for pop_config in config.pop("pop_layers_config"):
+            l = saving.deserialize_keras_object(  pop_config )
+
+            pop_layers.append(l)
+
+        return cls(synapses, pop_layers)
 
 class Net(tf.keras.Model):
 
@@ -40,16 +100,8 @@ class Net(tf.keras.Model):
         self.generators = []
         if len(gen_params) > 0:
             gen_model = SpatialThetaGenerators(gen_params)
-            gen_model.precomute()
+            gen_model.build()
             self.generators.append(gen_model)
-
-
-    # def get_generator_model(self, params):
-    #     print(params)
-    #
-    #     #model = SpatialThetaGenerators(params)
-    #
-    #     return None
 
 
     def get_pop_types_models(self, path, types):
@@ -67,10 +119,13 @@ class Net(tf.keras.Model):
 
 
     def get_model(self, pop_idx, pop, connections, base_model, neurons_params, synapses_params):
+
         input_shape = (1, None, self.Npops)
+
+
         pop_type = pop["type"]
 
-        #print(input_shape)
+
 
         if len( neurons_params[neurons_params["Neuron Type"] == pop_type] ) == 0:
             print(pop_type)
@@ -129,43 +184,44 @@ class Net(tf.keras.Model):
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = tf.keras.layers.RNN(synapses, return_sequences=True, stateful=True)
 
-        model = tf.keras.Sequential()
-        model.add(synapses_layer)
-
+        pop_layers = []
         for layer in base_model.layers:
-            model.add(tf.keras.models.clone_model(layer))
+            pop_layers.append( tf.keras.models.clone_model(layer) )
+
+        model = PopModelLayer(synapses_layer, pop_layers)   # tf.keras.Sequential()
 
         model.build(input_shape=input_shape)
 
-        for l_idx, layer in enumerate(model.layers):
-            if l_idx == 0:
-                continue
+        for l_idx, layer in enumerate(model.pop_layers):
             layer.trainable = False
-            layer.set_weights(base_model.layers[l_idx - 1].get_weights())
+            layer.set_weights(base_model.layers[l_idx].get_weights())
 
         # print(model.summary())
+
 
         return tf.keras.models.clone_model(model)
 
 
     def call(self, firings0, t0=0, Nsteps=1):
 
-        t = t0
+        t = tf.constant(t0, dtype=tf.float32)
+
         firings = []
         for idx in range(Nsteps):
+
             firings_in_step = []
 
             for model in self.pop_models:
                 if idx == 0:
-                    fired = model.predict(firings0)
+                    fired = model(firings0)
                 else:
 
-
-                    fired = model.predict(firings[-1])
+                    fired = model(firings[-1])
                 firings_in_step.append(fired)
 
             for gen in self.generators:
-                fired = gen.get_firings(t)
+                t = tf.reshape(t, shape=(-1, 1))
+                fired = gen(t)
                 #fired = self.ReshapeLayer(fired)
 
                 fired = tf.reshape(fired, (1, 1, -1) )
@@ -232,10 +288,10 @@ if __name__ == "__main__":
     firings0 = np.zeros(shape=(1, 1, len(populations)), dtype=np.float32)
 
 
-    t = 0
+    t = 0.0
     #fired = net.generators[0].get_firings(t)
 
-    fired = net(firings0, t0=0, Nsteps=10)
+    fired = net(firings0, t0=0.0, Nsteps=10)
     #
     # for m_idx, model in enumerate(net.pop_models):
     #     try:
@@ -250,4 +306,4 @@ if __name__ == "__main__":
 
     #Y = net.pop_models[0].predict(firings0)
 
-    print(fired.shape)
+    print(fired)
