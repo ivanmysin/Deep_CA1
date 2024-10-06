@@ -22,12 +22,7 @@ class PopModelLayer(tf.keras.layers.Layer):
     def build(self, input_shape):
         self.synapses.build(input_shape)
         self.built = True
-    #     prev_units = 2
-    #     for l in self.pop_layers:
-    #         input_shape = (1, None, prev_units)
-    #         prev_units = l.units
-    #
-    #         l.build(input_shape)
+
 
 
     def call(self, firings):
@@ -102,6 +97,40 @@ class Net(tf.keras.Model):
             gen_model = SpatialThetaGenerators(gen_params)
             gen_model.build()
             self.generators.append(gen_model)
+
+        self.output_layers = self.get_output_layers(populations)
+
+
+
+    def get_output_layers(self, populations):
+
+        simple_out_mask = np.zeros(len(populations), dtype='bool')
+        frequecy_filter_out_mask = np.zeros(len(populations), dtype='bool')
+        phase_locking_out_mask = np.zeros(len(populations), dtype='bool')
+
+        for pop_idx, pop in enumerate(populations):
+
+            if pop["type"] == "CA1 Pyramidal":
+                simple_out_mask[pop_idx] = True
+                continue
+            try:
+
+                if np.isnan(pop["ThetaPhase"]):
+                    phase_locking_out_mask[pop_idx] = True
+                    continue
+                else:
+                    frequecy_filter_out_mask[pop_idx] = True
+                    continue
+
+
+            except KeyError:
+                continue
+
+
+
+
+        output_layers = []
+        return output_layers
 
 
     def get_pop_types_models(self, path, types):
