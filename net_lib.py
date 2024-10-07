@@ -8,6 +8,7 @@ import myconfig
 from synapses_layers import TsodycsMarkramSynapse
 import genloss  #s import SpatialThetaGenerators
 import os
+
 tf.keras.backend.set_floatx('float32')
 
 from pprint import pprint
@@ -127,14 +128,26 @@ class Net(tf.keras.Model):
                 continue
 
 
+        output_layers = []
         simple_selector = genloss.CommonOutProcessing(simple_out_mask)
-        theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=myconfig.DT)
-        phase_locking_selector = genloss.PhaseLockingOutput(mask=phase_locking_out_mask, ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+        output_layers.append(simple_selector)
+
+
+        if np.sum(frequecy_filter_out_mask) > 0:
+            theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=myconfig.DT)
+            output_layers.append(theta_filter)
+
+            robast_mean_out = genloss.RobastMeanOut(mask=frequecy_filter_out_mask)
+            output_layers.append(robast_mean_out)
+
+
+        if np.sum(phase_locking_out_mask) > 0:
+            phase_locking_selector = genloss.PhaseLockingOutput(mask=phase_locking_out_mask,
+                                                                ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+            output_layers.append(phase_locking_selector)
+
 
         ### add robast mean!!!!
-
-
-        output_layers = [simple_selector, theta_filter, phase_locking_selector]
         return output_layers
 
 

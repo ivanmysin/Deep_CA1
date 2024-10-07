@@ -149,6 +149,7 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 
         self.mask = tf.constant(mask, dtype=tf.dtypes.bool)
         self.input_size = tf.size(self.mask)
+        self.n_selected = tf.reduce_sum( tf.cast(self.mask, dtype=tf.int64)  )
 
     def build(self):
         input_shape = (1, None, self.input_size)
@@ -192,12 +193,12 @@ class FrequencyFilter(CommonOutProcessing):
         self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
         self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
         self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
-        self.gauss_low = tf.concat( int(tf.size(self.R))*(self.gauss_low, ), axis=2)
+        self.gauss_low = tf.concat( int(self.n_selected) *(self.gauss_low, ), axis=2)
 
         self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
         self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
         self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
-        self.gauss_high = tf.concat( int(tf.size(self.R)) * (self.gauss_high,), axis=2)
+        self.gauss_high = tf.concat( int(self.n_selected) * (self.gauss_high,), axis=2)
 
     def build(self):
         super(FrequencyFilter, self).build()
@@ -259,9 +260,9 @@ class PhaseLockingOutput(CommonOutProcessing):
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
-        t_max = tf.shape(simulated_firings)[1]*self.dt
+        t_max = tf.cast(tf.shape(simulated_firings)[1], dtype=tf.float32) * self.dt
 
-        t = tf.range(0, t_max, 0.1)
+        t = tf.range(0, t_max, self.dt)
         t = tf.reshape(t, shape=(-1, 1))
 
         theta_phases = 2 * PI * 0.001 * t * self.ThetaFreq
