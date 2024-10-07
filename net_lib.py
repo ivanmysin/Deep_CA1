@@ -6,7 +6,7 @@ import pickle
 
 import myconfig
 from synapses_layers import TsodycsMarkramSynapse
-from genloss import SpatialThetaGenerators
+import genloss  #s import SpatialThetaGenerators
 import os
 tf.keras.backend.set_floatx('float32')
 
@@ -94,7 +94,7 @@ class Net(tf.keras.Model):
 
         self.generators = []
         if len(gen_params) > 0:
-            gen_model = SpatialThetaGenerators(gen_params)
+            gen_model = genloss.SpatialThetaGenerators(gen_params)
             gen_model.build()
             self.generators.append(gen_model)
 
@@ -127,9 +127,14 @@ class Net(tf.keras.Model):
                 continue
 
 
+        simple_selector = genloss.CommonOutProcessing(simple_out_mask)
+        theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=myconfig.DT)
+        phase_locking_selector = genloss.PhaseLockingOutput(mask=phase_locking_out_mask, ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+
+        ### add robast mean!!!!
 
 
-        output_layers = []
+        output_layers = [simple_selector, theta_filter, phase_locking_selector]
         return output_layers
 
 
@@ -231,10 +236,9 @@ class Net(tf.keras.Model):
         return tf.keras.models.clone_model(model)
 
 
-    def call(self, firings0, t0=0, Nsteps=1):
 
+    def simulate(self,  firings0, t0=0, Nsteps=1):
         t = tf.constant(t0, dtype=tf.float32)
-
         firings = []
         for idx in range(Nsteps):
 
@@ -251,21 +255,33 @@ class Net(tf.keras.Model):
             for gen in self.generators:
                 t = tf.reshape(t, shape=(-1, 1))
                 fired = gen(t)
-                #fired = self.ReshapeLayer(fired)
+                # fired = self.ReshapeLayer(fired)
 
-                fired = tf.reshape(fired, (1, 1, -1) )
+                fired = tf.reshape(fired, (1, 1, -1))
                 firings_in_step.append(fired)
 
-
             firings_in_step = self.ConcatLayer(firings_in_step)
-            firings_in_step = self.ReshapeLayer( firings_in_step )
+            firings_in_step = self.ReshapeLayer(firings_in_step)
             firings.append(firings_in_step)
 
             t += self.dt
 
         firings = self.ConcatLayerInTime(firings)
-
         return firings
+
+
+    def call(self, firings0, t0=0, Nsteps=1):
+
+
+        firings = self.simulate(firings0, t0=t0, Nsteps=Nsteps)
+
+        outputs = []
+
+        for out_layer in self.output_layers:
+            out = out_layer(firings)
+            outputs.append(out)
+
+        return outputs
 
 
 

@@ -140,7 +140,7 @@ class SpatialThetaGenerators(CommonGenerator):
 
 class CommonOutProcessing(tf.keras.layers.Layer):
     def __init__(self, mask):
-
+        super(CommonOutProcessing, self).__init__()
         #
         # self.inputs_size = len(params)
         #
@@ -164,8 +164,8 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 
 
 class FrequencyFilter(CommonOutProcessing):
-    def __init__(self, params, mask=None, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
-        super(FrequencyFilter, self).__init__(params, mask)
+    def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
+        super(FrequencyFilter, self).__init__(mask)
 
 
         # Rs = []

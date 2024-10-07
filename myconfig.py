@@ -1,4 +1,5 @@
-
+#####
+ThetaFreq = 7.0
 
 ############## directorires  #################
 SCRIPTS4PARAMSGENERATION = "./parameters/"
