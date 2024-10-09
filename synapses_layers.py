@@ -48,6 +48,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=tf.float32 )
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=tf.float32 )
 
+        self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
+
 
 
     def build(self, input_shape):
@@ -146,6 +148,10 @@ class TsodycsMarkramSynapse(BaseSynapse):
         initial_state = [R, U, A]
 
         return initial_state
+
+    def add_regularization_penalties(self):
+        self.add_loss(self.gmax_regulizer(self.gsyn_max))
+
 
 if __name__ == "__main__":
     import numpy as np
