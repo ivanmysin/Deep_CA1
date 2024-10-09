@@ -304,6 +304,8 @@ class RobastMeanOutRanger(tf.keras.regularizers.Regularizer):
         self.rw = strength
 
     def __call__(self, x):
+
+        print("Hello")
         loss_add = tf.reduce_sum( tf.nn.relu( x - self.HighFiringRateBound) )
         loss_add += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - x) )
         return self.rw * loss_add
