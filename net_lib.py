@@ -101,6 +101,8 @@ class Net(tf.keras.Model):
 
         self.output_layers = self.get_output_layers(populations)
 
+        self.firings_decorrelator = genloss.Decorrelator(strength=0.001) #strength можно определить в myconf
+
 
 
     def get_output_layers(self, populations):
@@ -287,9 +289,11 @@ class Net(tf.keras.Model):
 
 
         firings = self.simulate(firings0, t0=t0, Nsteps=Nsteps)
+        corr_penalty = self.firings_decorrelator( firings )
+        self.add_loss(corr_penalty)
+
 
         outputs = []
-
         for out_layer in self.output_layers:
             out = out_layer(firings)
             outputs.append(out)
