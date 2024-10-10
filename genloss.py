@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from keras.src.ops import dtype
 
 tf.keras.backend.set_floatx('float32')
 
@@ -320,3 +321,17 @@ class FiringsDecorrelator(tf.keras.regularizers.Regularizer):
     def call(self, x):
         loss_add = (tf.reduce_sum(tf.multiply(x,  tf.transpose(x))))**2
         return self.strength * loss_add
+
+class Decorrelator(tf.keras.regularizers.Regularizer):
+    def __init__(self, strength=0.1):
+        self.strength = strength
+
+    def __call__(self, x):
+        Ntimesteps = tf.cast(tf.shape(x)[1], dtype=tf.float32)
+        x = tf.reshape(x, shape=(tf.shape(x)[1], tf.shape(x)[2]))
+
+        Xcentered = x - tf.reduce_mean(x, axis=0, keepdims=True)
+        Xcentered = Xcentered / tf.math.sqrt(tf.reduce_mean(Xcentered ** 2, axis=0, keepdims=True))
+        corr_matrix = (tf.transpose(Xcentered) @ Xcentered) / Ntimesteps
+
+        return self.strength * tf.reduce_mean(corr_matrix**2)
