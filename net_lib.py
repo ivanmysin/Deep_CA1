@@ -347,25 +347,26 @@ if __name__ == "__main__":
     print("############################################")
     net = Net(populations, connections, pop_types_params, neurons_params, synapses_params)
 
+    test_input = np.random.uniform(0.5, 1, size=len(populations)).reshape(1, 1, -1)
+    test_input = tf.constant(test_input)
+
+
+    # test_out = net.pop_models[10](test_input)
+    # print(test_out)
+
+    t = tf.constant(0.0, dtype=tf.float32)
+    t = tf.reshape(t, shape=(-1, 1))
+
+    # outs = net.generators[0](t)
+    #
+    # print(outs)
+
     firings0 = np.zeros(shape=(1, 1, len(populations)), dtype=np.float32)
+    #firings0 = np.random.uniform(0, 0.01, len(populations)).astype(np.float32).reshape(1, 1, -1)
 
 
     t = 0.0
     #fired = net.generators[0].get_firings(t)
 
     fired = net(firings0, t0=0.0, Nsteps=10)
-    #
-    # for m_idx, model in enumerate(net.pop_models):
-    #     try:
-    #         fired = model.predict(firings0)
-    #
-    #     except ValueError:
-    #         print(m_idx, populations[m_idx]["type"])
-
-    #fired = net.pop_models[6].predict(firings0)
-
-    #
-
-    #Y = net.pop_models[0].predict(firings0)
-
-    print(fired)
+    print(fired[0])

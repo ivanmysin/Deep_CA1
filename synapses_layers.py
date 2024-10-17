@@ -111,7 +111,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         A = states[2]
 
 
-        FRpre_normed =  FR * self.pconn
+        FRpre_normed =  0.01 * FR * self.pconn
 
         a_ = A * self.exp_tau_d
         r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
@@ -124,14 +124,16 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         gsyn = tf.nn.relu(self.gsyn_max) * A
 
-        g_tot = tf.reduce_sum(gsyn, axis=-1)
+        g_tot = tf.reduce_sum(gsyn, axis=-1) + 0.0000001
+
         E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
 
         E = (E - self.Erev_min) / (self.Erev_max - self.Erev_min) #- 1
 
         tau = self.Cm / g_tot
 
-        tau = tf.math.log(tau + 1.0)
+        #tau = tf.math.log(tau + 1.0)
+        tau = 2 * exp(-self.dt / tau) - 1
 
         output = tf.stack([E, tau], axis=-1)
 

@@ -40,13 +40,13 @@ params = [
 ]
 dt = 0.1
 
-pyr = genloss.SpatialThetaGenerators(params, mask=[True,])
-pyr.precomute()
-
-
-t = tf.range(0, 10000.0, dt, dtype=tf.float64)
-
-firings = pyr.get_firings( tf.reshape(t, shape=[-1, 1]) ) * 0.001 * dt
+# pyr = genloss.SpatialThetaGenerators(params, mask=[True,])
+# pyr.precomute()
+#
+#
+t = tf.range(0, 0.2, dt, dtype=tf.float32)
+#
+# firings = pyr.get_firings( tf.reshape(t, shape=[-1, 1]) ) * 0.001 * dt
 ###############################################################
 pre_types = ["CA1 Pyramidal", "CA1 Basket"] #  "CA1 O-LM",
 post_type = "CA1 Basket"
@@ -92,13 +92,15 @@ model.build(input_shape=input_shape)
 
 #########################################
 X = np.zeros([1, len(t), 2], dtype=np.float32)
-X[0, :, :] = firings.numpy() # !!!!
+#X[0, :, :] = firings.numpy() # !!!!
 
 
 Y = model.predict(X)
 
+print(Y)
+
 fig, axes = plt.subplots(nrows=3)
-axes[0].plot(t, firings)
+#axes[0].plot(t, firings)
 axes[1].plot(t, Y[0, :, 0])
 axes[2].plot(t, Y[0, :, 1])
 axes[2].set_ylim(0, 80)
