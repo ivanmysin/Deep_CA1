@@ -73,7 +73,7 @@ class Net(tf.keras.Model):
 
         self.dt = myconfig.DT
         self.Npops = len(populations)
-        self.Nfirings = self.Npops
+        #self.Nfirings = self.Npops
 
         simulated_types = pop_types_params[pop_types_params["is_include"] == 1]["neurons"].to_list()
 
@@ -99,7 +99,7 @@ class Net(tf.keras.Model):
             gen_model.build()
             self.generators.append(gen_model)
 
-            self.Nfirings += gen_model.n_outs
+            #self.Nfirings += gen_model.n_outs
 
         self.output_layers = self.get_output_layers(populations)
 
@@ -125,12 +125,12 @@ class Net(tf.keras.Model):
 
                 if np.isnan(pop["ThetaPhase"]):
                     phase_locking_out_mask[pop_idx] = True
-                    target_params[1].append(pop)
+                    target_params[3].append(pop["R"])
                     continue
                 else:
                     frequecy_filter_out_mask[pop_idx] = True
-                    target_params[2].append(pop["R"])
-                    target_params[3].append(pop["MeanFiringRate"])
+                    target_params[1].append(pop)
+                    target_params[2].append(pop["MeanFiringRate"])
 
                     continue
 
@@ -318,31 +318,44 @@ class Net(tf.keras.Model):
     def train_step(self, data):
 
         t0, Nsteps = data   #!!!!!!
-        t = tf.range(t0, (Nsteps+1)*self.dt, self.dt, dtype=tf.float32)
+        t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=tf.float32)
         t = tf.reshape(t, shape=(-1, 1) )
         y_trues = []
         for CompTarget in self.CompTargets:
             target = CompTarget(t)
+            # print(tf.shape(target))
             y_trues.append(target)
 
-        firings0 = tf.zeros(self.Nfirings, dtype=tf.float32) #### возможно стоит как-то передавать снаружи!
+
+
+        firings0 = tf.zeros(self.Npops, dtype=tf.float32) #### возможно стоит как-то передавать снаружи!
         firings0 = tf.reshape(firings0, shape=(1, 1, -1))
+
 
         # Compute gradients
         trainable_vars = self.trainable_variables
         with tf.GradientTape(watch_accessed_variables=trainable_vars) as tape:
+
             y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
+
+            # for y_pred in y_preds:
+            #     print(tf.shape(y_pred))
+
             # Compute the loss value
-            # (the loss function is configured in `compile()`)
-            loss = 0
+            loss_value = 0
             for layer_loss in self.losses:
-                loss += layer_loss
+                loss_value += layer_loss
 
-            for y_true, y_pred, loss_func in zip(y_trues, y_preds, self.loss_functions):
-                loss += loss_func(y_true, y_pred)
+            loss_values = self.compute_loss(y=y_trues, y_pred=y_preds)
 
-            gradients = tape.gradient(loss, trainable_vars)
-        # Update weights
+            print(loss_values)
+            #for y_true, y_pred in zip(y_trues, y_preds): # self.loss_functions
+            #    loss +=
+
+            gradients = tape.gradient(loss_values, trainable_vars)
+
+        print(gradients)
+
         self.optimizer.apply(gradients, trainable_vars)
         # # Update metrics (includes the metric that tracks the loss)
         # for metric in self.metrics:
@@ -353,7 +366,7 @@ class Net(tf.keras.Model):
         #
         # # Return a dict mapping metric names to current value
         # return {m.name: m.result() for m in self.metrics}
-        return {"loss" : loss}
+        return {"loss" : loss_value}
 
 
 if __name__ == "__main__":
@@ -380,10 +393,6 @@ if __name__ == "__main__":
     for pop_idx, pop in enumerate(populations):
         pop_type = pop["type"]
 
-
-
-
-
         is_connected_mask = np.zeros(len(populations), dtype='bool')
 
         for conn in connections:
@@ -407,7 +416,7 @@ if __name__ == "__main__":
 
     net.compile(
         optimizer = 'adam',
-        loss = ["log_cosh", "log_cosh", "cosine_similarity", "cosine_similarity"],
+        loss = ["log_cosh", "cosine_similarity", "mean_squared_error", "mean_squared_error"],
     )
     print("Model compiled!!!")
 
@@ -425,7 +434,7 @@ if __name__ == "__main__":
     #
     # print(outs)
 
-    firings0 = np.zeros(shape=(1, 1, len(populations)), dtype=np.float32)
+    #firings0 = np.zeros(shape=(1, 1, len(populations)), dtype=np.float32)
     #firings0 = np.random.uniform(0, 0.01, len(populations)).astype(np.float32).reshape(1, 1, -1)
 
 
