@@ -73,6 +73,7 @@ class Net(tf.keras.Model):
 
         self.dt = myconfig.DT
         self.Npops = len(populations)
+        self.Nfirings = self.Npops
 
         simulated_types = pop_types_params[pop_types_params["is_include"] == 1]["neurons"].to_list()
 
@@ -92,12 +93,13 @@ class Net(tf.keras.Model):
                 pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
                 self.pop_models.append(pop_model)
 
-
         self.generators = []
         if len(gen_params) > 0:
             gen_model = genloss.SpatialThetaGenerators(gen_params)
             gen_model.build()
             self.generators.append(gen_model)
+
+            self.Nfirings += gen_model.n_outs
 
         self.output_layers = self.get_output_layers(populations)
 
@@ -107,6 +109,8 @@ class Net(tf.keras.Model):
 
     def get_output_layers(self, populations):
 
+        target_params = [[], [], [], []]
+
         simple_out_mask = np.zeros(len(populations), dtype='bool')
         frequecy_filter_out_mask = np.zeros(len(populations), dtype='bool')
         phase_locking_out_mask = np.zeros(len(populations), dtype='bool')
@@ -115,14 +119,19 @@ class Net(tf.keras.Model):
 
             if pop["type"] == "CA1 Pyramidal":
                 simple_out_mask[pop_idx] = True
+                target_params[0].append(pop)
                 continue
             try:
 
                 if np.isnan(pop["ThetaPhase"]):
                     phase_locking_out_mask[pop_idx] = True
+                    target_params[1].append(pop)
                     continue
                 else:
                     frequecy_filter_out_mask[pop_idx] = True
+                    target_params[2].append(pop["R"])
+                    target_params[3].append(pop["MeanFiringRate"])
+
                     continue
 
 
@@ -136,7 +145,7 @@ class Net(tf.keras.Model):
 
 
         if np.sum(frequecy_filter_out_mask) > 0:
-            theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=myconfig.DT)
+            theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=self.dt)
             output_layers.append(theta_filter)
 
             robast_mean_out = genloss.RobastMeanOut(mask=frequecy_filter_out_mask)
@@ -145,11 +154,15 @@ class Net(tf.keras.Model):
 
         if np.sum(phase_locking_out_mask) > 0:
             phase_locking_selector = genloss.PhaseLockingOutput(mask=phase_locking_out_mask,
-                                                                ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+                                                                ThetaFreq=myconfig.ThetaFreq, dt=self.dt)
             output_layers.append(phase_locking_selector)
 
+        self.CompTargets = []
+        self.CompTargets.append( genloss.SpatialThetaGenerators(target_params[0]) )
+        self.CompTargets.append( genloss.VonMissesGenerator(target_params[1]) )
+        self.CompTargets.append( genloss.SimplestKeepLayer(target_params[2]) )
+        self.CompTargets.append( genloss.SimplestKeepLayer(target_params[3]) )
 
-        ### add robast mean!!!!
         return output_layers
 
 
@@ -285,12 +298,13 @@ class Net(tf.keras.Model):
         return firings
 
 
-    def call(self, firings0, t0=0, Nsteps=1):
+    def call(self, firings0, t0=0, Nsteps=1, training=False):
 
 
         firings = self.simulate(firings0, t0=t0, Nsteps=Nsteps)
-        corr_penalty = self.firings_decorrelator( firings )
-        self.add_loss(corr_penalty)
+        if training:
+            corr_penalty = self.firings_decorrelator( firings )
+            self.add_loss(corr_penalty)
 
 
         outputs = []
@@ -301,6 +315,45 @@ class Net(tf.keras.Model):
         return outputs
 
 
+    def train_step(self, data):
+
+        t0, Nsteps = data   #!!!!!!
+        t = tf.range(t0, (Nsteps+1)*self.dt, self.dt, dtype=tf.float32)
+        t = tf.reshape(t, shape=(-1, 1) )
+        y_trues = []
+        for CompTarget in self.CompTargets:
+            target = CompTarget(t)
+            y_trues.append(target)
+
+        firings0 = tf.zeros(self.Nfirings, dtype=tf.float32) #### возможно стоит как-то передавать снаружи!
+        firings0 = tf.reshape(firings0, shape=(1, 1, -1))
+
+        # Compute gradients
+        trainable_vars = self.trainable_variables
+        with tf.GradientTape(watch_accessed_variables=trainable_vars) as tape:
+            y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
+            # Compute the loss value
+            # (the loss function is configured in `compile()`)
+            loss = 0
+            for layer_loss in self.losses:
+                loss += layer_loss
+
+            for y_true, y_pred, loss_func in zip(y_trues, y_preds, self.loss_functions):
+                loss += loss_func(y_true, y_pred)
+
+            gradients = tape.gradient(loss, trainable_vars)
+        # Update weights
+        self.optimizer.apply(gradients, trainable_vars)
+        # # Update metrics (includes the metric that tracks the loss)
+        # for metric in self.metrics:
+        #     if metric.name == "loss":
+        #         metric.update_state(loss)
+        #     else:
+        #         metric.update_state(y, y_pred)
+        #
+        # # Return a dict mapping metric names to current value
+        # return {m.name: m.result() for m in self.metrics}
+        return {"loss" : loss}
 
 
 if __name__ == "__main__":
@@ -326,6 +379,11 @@ if __name__ == "__main__":
 
     for pop_idx, pop in enumerate(populations):
         pop_type = pop["type"]
+
+
+
+
+
         is_connected_mask = np.zeros(len(populations), dtype='bool')
 
         for conn in connections:
@@ -346,6 +404,12 @@ if __name__ == "__main__":
 
     print("############################################")
     net = Net(populations, connections, pop_types_params, neurons_params, synapses_params)
+
+    net.compile(
+        optimizer = 'adam',
+        loss = ["log_cosh", "log_cosh", "cosine_similarity", "cosine_similarity"],
+    )
+    print("Model compiled!!!")
 
     test_input = np.random.uniform(0.5, 1, size=len(populations)).reshape(1, 1, -1)
     test_input = tf.constant(test_input)
@@ -368,5 +432,11 @@ if __name__ == "__main__":
     t = 0.0
     #fired = net.generators[0].get_firings(t)
 
-    fired = net(firings0, t0=0.0, Nsteps=10)
-    print(fired[0])
+    # fired = net(firings0, t0=0.0, Nsteps=10)
+    # print(fired[0])
+
+    Nsteps = 10
+
+    data = (t, Nsteps)
+    l = net.train_step(data)
+    print(l)

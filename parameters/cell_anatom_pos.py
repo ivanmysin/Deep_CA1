@@ -115,13 +115,15 @@ def main():
                 "y_anat" : pyrs_y,
                 "z_anat" : pyrs_z,
 
+                "ThetaFreq" : myconfig.ThetaFreq,
+
                 "OutPlaceFiringRate" : OUTPLACEFIRING,  # Хорошо бы сделать лог-нормальное распределение
                 "OutPlaceThetaPhase": THETA_SLOPE_DV * pyrs_y + ThetaPhase,  # DV
                 "R": THETA_R_SLOPE_DV * pyrs_y + THETA_R_0,
 
 
                 "InPlacePeakRate" : PEAKFIRING, # Хорошо бы сделать лог-нормальное распределение
-                "CenterPlaceField" : center_place_field,
+                "CenterPlaceField" : float(center_place_field),
                 "SigmaPlaceField" : np.random.normal(loc=place_size, scale=place_size_std), #!!!!  Хорошо бы сделать лог-нормальное распределение
 
 

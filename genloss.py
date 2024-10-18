@@ -20,6 +20,16 @@ argmax = tf.math.argmax
 PI = np.pi
 
 
+class SimplestKeepLayer(tf.keras.layers.Layer):
+    def __init__(self, params):
+        super(SimplestKeepLayer, self).__init__()
+        self.targets_vals = tf.constant(params, dtype=tf.float32)
+
+    def call(self, t):
+        return self.targets_vals
+
+
+
 #### inputs generators
 class CommonGenerator(tf.keras.layers.Layer):
     def __init__(self, params):
@@ -47,6 +57,50 @@ class CommonGenerator(tf.keras.layers.Layer):
         kappa = tf.where(R >= 0.85,  1 / (3 * R - 4 * R**2 + R**3), kappa)
         return kappa
 
+class VonMissesGenerator(CommonGenerator):
+    def __init__(self, params):
+        super(VonMissesGenerator, self).__init__(params)
+
+        ThetaFreq = []
+        FiringRate = []
+        Rs = []
+        ThetaPhase = []
+
+
+        self.n_outs = len(params)
+
+        for p in params:
+            FiringRate.append(p["MeanFiringRate"])
+            Rs.append(p["R"]),
+            ThetaFreq.append(p["ThetaFreq"])
+            ThetaPhase.append(p["ThetaPhase"])
+
+        self.ThetaFreq = tf.reshape(tf.constant(ThetaFreq, dtype=tf.float32), [1, -1])
+        self.FiringRate = tf.reshape(tf.constant(FiringRate, dtype=tf.float32), [1, -1])
+        self.R = tf.reshape(tf.constant(Rs, dtype=tf.float32), [1, -1])
+        self.ThetaPhase = tf.reshape(tf.constant(ThetaPhase, dtype=tf.float32), [1, -1])
+
+    def build(self):
+        input_shape = (None, 1)
+
+        super(VonMissesGenerator, self).build(input_shape)
+        self.kappa = self.r2kappa(self.R)
+        tmp = 2 * PI * self.ThetaFreq * 0.001
+        self.mult4time = tf.constant(tmp, dtype=tf.float32)
+        I0 = bessel_i0(self.kappa)
+        self.normalizator = self.FiringRate / I0
+
+
+        self.built = True
+
+    def call(self, t):
+        firings = self.normalizator * exp(self.kappa * cos( self.mult4time * t - self.ThetaPhase))
+
+        #firings = firings  # / (0.001 * dt)
+
+        return firings
+
+
 class SpatialThetaGenerators(CommonGenerator):
     def __init__(self, params):
         super(SpatialThetaGenerators, self).__init__(params)
@@ -62,6 +116,8 @@ class SpatialThetaGenerators(CommonGenerator):
         SigmaPlaceField = []
         SlopePhasePrecession = []
         PrecessionOnset = []
+
+        self.n_outs = len(params)
 
         for p in params:
             OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
@@ -89,8 +145,6 @@ class SpatialThetaGenerators(CommonGenerator):
         self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=tf.float32), [1, -1])
         self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=tf.float32), [1, -1])
 
-
-
     def build(self):
         input_shape = (None, 1)
 
@@ -103,6 +157,8 @@ class SpatialThetaGenerators(CommonGenerator):
 
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
+
+
         self.built = True
 
 
@@ -271,8 +327,9 @@ class PhaseLockingOutput(CommonOutProcessing):
         imag = sin(theta_phases)
 
         normed_firings = selected_firings / tf.math.reduce_sum(selected_firings, axis=1)
-        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real)**2 + tf.math.reduce_sum(normed_firings * imag)**2)
+        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real, axis=1)**2 + tf.math.reduce_sum(normed_firings * imag, axis=1)**2)
 
+        Rsim = tf.reshape(Rsim, shape=(-1))
         # loss = tf.keras.losses.MSE(Rsim, self.R)
         #
         # mean_firings = tf.reduce_mean(selected_firings, axis=1)
@@ -291,6 +348,7 @@ class RobastMeanOut(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         robast_mean = exp(tf.reduce_mean(log(selected_firings), axis=1))
+        robast_mean = tf.reshape(robast_mean, shape=(-1))
 
         return robast_mean
 
@@ -305,23 +363,12 @@ class RobastMeanOutRanger(tf.keras.regularizers.Regularizer):
         self.rw = strength
 
     def __call__(self, x):
-
-        print("Hello")
         loss_add = tf.reduce_sum( tf.nn.relu( x - self.HighFiringRateBound) )
         loss_add += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - x) )
         return self.rw * loss_add
 
     # def get_config(self):
     #   return {'l2': float(self.l2)}
-
-class FiringsDecorrelator(tf.keras.regularizers.Regularizer):
-    def __init__(self, strength=0.1):
-        self.strength = strength
-
-    def call(self, x):
-        loss_add = (tf.reduce_sum(tf.multiply(x,  tf.transpose(x))))**2
-        return self.strength * loss_add
-
 class Decorrelator(tf.keras.regularizers.Regularizer):
     def __init__(self, strength=0.1):
         self.strength = strength
