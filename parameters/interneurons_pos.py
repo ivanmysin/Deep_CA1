@@ -6,6 +6,8 @@ import pickle
 import os
 import myconfig
 
+
+
 def main():
 
     THETA_SLOPE_DV = 1.3e-3 # rad / mkm (по оси DV)
@@ -61,6 +63,8 @@ def main():
                 "x_anat": selected[cell_idx, 0],
                 "y_anat": selected[cell_idx, 1],
                 "z_anat": 0,
+
+                "ThetaFreq" : myconfig.ThetaFreq,
 
                 "MeanFiringRate": cells_pop["MeanFiringRate"],  # Хорошо бы сделать лог-нормальное распределение
                 "ThetaPhase": THETA_SLOPE_DV * selected[cell_idx, 1] + cells_pop["MeanFiringRate"],  # DV

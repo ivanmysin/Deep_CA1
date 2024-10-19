@@ -258,6 +258,8 @@ def main():
 
         neuron_opt_params = default_params.copy()
         neuron_type = populations_params["Neuron Type"]
+
+
         del populations_params["Neuron Type"]
 
         #pprint.pprint(populations_params)

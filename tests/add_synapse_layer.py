@@ -32,7 +32,7 @@ if True:
 
     synapses_layer = RNN(synapses, return_sequences=True, stateful=True)
 
-    population_model = load_model("../pretrained_models/pv_bas.keras")
+    population_model = load_model("../pretrained_models/CA1 Basket.keras")
 
 
     model = tf.keras.Sequential()
@@ -51,7 +51,8 @@ if True:
     print(model.summary())
 
     X = np.random.rand(50).reshape(1, 10, 5)
+    #!!! X = np.zeros_like(X)
 
     Y = model.predict(X)
 
-    print(Y.shape)
+    print(Y)
