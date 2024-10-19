@@ -73,6 +73,8 @@ def main():
 
             interneurons.append(int_cell)
 
+            # print(int_cell["R"])
+
 
         # fig, axes = plt.subplots()
         # axes.plot( right_bound, CA1_flat["H"], color="blue")

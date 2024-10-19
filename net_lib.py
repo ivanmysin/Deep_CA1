@@ -126,6 +126,9 @@ class Net(tf.keras.Model):
                 if np.isnan(pop["ThetaPhase"]):
                     phase_locking_out_mask[pop_idx] = True
                     target_params[3].append(pop["R"])
+
+                    #print(pop["type"], pop["R"])
+
                     continue
                 else:
                     frequecy_filter_out_mask[pop_idx] = True
@@ -162,6 +165,7 @@ class Net(tf.keras.Model):
         self.CompTargets.append( genloss.VonMissesGenerator(target_params[1]) )
         self.CompTargets.append( genloss.SimplestKeepLayer(target_params[2]) )
         self.CompTargets.append( genloss.SimplestKeepLayer(target_params[3]) )
+
 
         return output_layers
 
@@ -317,14 +321,18 @@ class Net(tf.keras.Model):
 
     def train_step(self, data):
 
+        #loss_functions = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE]
+
+
         t0, Nsteps = data   #!!!!!!
         t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=tf.float32)
         t = tf.reshape(t, shape=(-1, 1) )
         y_trues = []
         for CompTarget in self.CompTargets:
             target = CompTarget(t)
-            # print(tf.shape(target))
+            #print(tf.shape(target))
             y_trues.append(target)
+
 
 
 
@@ -333,30 +341,44 @@ class Net(tf.keras.Model):
 
 
         # Compute gradients
-        trainable_vars = self.trainable_variables
-        with tf.GradientTape(watch_accessed_variables=trainable_vars) as tape:
+        #trainable_vars =
+
+        #print(trainable_vars)
+
+
+        with tf.GradientTape() as tape:
+            #tape.watch(self.trainable_variables)
 
             y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
 
             # for y_pred in y_preds:
             #     print(tf.shape(y_pred))
 
-            # Compute the loss value
-            loss_value = 0
-            for layer_loss in self.losses:
-                loss_value += layer_loss
+            # # Compute the loss value
+            # loss_value = 0
+            # for layer_loss in self.losses:
+            #     loss_value += layer_loss
 
-            loss_values = self.compute_loss(y=y_trues, y_pred=y_preds)
+            # for y_true, y_pred, loss_func in zip(y_trues, y_preds, loss_functions):
+            #     # print("Nans y_true", tf.math.reduce_sum( tf.cast(tf.math.is_nan(y_true), dtype=tf.int32)  ))
+            #     # print("Nans y_pred", tf.math.reduce_sum( tf.cast(tf.math.is_nan(y_pred), dtype=tf.int32)  ))
+            #     #
+            #     # print("#################")
+            #     tmp_loss = loss_func(y_true, y_pred)
+            #     print("Nans tmp_loss", tf.math.reduce_sum(tf.cast(tf.math.is_nan(tmp_loss), dtype=tf.int32)))
+            #
+            #
+            #     loss_value += tf.math.reduce_sum( tmp_loss )
 
-            print(loss_values)
-            #for y_true, y_pred in zip(y_trues, y_preds): # self.loss_functions
-            #    loss +=
 
-            gradients = tape.gradient(loss_values, trainable_vars)
+            loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
+
+        print(loss_value)
+        gradients = tape.gradient(loss_value, self.trainable_variables)
 
         print(gradients)
 
-        self.optimizer.apply(gradients, trainable_vars)
+        self.optimizer.apply(gradients, self.trainable_variables)
         # # Update metrics (includes the metric that tracks the loss)
         # for metric in self.metrics:
         #     if metric.name == "loss":
@@ -416,7 +438,7 @@ if __name__ == "__main__":
 
     net.compile(
         optimizer = 'adam',
-        loss = ["log_cosh", "cosine_similarity", "mean_squared_error", "mean_squared_error"],
+        loss = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE],
     )
     print("Model compiled!!!")
 

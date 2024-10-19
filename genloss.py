@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from keras.src.ops import dtype
 
 tf.keras.backend.set_floatx('float32')
 
@@ -98,6 +97,8 @@ class VonMissesGenerator(CommonGenerator):
 
         #firings = firings  # / (0.001 * dt)
 
+        firings = tf.reshape(firings, shape=(1, tf.shape(firings)[0], tf.shape(firings)[1]  ))
+
         return firings
 
 
@@ -180,6 +181,7 @@ class SpatialThetaGenerators(CommonGenerator):
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
         firings = multip * firings  # / (0.001 * dt)
+        firings = tf.reshape(firings, shape=(1, tf.shape(firings)[0], tf.shape(firings)[1]))
 
         return firings
 
@@ -271,9 +273,9 @@ class FrequencyFilter(CommonOutProcessing):
         #firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.ThetaPhase) )
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
-        low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME', data_format="NWC")
+        low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME') # , data_format="NWC"
         filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
-        filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME', data_format="NWC")
+        filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
 
         return filtered_firings
 
@@ -317,6 +319,8 @@ class PhaseLockingOutput(CommonOutProcessing):
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
+        #print("Nans selected_firings", tf.math.reduce_sum(  tf.cast(tf.math.is_nan(selected_firings), dtype=tf.int32)   )  )
+
         t_max = tf.cast(tf.shape(simulated_firings)[1], dtype=tf.float32) * self.dt
 
         t = tf.range(0, t_max, self.dt)
@@ -326,10 +330,17 @@ class PhaseLockingOutput(CommonOutProcessing):
         real = cos(theta_phases)
         imag = sin(theta_phases)
 
-        normed_firings = selected_firings / tf.math.reduce_sum(selected_firings, axis=1)
+        normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
+        # print("Nans normed_firings", tf.math.reduce_sum(  tf.cast(tf.math.is_nan(normed_firings), dtype=tf.int32)   )  )
+
+
         Rsim = sqrt(tf.math.reduce_sum(normed_firings * real, axis=1)**2 + tf.math.reduce_sum(normed_firings * imag, axis=1)**2)
 
         Rsim = tf.reshape(Rsim, shape=(-1))
+
+
+        #print("Nans Rsim", tf.math.reduce_sum( tf.cast(tf.math.is_nan(Rsim), dtype=tf.int32)  ))
+
         # loss = tf.keras.losses.MSE(Rsim, self.R)
         #
         # mean_firings = tf.reduce_mean(selected_firings, axis=1)
@@ -378,7 +389,7 @@ class Decorrelator(tf.keras.regularizers.Regularizer):
         x = tf.reshape(x, shape=(tf.shape(x)[1], tf.shape(x)[2]))
 
         Xcentered = x - tf.reduce_mean(x, axis=0, keepdims=True)
-        Xcentered = Xcentered / tf.math.sqrt(tf.reduce_mean(Xcentered ** 2, axis=0, keepdims=True))
+        Xcentered = Xcentered / (tf.math.sqrt(tf.reduce_mean(Xcentered ** 2, axis=0, keepdims=True)) + 0.0000000001)
         corr_matrix = (tf.transpose(Xcentered) @ Xcentered) / Ntimesteps
 
         return self.strength * tf.reduce_mean(corr_matrix**2)
