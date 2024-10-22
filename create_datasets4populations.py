@@ -173,8 +173,10 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
 
     gexc = np.asarray(gexc_monitor.gexc / mS).astype(np.float32).ravel()
     ginh = np.asarray(ginh_monitor.ginh / mS).astype(np.float32).ravel()
-    Erev =  (params["Eexc"]/mV * gexc + params["Einh"]/mV * ginh) / (gexc + ginh)
-    tau_syn = float(params['Cm']/uF) / (gexc + ginh + 0.0001)
+    grest = 0.0000000001
+
+    Erev =  (params["Eexc"]/mV * gexc + params["Einh"]/mV * ginh  + params["Vrest"]/mV * grest ) / (gexc + ginh + grest)
+    tau_syn = float(params['Cm']/uF) / (gexc + ginh + grest)
 
     file = h5py.File(filepath, mode='w')
     file.create_dataset('firing_i', data=np.asarray(firing_monitor.i).astype(np.float32).ravel() )

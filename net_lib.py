@@ -73,7 +73,7 @@ class Net(tf.keras.Model):
 
         self.dt = myconfig.DT
         self.Npops = len(populations)
-        #self.Nfirings = self.Npops
+
 
         simulated_types = pop_types_params[pop_types_params["is_include"] == 1]["neurons"].to_list()
 
@@ -373,10 +373,13 @@ class Net(tf.keras.Model):
 
             loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
 
-        print(loss_value)
+        print("Loss value = ", loss_value)
         gradients = tape.gradient(loss_value, self.trainable_variables)
 
-        print(gradients)
+        for grad_idx, grad in enumerate(gradients):
+            print(grad_idx)
+            print(grad)
+            print("###################################################")
 
         self.optimizer.apply(gradients, self.trainable_variables)
         # # Update metrics (includes the metric that tracks the loss)
@@ -412,28 +415,28 @@ if __name__ == "__main__":
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    for pop_idx, pop in enumerate(populations):
-        pop_type = pop["type"]
-
-        is_connected_mask = np.zeros(len(populations), dtype='bool')
-
-        for conn in connections:
-            if conn["post_idx"] != pop_idx: continue
-            is_connected_mask[conn["pre_idx"]] = True
-
-
-        if np.sum(is_connected_mask) == 0:
-            conn = {
-                "pconn" : 0.0,
-                "pre_idx" : 0,
-                "post_idx" : pop_idx,
-                "pre_type" : populations[0],
-                "post_type" : populations[pop_idx],
-            }
-            connections.append(conn)
+    # for pop_idx, pop in enumerate(populations):
+    #     pop_type = pop["type"]
+    #
+    #     is_connected_mask = np.zeros(len(populations), dtype='bool')
+    #
+    #     for conn in connections:
+    #         if conn["post_idx"] != pop_idx: continue
+    #         is_connected_mask[conn["pre_idx"]] = True
 
 
-    print("############################################")
+        # if np.sum(is_connected_mask) == 0:
+        #     conn = {
+        #         "pconn" : 0.0,
+        #         "pre_idx" : 0,
+        #         "post_idx" : pop_idx,
+        #         "pre_type" : populations[0],
+        #         "post_type" : populations[pop_idx],
+        #     }
+        #     connections.append(conn)
+
+
+    #print("############################################")
     net = Net(populations, connections, pop_types_params, neurons_params, synapses_params)
 
     net.compile(

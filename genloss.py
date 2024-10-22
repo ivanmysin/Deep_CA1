@@ -273,9 +273,12 @@ class FrequencyFilter(CommonOutProcessing):
         #firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.ThetaPhase) )
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
-        low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME') # , data_format="NWC"
-        filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
-        filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
+        # !!!!!!!!!!!!!!!!
+        # low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME') # , data_format="NWC"
+        # filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
+        # filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
+
+        filtered_firings = selected_firings
 
         return filtered_firings
 
