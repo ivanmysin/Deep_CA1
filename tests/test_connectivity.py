@@ -13,13 +13,13 @@ import genloss  #s import SpatialThetaGenerators
 import net_lib
 
 
-with open(myconfig.STRUCTURESOFNET + "_neurons.pickle", "rb") as neurons_file:
+with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file:
     populations = pickle.load(neurons_file)
 
 types = set([pop['type'] for pop in populations])
 # print(types)
 
-with open(myconfig.STRUCTURESOFNET + "_connections.pickle", "rb") as synapses_file:
+with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file:
     connections = pickle.load(synapses_file)
 
 pop_types_params = pd.read_excel(myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2",
@@ -43,6 +43,8 @@ for pop_idx, pop_layer in enumerate(net.pop_models):
     mask = pop_layer.synapses.cell.mask.numpy()
     mask2 = np.zeros_like(mask)
 
+    pconn =  pop_layer.synapses.cell.pconn.numpy()
+
     conn_indexes = []
     for conn in connections:
         if conn["post_idx"] == pop_idx:
@@ -54,9 +56,11 @@ for pop_idx, pop_layer in enumerate(net.pop_models):
 
 
     #mask2[conn_indexes] = True
-
-    print(mask2)
     print("##############################################")
+    print(mask2)
+
     print(mask)
     print(np.sum(  (mask != mask2) ) )
-    break
+
+    print(pconn.size, np.sum(mask) )
+    print(pconn )

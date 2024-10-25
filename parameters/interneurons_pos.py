@@ -50,13 +50,15 @@ def main():
         if str(cells_pop["neurons"]) == "CA1 Pyramidal": continue
         if not cells_pop["is_include"]: continue
 
-        if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
+        # if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
 
         cells_pop["Npops"] = 2 #!!!!
 
         selected, _ = kmeans(points, cells_pop["Npops"])
 
         for cell_idx in range(cells_pop["Npops"]):
+            print(cells_pop["neurons"])
+
             int_cell = {
                 "type": cells_pop["neurons"],
 

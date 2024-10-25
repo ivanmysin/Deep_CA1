@@ -8,10 +8,11 @@ import myconfig
 from synapses_layers import TsodycsMarkramSynapse
 import genloss  #s import SpatialThetaGenerators
 import os
+from pprint import pprint
 
 tf.keras.backend.set_floatx('float32')
 
-from pprint import pprint
+
 
 class PopModelLayer(tf.keras.layers.Layer):
 
@@ -194,7 +195,7 @@ class Net(tf.keras.Model):
 
 
         if len( neurons_params[neurons_params["Neuron Type"] == pop_type] ) == 0:
-            print(pop_type)
+            print("No neuron type", pop_type, " index: ", pop_idx)
 
             return None
 
@@ -213,13 +214,25 @@ class Net(tf.keras.Model):
 
         is_connected_mask = np.zeros(self.Npops, dtype='bool')
 
+
+        #print(pop_idx)
+
         for conn in connections:
             if conn["post_idx"] != pop_idx: continue
 
-            syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == conn['pre_type']) & (
+            #pprint(conn)
+
+            pre_type = conn['pre_type']
+
+            if "_generator" in pre_type:
+                pre_type = pre_type.replace("_generator", "")
+
+
+            syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == pre_type) & (
                     synapses_params['Postsynaptic Neuron Type'] == conn['post_type'])]
 
             if len(syn) == 0:
+                print("Connection from ", conn["pre_type"], "to", conn["post_type"], "not finded!")
                 continue
 
             is_connected_mask[conn["pre_idx"]] = True
@@ -232,9 +245,9 @@ class Net(tf.keras.Model):
             tau_f = syn['tau_f'].values[0]
             tau_d = syn['tau_d'].values[0]
 
-            if neurons_params[neurons_params['Neuron Type'] == conn['pre_type']]['E/I'].values[0] == "e":
+            if neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "e":
                 Erev = 0
-            elif neurons_params[neurons_params['Neuron Type'] == conn['pre_type']]['E/I'].values[0] == "i":
+            elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
                 Erev = -75.0
 
             conn_params['Uinc'].append(Uinc)
@@ -245,7 +258,10 @@ class Net(tf.keras.Model):
 
 
         if np.sum(is_connected_mask) == 0:
-            print("Not connected", pop["type"])
+            print("Not connected", pop["type"], "with index", pop_idx)
+
+        # print(is_connected_mask)
+        # print("#################################")
 
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = tf.keras.layers.RNN(synapses, return_sequences=True, stateful=True)
@@ -395,14 +411,14 @@ class Net(tf.keras.Model):
 
 
 if __name__ == "__main__":
-    with open(myconfig.STRUCTURESOFNET + "_neurons.pickle", "rb") as neurons_file:
+    with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file:
         populations = pickle.load(neurons_file)
 
 
     types = set( [pop['type'] for pop in populations] )
     #print(types)
 
-    with open(myconfig.STRUCTURESOFNET + "_connections.pickle", "rb") as synapses_file:
+    with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
 
