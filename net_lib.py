@@ -237,7 +237,7 @@ class Net(tf.keras.Model):
 
             is_connected_mask[conn["pre_idx"]] = True
 
-            conn_params["gsyn_max"].append(np.random.rand())  # !!!
+            conn_params["gsyn_max"].append(0.8)  # np.random.rand()!!!
             conn_params['pconn'].append(conn['pconn'])
 
             Uinc = syn['Uinc'].values[0]
@@ -332,6 +332,8 @@ class Net(tf.keras.Model):
             out = out_layer(firings)
             outputs.append(out)
 
+            print(out_layer.mask.numpy())
+
         return outputs
 
 
@@ -343,11 +345,7 @@ class Net(tf.keras.Model):
         t0, Nsteps = data   #!!!!!!
         t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=tf.float32)
         t = tf.reshape(t, shape=(-1, 1) )
-        y_trues = []
-        for CompTarget in self.CompTargets:
-            target = CompTarget(t)
-            #print(tf.shape(target))
-            y_trues.append(target)
+
 
 
 
@@ -355,20 +353,24 @@ class Net(tf.keras.Model):
         firings0 = tf.zeros(self.Npops, dtype=tf.float32) #### возможно стоит как-то передавать снаружи!
         firings0 = tf.reshape(firings0, shape=(1, 1, -1))
 
+        y_trues = []
+        for CompTarget in self.CompTargets:
+            target = CompTarget(t)
+            # print(tf.shape(target))
+            y_trues.append(target)
 
         # Compute gradients
-        #trainable_vars =
-
-        #print(trainable_vars)
-
-
         with tf.GradientTape() as tape:
             #tape.watch(self.trainable_variables)
 
             y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
 
-            # for y_pred in y_preds:
-            #     print(tf.shape(y_pred))
+
+
+            l = 0
+            for y_pred in y_preds:
+                #print(tf.shape(y_pred))
+                l += tf.reduce_sum(y_pred)
 
             # # Compute the loss value
             # loss_value = 0
@@ -389,7 +391,8 @@ class Net(tf.keras.Model):
 
             loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
 
-        print("Loss value = ", loss_value)
+        #print("Loss value = ", loss_value)
+        #gradients = tape.gradient(loss_value, self.trainable_variables)
         gradients = tape.gradient(loss_value, self.trainable_variables)
 
         for grad_idx, grad in enumerate(gradients):

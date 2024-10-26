@@ -167,6 +167,8 @@ if __name__ == "__main__":
         "tau_d" : np.zeros(Ns, dtype=np.float32) + 1.5,
         'pconn' : np.zeros(Ns, dtype=np.float32) + 1.0,
         'Erev' : np.zeros(Ns, dtype=np.float32),
+        'Erev_min' : -75.0,
+        'Erev_max' : 0.0,
         'Cm' : 0.114,
     }
     dt = 0.1

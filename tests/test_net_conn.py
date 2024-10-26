@@ -103,6 +103,19 @@ connections = [
     },
     {
         "pconn": 1.0,
+        "pre_idx": 1,
+        "post_idx": 1,
+    },
+    {
+        "pconn": 1.0,
+        "pre_idx": 1,
+        "post_idx": 0,
+    },
+
+
+
+    {
+        "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 2,
     },
@@ -117,12 +130,12 @@ connections = [
         "post_idx": 4,
     },
 
+    ##########
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 0,
     },
-    ##########
     {
         "pconn": 1.0,
         "pre_idx": 5,
