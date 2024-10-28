@@ -77,8 +77,8 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     ampl_max_exc = 0.1 * float(params['Cm']/pF) / tau_min
     ampl_min_exc = 0.1 * float(params['Cm']/pF) / tau_max
 
-    ampl_min_inh = 2.0 * ampl_min_exc
-    ampl_max_inh = 2.0 * ampl_max_exc
+    ampl_min_inh = 2.5 * ampl_min_exc
+    ampl_max_inh = 2.5 * ampl_max_exc
 
     g_params = {
         "omega_1_e": randinterval(0.2, 2.0) * Hz,  # [0.2 2],
@@ -140,7 +140,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     #
     neuron.V = params["Vrest"]
     neuron.U = 0 * pA
-    neuron.Vth = params['Vth_mean']*mV  #np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV
+    neuron.Vth = np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV # params['Vth_mean']*mV  #
 
     M_full_V = StateMonitor(neuron, ['V', 'U'], record=np.arange(NN))
     # M_full_U = StateMonitor(neuron, 'U', record=np.arange(N))
@@ -173,12 +173,12 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
         return False
 
 
-    fig, axes = plt.subplots(nrows=2)
-    axes[0].plot(M_full_V.V[0] / mV)
-    axes[1].plot(M_full_V.U[0] / pA)
-    axes[0].set_title(mean_firing_rate)
-    plt.show()
-    return True
+    # fig, axes = plt.subplots(nrows=2)
+    # axes[0].plot(M_full_V.V[0] / mV)
+    # axes[1].plot(M_full_V.U[0] / pA)
+    # axes[0].set_title(mean_firing_rate)
+    # plt.show()
+    # return True
 
     # ###### smoothing of population firing rate #########
     win = parzen(101)
@@ -271,8 +271,8 @@ def main():
         if not populations_params["Neuron Type"] in simutated_population_types:
             continue
 
-        if not populations_params["Neuron Type"] in ["CA1 Horizontal Axo-Axonic", ]: ######!!!!!!!!!!!!!!!!!!!!!
-             continue
+        # if not populations_params["Neuron Type"] in ["CA1 Horizontal Axo-Axonic", ]: ######!!!!!!!!!!!!!!!!!!!!!
+        #      continue
 
 
         neuron_opt_params = default_params.copy()
