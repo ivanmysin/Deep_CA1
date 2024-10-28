@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.signal.windows import parzen
 from brian2 import NeuronGroup, Network, SpikeMonitor, StateMonitor
-from brian2 import ms, mV, nF, uF, mS, uS, uA, pA, second, Hz
+from brian2 import ms, mV, nF, uF, mS, uS, uA, pA, second, Hz, nA, nS, pF
 from brian2 import defaultclock
 import h5py
 import os
@@ -20,9 +20,9 @@ def randinterval(minv, maxv):
 
 def add_units(value, key):
     if key == "Cm":
-        return value * nF
+        return value * pF
     if key == "k":
-        return value * uS / mV
+        return value * nS / mV
     if key == "Vrest":
         return value * mV
     if key == "Vth":
@@ -34,7 +34,7 @@ def add_units(value, key):
     if key == "a":
         return value * ms ** -1
     if key == "b":
-        return value * uS
+        return value * nS
     if key == "d":
         return value * pA
     return value
@@ -74,11 +74,11 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     tau_min = 1.5 # ms
     tau_max = 20.0 # ms
 
-    ampl_max_exc = 0.1 * float(params['Cm']/uF) / tau_min
-    ampl_min_exc = 0.1 * float(params['Cm']/uF) / tau_max
+    ampl_max_exc = 0.1 * float(params['Cm']/pF) / tau_min
+    ampl_min_exc = 0.1 * float(params['Cm']/pF) / tau_max
 
-    ampl_min_inh = 1.0 * ampl_min_exc
-    ampl_max_inh = 1.0 * ampl_max_exc
+    ampl_min_inh = 2.0 * ampl_min_exc
+    ampl_max_inh = 2.0 * ampl_max_exc
 
     g_params = {
         "omega_1_e": randinterval(0.2, 2.0) * Hz,  # [0.2 2],
@@ -86,10 +86,10 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
         "omega_3_e": randinterval(25.0, 45.0) * Hz,  # [25  45],
         "omega_4_e": randinterval(50.0, 90.0) * Hz,  # [50  90],
 
-        "ampl_1_e": randinterval(ampl_min_exc, ampl_max_exc) * mS,  # [0.2 10],
-        "ampl_2_e": randinterval(ampl_min_exc, ampl_max_exc) * mS,  # [0.2 10],
-        "ampl_3_e": randinterval(ampl_min_exc, ampl_max_exc) * mS,  # [0.2 10],
-        "ampl_4_e": randinterval(ampl_min_exc, ampl_max_exc) * mS,  # [0.2 10],
+        "ampl_1_e": randinterval(ampl_min_exc, ampl_max_exc) * nS,  # [0.2 10],
+        "ampl_2_e": randinterval(ampl_min_exc, ampl_max_exc) * nS,  # [0.2 10],
+        "ampl_3_e": randinterval(ampl_min_exc, ampl_max_exc) * nS,  # [0.2 10],
+        "ampl_4_e": randinterval(ampl_min_exc, ampl_max_exc) * nS,  # [0.2 10],
 
         "phase0_1_e": randinterval(-np.pi, np.pi),  # [-pi pi],
         "phase0_2_e": randinterval(-np.pi, np.pi),  # [-pi pi],
@@ -101,10 +101,10 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
         "omega_3_i": randinterval(25.0, 45.0) * Hz,  # [25  45],
         "omega_4_i": randinterval(50.0, 90.0) * Hz,  # [50  90],
 
-        "ampl_1_i": randinterval(ampl_min_inh, ampl_max_inh) * mS,  # [0.2 50],
-        "ampl_2_i": randinterval(ampl_min_inh, ampl_max_inh) * mS,  # [0.2 50],
-        "ampl_3_i": randinterval(ampl_min_inh, ampl_max_inh) * mS,  # [0.2 50],
-        "ampl_4_i": randinterval(ampl_min_inh, ampl_max_inh) * mS,  # [0.2 50]
+        "ampl_1_i": randinterval(ampl_min_inh, ampl_max_inh) * nS,  # [0.2 50],
+        "ampl_2_i": randinterval(ampl_min_inh, ampl_max_inh) * nS,  # [0.2 50],
+        "ampl_3_i": randinterval(ampl_min_inh, ampl_max_inh) * nS,  # [0.2 50],
+        "ampl_4_i": randinterval(ampl_min_inh, ampl_max_inh) * nS,  # [0.2 50]
 
         "phase0_1_i": randinterval(-np.pi, np.pi),  # [-pi pi],
         "phase0_2_i": randinterval(-np.pi, np.pi),  # [-pi pi],
@@ -114,7 +114,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
 
 
 
-
+    ################
     eqs = '''
     dV/dt = (k*(V - Vrest)*(V - Vth) - U + Iexc + Iinh)/Cm + sigma*xi/ms**0.5 : volt
     dU/dt = a * (b * (V - Vrest) - U) : ampere
@@ -129,15 +129,20 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     # res = check_gparams(params, duration)
     # print(res)
     #return True
+    #NN = 1
+    ## params["Vrest"], params["Vmin"] = params["Vmin"], params["Vrest"]
+    ## params["a"] = params["a"] * 0.01
+
+    #print(params["b"] * params["Vrest"])
 
 
     neuron = NeuronGroup(NN, eqs, method='heun', threshold='V > Vpeak', reset="V = Vmin; U = U + d", namespace=params)
-
+    #
     neuron.V = params["Vrest"]
-    neuron.U = 0 * uA
-    neuron.Vth = np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV
+    neuron.U = 0 * pA
+    neuron.Vth = params['Vth_mean']*mV  #np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV
 
-    M_full_V = StateMonitor(neuron, 'V', record=np.arange(NN))
+    M_full_V = StateMonitor(neuron, ['V', 'U'], record=np.arange(NN))
     # M_full_U = StateMonitor(neuron, 'U', record=np.arange(N))
     gexc_monitor = StateMonitor(neuron, 'gexc', record=0)
     ginh_monitor = StateMonitor(neuron, 'ginh', record=0)
@@ -145,6 +150,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     firing_monitor = SpikeMonitor(neuron)
 
     monitors = [M_full_V, gexc_monitor, ginh_monitor, firing_monitor]
+    #monitors = [M_full_V, firing_monitor]
 
     net = Network(neuron)  # automatically include G and S
     net.add(monitors)  # manually add the monitors
@@ -157,14 +163,22 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     # dbins = bins[1] - bins[0]
     population_firing_rate = population_firing_rate / NN  # spikes in bin   #/ (0.001 * dbins) # spikes per second
 
-    # fig, axes = plt.subplots(nrows=2)
-    # axes[0].plot()
-    # plt.show()
-    #
+
+
+
     Nspikes = np.asarray(firing_monitor.t).size
-    if Nspikes/NN/(duration * 0.001) < 0.2:
+    mean_firing_rate = Nspikes/NN/(duration * 0.001)
+    if  mean_firing_rate < 0.2:
         print("A lot of spikes!!!! Do not save simulation!!!!!")
         return False
+
+
+    fig, axes = plt.subplots(nrows=2)
+    axes[0].plot(M_full_V.V[0] / mV)
+    axes[1].plot(M_full_V.U[0] / pA)
+    axes[0].set_title(mean_firing_rate)
+    plt.show()
+    return True
 
     # ###### smoothing of population firing rate #########
     win = parzen(101)
@@ -204,6 +218,8 @@ def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
             idx += 1
 
 
+        ## break ##!!!!!!!!!!!!!
+
 
 def create_all_types_dataset(all_params, NN):
     for n, (key, item) in enumerate(all_params.items()):
@@ -214,6 +230,7 @@ def create_all_types_dataset(all_params, NN):
 
         print(key)
         create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
+
 
 
 def main():
@@ -254,8 +271,8 @@ def main():
         if not populations_params["Neuron Type"] in simutated_population_types:
             continue
 
-        # if not populations_params["Neuron Type"] in ["CA1 OR-LM", "CA1 Trilaminar"]: ######!!!!!!!!!!!!!!!!!!!!!
-        #      continue
+        if not populations_params["Neuron Type"] in ["CA1 Horizontal Axo-Axonic", ]: ######!!!!!!!!!!!!!!!!!!!!!
+             continue
 
 
         neuron_opt_params = default_params.copy()
