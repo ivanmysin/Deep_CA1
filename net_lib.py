@@ -332,7 +332,7 @@ class Net(tf.keras.Model):
             out = out_layer(firings)
             outputs.append(out)
 
-            print(out_layer.mask.numpy())
+            #print(out_layer.mask.numpy())
 
         return outputs
 
@@ -367,10 +367,11 @@ class Net(tf.keras.Model):
 
 
 
-            l = 0
-            for y_pred in y_preds:
-                #print(tf.shape(y_pred))
-                l += tf.reduce_sum(y_pred)
+            # l = 0
+            # for y_pred in y_preds:
+            #     #print(tf.shape(y_pred))
+            #     l += tf.reduce_sum(y_pred)
+            # = tf.reduce_sum(y_preds[3])
 
             # # Compute the loss value
             # loss_value = 0
@@ -392,8 +393,8 @@ class Net(tf.keras.Model):
             loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
 
         #print("Loss value = ", loss_value)
-        #gradients = tape.gradient(loss_value, self.trainable_variables)
         gradients = tape.gradient(loss_value, self.trainable_variables)
+
 
         for grad_idx, grad in enumerate(gradients):
             print(grad_idx)

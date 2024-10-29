@@ -337,8 +337,7 @@ class PhaseLockingOutput(CommonOutProcessing):
         # print("Nans normed_firings", tf.math.reduce_sum(  tf.cast(tf.math.is_nan(normed_firings), dtype=tf.int32)   )  )
 
 
-        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real, axis=1)**2 + tf.math.reduce_sum(normed_firings * imag, axis=1)**2)
-
+        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real, axis=1)**2 + tf.math.reduce_sum(normed_firings * imag, axis=1)**2 + 0.0000001)
         Rsim = tf.reshape(Rsim, shape=(-1))
 
 
@@ -361,7 +360,7 @@ class RobastMeanOut(CommonOutProcessing):
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
-        robast_mean = exp(tf.reduce_mean(log(selected_firings), axis=1))
+        robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
         robast_mean = tf.reshape(robast_mean, shape=(-1))
 
         return robast_mean
