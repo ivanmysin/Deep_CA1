@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from keras.src.ops import dtype
 from tensorflow import GradientTape
 
 

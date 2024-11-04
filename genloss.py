@@ -224,53 +224,45 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 
 
 class FrequencyFilter(CommonOutProcessing):
-    def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
+    def __init__(self, mask, minfreq=3, maxfreq=8, dfreq=1, dt=0.1):
+    # def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
         super(FrequencyFilter, self).__init__(mask)
 
+        self.omega0 = 6.0 # w0 of mortet
+        freqs = tf.range(minfreq, maxfreq, dfreq, dtype=tf.float32)
+        self.scales = self.omega0 / freqs
+        self.dt = tf.constant(0.001 * dt, dtype=tf.float32) # dt = 0.001 * dt : convert ms to sec
 
-        # Rs = []
-        # ThetaFreq = []
-        # ThetaPhase = []
-        # MeanFiringRate = []
-        #
-        #
-        # for p in params:
-        #
-        #     Rs.append(p["R"])
-        #     ThetaFreq.append( p["ThetaFreq"] )
-        #     ThetaPhase.append( p["ThetaPhase"] )
-        #     MeanFiringRate.append(p["MeanFiringRate"] )
-        #
-        # self.ThetaFreq = tf.constant(ThetaFreq, dtype=tf.float32)
-        # self.MeanFiringRate = tf.constant(MeanFiringRate, dtype=tf.float32)
-        # self.MeanFiringRate = tf.reshape(self.MeanFiringRate, shape=(1, -1))
-        # self.ThetaPhase = tf.constant(ThetaPhase, dtype=tf.float32)
-        # self.R = tf.constant(Rs, dtype=tf.float32)
 
-        tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=tf.float32)
-
-        self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
-        self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
-        self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
-        self.gauss_low = tf.concat( int(self.n_selected) *(self.gauss_low, ), axis=2)
-
-        self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
-        self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
-        self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
-        self.gauss_high = tf.concat( int(self.n_selected) * (self.gauss_high,), axis=2)
+        # tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=tf.float32)
+        #
+        # self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
+        # self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
+        # self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
+        # self.gauss_low = tf.concat( int(self.n_selected) *(self.gauss_low, ), axis=2)
+        #
+        # self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
+        # self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
+        # self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
+        # self.gauss_high = tf.concat( int(self.n_selected) * (self.gauss_high,), axis=2)
 
     def build(self):
         super(FrequencyFilter, self).build()
-        #
-        # self.kappa = self.r2kappa(self.R)
-        #
-        # self.mult4time = tf.constant(2 * PI * self.ThetaFreq * 0.001, dtype=tf.float32)
-        #
-        # I0 = bessel_i0(self.kappa)
-        # self.normalizator = self.MeanFiringRate / I0 # * 0.001
+
+    def fftfreqs(self, n, dt):
+        val = 1.0 / (tf.cast(n, dtype=tf.float32) * dt)
+
+        N = tf.where((n % 2) == 0, n / 2 + 1, (n - 1) / 2)
+        p1 = tf.range(0, N, dtype=tf.float32)
+        N = tf.where((n % 2) == 0, -n / 2, -(n - 1) / 2)
+        p2 = tf.range(N, -1, dtype=tf.float32)
+        results = tf.concat([p1, p2], axis=0)
+
+        return results * val
+
 
     def call(self, simulated_firings):
-        #firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.ThetaPhase) )
+
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         # !!!!!!!!!!!!!!!!
@@ -278,7 +270,23 @@ class FrequencyFilter(CommonOutProcessing):
         # filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
         # filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
 
-        filtered_firings = selected_firings
+        coeff_map = ()
+
+        signal_FT = tf.signal.fft(selected_firings)
+        omegas = self.fftfreqs(tf.shape(selected_firings)[1], self.dt)
+
+        for idx, s in enumerate(self.scales):
+            morlet_FT = PI ** (-0.25) * tf.math.exp(-0.5 * (s * omegas - self.omega0)**2)
+            morlet_FT = tf.cast(morlet_FT, dtype=tf.complex64)
+
+            coeff = tf.signal.ifft(signal_FT * morlet_FT) / tf.cast(tf.math.sqrt(s), dtype=tf.complex64)
+            coeff_map = coeff_map + (coeff,)
+
+        coeff_map = tf.stack(coeff_map, axis=1)
+
+
+        filtered_firings = tf.reduce_sum(tf.math.real(coeff_map), axis=1)
+        filtered_firings = filtered_firings - tf.reduce_min(filtered_firings)
 
         return filtered_firings
 
