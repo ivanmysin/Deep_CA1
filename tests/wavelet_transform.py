@@ -33,7 +33,7 @@ params = [
         "OutPlaceThetaPhase": 0,
         "InPlacePeakRate": 8.0,
         "CenterPlaceField": 2500,
-        "R": 0.2,
+        "R": 0.4,
         "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0,
         "PrecessionOnset": 0.0,
@@ -50,7 +50,7 @@ signal_gens = gen(t)
 signal = signal_gens.numpy()[0, :, 0].ravel()
 
 omega0 = 6.0
-freqs = np.arange(3, 6)
+freqs = np.arange(5, 25, 5)
 scales = omega0 / freqs
 
 coeff_map = np.zeros((freqs.size, signal.size), dtype=np.complex128)
@@ -67,12 +67,16 @@ for idx, s in enumerate(scales):
 
 coeff_map = coeff_map
 signal_pred = np.sum(coeff_map.real, axis=0)
-signal_pred = signal_pred - np.min(signal_pred)
+signal_pred = signal_pred - np.mean(signal_pred)
+
+
+signal = signal - np.mean(signal)
 
 l = tf.keras.losses.cosine_similarity(signal, signal_pred)
 print(l)
 
 signal2 =  signal_gens.numpy()[0, :, 1].ravel()
+signal2 = signal2 - np.mean(signal2)
 l = tf.keras.losses.cosine_similarity(signal2, signal_pred)
 print(l)
 

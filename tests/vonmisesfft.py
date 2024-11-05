@@ -1,7 +1,8 @@
+import numpy as np
+from scipy.signal import hilbert
 import matplotlib.pyplot as plt
 import os
 
-from keras.src.ops import dtype
 
 PI = 3.141592653589793
 
@@ -37,7 +38,7 @@ def fftfreqs(n, dt):
 params = [
     {
         "ThetaFreq" : 5,
-        "OutPlaceFiringRate" : 15.5,
+        "OutPlaceFiringRate" : 0.5,
         "OutPlaceThetaPhase" : 0,
         "InPlacePeakRate" : 8.0,
         "CenterPlaceField" : 2500,
@@ -47,11 +48,11 @@ params = [
         "PrecessionOnset" : 0.0,
     },
     {
-        "ThetaFreq": 6,
+        "ThetaFreq": 5,
         "OutPlaceFiringRate": 8.5,
         "OutPlaceThetaPhase": 0,
         "InPlacePeakRate": 8.0,
-        "CenterPlaceField": 2500,
+        "CenterPlaceField": -2500,
         "R": 0.2,
         "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0,
@@ -62,30 +63,39 @@ params = [
 gen = SpatialThetaGenerators(params)
 
 dt = 10.0
-t = tf.range(0, 1200, dt, dtype=tf.float32)
+t = tf.range(0, 5000, dt, dtype=tf.float32)
 t = tf.reshape(t, shape=(-1, 1))
 
 signal_gens = gen(t)
-signal = signal_gens[0, :, :]
+signal_true = signal_gens[0, :, 1]
+signal_pred = signal_gens[0, :, 0]
 
-signal = tf.cast(signal, dtype=tf.complex64)
+signal_true = signal_true - tf.reduce_mean(signal_true)
+signal_pred = signal_pred - tf.reduce_mean(signal_pred)
 
-signal = tf.transpose(signal)
 
-signal_FT = tf.signal.fft(signal)
 
-signal_FT = 2.0 * signal_FT / tf.cast(tf.shape(signal)[1], dtype=tf.complex64)
 
-omegas = fftfreqs(tf.shape(signal)[1], 0.001*dt )
 
-omegas = tf.reshape(omegas, shape=(-1, 1))
+signal_pred = tf.cast(signal_pred, dtype=tf.complex64)
+#signal_pred = tf.transpose(signal_pred)
+signal_FT = tf.signal.fft(signal_pred)
+# signal_FT = 2.0 * signal_FT / tf.cast(tf.shape(signal)[1], dtype=tf.complex64)
+# omegas = fftfreqs(tf.shape(signal)[1], 0.001*dt )
+# omegas = tf.reshape(omegas, shape=(-1, 1))
 
+signal_pred_p = tf.signal.ifft(signal_FT**2)
+signal_pred_p = tf.cast(signal_pred_p, dtype=tf.float32)
+
+
+l = tf.keras.losses.cosine_similarity(signal_true, signal_pred_p)
+print(l)
 fig, axes = plt.subplots(nrows=2)
 #axes.pcolor(t.ravel(), freqs, np.abs(coeff_map), shading='auto')
 # plt.colorbar()
 
-axes[0].plot(t, tf.transpose(tf.math.real(signal)) )
-axes[1].plot(omegas, tf.transpose(tf.math.abs(signal_FT)))
+axes[0].plot(t, signal_pred_p)
+axes[1].plot(t, signal_pred)
 
 
 plt.show()
