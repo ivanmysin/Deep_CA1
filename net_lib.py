@@ -115,7 +115,7 @@ class Net(tf.keras.Model):
         simple_out_mask = np.zeros(len(populations), dtype='bool')
         frequecy_filter_out_mask = np.zeros(len(populations), dtype='bool')
         phase_locking_out_mask = np.zeros(len(populations), dtype='bool')
-
+        ints_phases = []
         for pop_idx, pop in enumerate(populations):
 
             if pop["type"] == "CA1 Pyramidal":
@@ -136,6 +136,8 @@ class Net(tf.keras.Model):
                     target_params[1].append(pop)
                     target_params[2].append(pop["MeanFiringRate"])
 
+                    ints_phases.append( {"ThetaPhase" : pop["ThetaPhase"]})
+
                     continue
 
 
@@ -149,8 +151,8 @@ class Net(tf.keras.Model):
 
 
         if np.sum(frequecy_filter_out_mask) > 0:
-            theta_filter = genloss.FrequencyFilter(mask=frequecy_filter_out_mask, dt=self.dt)
-            output_layers.append(theta_filter)
+            theta_phase_locking_with_phase = genloss.PhaseLockingOutputWithPhase(ints_phases, mask=frequecy_filter_out_mask, ThetaFreq=myconfig.ThetaFreq, dt=self.dt)
+            output_layers.append(theta_phase_locking_with_phase)
 
             robast_mean_out = genloss.RobastMeanOut(mask=frequecy_filter_out_mask)
             output_layers.append(robast_mean_out)
@@ -163,7 +165,9 @@ class Net(tf.keras.Model):
 
         self.CompTargets = []
         self.CompTargets.append( genloss.SpatialThetaGenerators(target_params[0]) )
-        self.CompTargets.append( genloss.VonMissesGenerator(target_params[1]) )
+
+        self.CompTargets.append( genloss.RILayer(target_params[1]) )
+
         self.CompTargets.append( genloss.SimplestKeepLayer(target_params[2]) )
         self.CompTargets.append( genloss.SimplestKeepLayer(target_params[3]) )
 

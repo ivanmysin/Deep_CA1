@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-
 tf.keras.backend.set_floatx('float32')
 
 bessel_i0 = tf.math.bessel_i0
@@ -27,9 +26,33 @@ class SimplestKeepLayer(tf.keras.layers.Layer):
     def call(self, t):
         return self.targets_vals
 
+class RILayer(tf.keras.layers.Layer):
+    def __init__(self, params):
+        super(RILayer, self).__init__()
+
+        R = []
+        ThetaPhase = []
+
+        for p in params:
+            R.append(p["R"])
+            ThetaPhase.append(p["ThetaPhase"])
+
+        R = tf.constant(R, dtype=tf.float32)
+        ThetaPhase = tf.constant(ThetaPhase, dtype=tf.float32)
+
+        imag = R * sin(ThetaPhase)
+        real = R * cos(ThetaPhase)
+
+        self.targets_vals = tf.stack([real, imag], axis=1)
+
+    def call(self, t):
+        return self.targets_vals
 
 
-#### inputs generators
+
+
+
+    #### inputs generators
 class CommonGenerator(tf.keras.layers.Layer):
     def __init__(self, params):
         super(CommonGenerator, self).__init__()
@@ -327,12 +350,8 @@ class PhaseLockingOutput(CommonOutProcessing):
         # self.HighFiringRateBound = tf.constant(HighFiringRateBound, dtype=tf.float32)
         # self.R = tf.constant(Rs, dtype=tf.float32)
 
-    def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
-
-        #print("Nans selected_firings", tf.math.reduce_sum(  tf.cast(tf.math.is_nan(selected_firings), dtype=tf.int32)   )  )
-
-        t_max = tf.cast(tf.shape(simulated_firings)[1], dtype=tf.float32) * self.dt
+    def compute_fourie_trasform(self, selected_firings):
+        t_max = tf.cast(tf.shape(selected_firings)[1], dtype=tf.float32) * self.dt
 
         t = tf.range(0, t_max, self.dt)
         t = tf.reshape(t, shape=(-1, 1))
@@ -342,22 +361,41 @@ class PhaseLockingOutput(CommonOutProcessing):
         imag = sin(theta_phases)
 
         normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
-        # print("Nans normed_firings", tf.math.reduce_sum(  tf.cast(tf.math.is_nan(normed_firings), dtype=tf.int32)   )  )
 
+        real_sim = tf.reduce_sum(normed_firings * real, axis=1)
+        imag_sim = tf.reduce_sum(normed_firings * imag, axis=1)
 
-        Rsim = sqrt(tf.math.reduce_sum(normed_firings * real, axis=1)**2 + tf.math.reduce_sum(normed_firings * imag, axis=1)**2 + 0.0000001)
+        return real_sim, imag_sim
+
+    def call(self, simulated_firings):
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+        real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
+        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
         Rsim = tf.reshape(Rsim, shape=(-1))
-
-
-        #print("Nans Rsim", tf.math.reduce_sum( tf.cast(tf.math.is_nan(Rsim), dtype=tf.int32)  ))
-
-        # loss = tf.keras.losses.MSE(Rsim, self.R)
-        #
-        # mean_firings = tf.reduce_mean(selected_firings, axis=1)
-        # loss += tf.reduce_sum( tf.nn.relu( mean_firings - self.HighFiringRateBound) )
-        # loss += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - mean_firings) )
-
         return Rsim
+
+class PhaseLockingOutputWithPhase(PhaseLockingOutput):
+
+    def __init__(self, params, mask=None, ThetaFreq=5.0, dt=0.1):
+        super(PhaseLockingOutputWithPhase, self).__init__(mask=mask, ThetaFreq=ThetaFreq, dt=dt)
+
+        phases = []
+        for p in params:
+            phases.append(p["ThetaPhase"])
+
+        self.phases = tf.constant(phases, dtype=tf.float32)
+
+    def call(self, simulated_firings):
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+        real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
+
+        output = tf.stack([real_sim, imag_sim], axis=1)
+
+        #Rsim = tf.reshape(Rsim, shape=(-1))
+        return output
+
+
+
 
 
 class RobastMeanOut(CommonOutProcessing):
