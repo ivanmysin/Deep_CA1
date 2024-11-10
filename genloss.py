@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
-tf.keras.backend.set_floatx('float32')
+import myconfig
+
+tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 bessel_i0 = tf.math.bessel_i0
 sqrt = tf.math.sqrt
@@ -21,7 +23,7 @@ PI = np.pi
 class SimplestKeepLayer(tf.keras.layers.Layer):
     def __init__(self, params):
         super(SimplestKeepLayer, self).__init__()
-        self.targets_vals = tf.constant(params, dtype=tf.float32)
+        self.targets_vals = tf.constant(params, dtype=myconfig.DTYPE)
 
     def call(self, t):
         return self.targets_vals
@@ -37,8 +39,8 @@ class RILayer(tf.keras.layers.Layer):
             R.append(p["R"])
             ThetaPhase.append(p["ThetaPhase"])
 
-        R = tf.constant(R, dtype=tf.float32)
-        ThetaPhase = tf.constant(ThetaPhase, dtype=tf.float32)
+        R = tf.constant(R, dtype=myconfig.DTYPE)
+        ThetaPhase = tf.constant(ThetaPhase, dtype=myconfig.DTYPE)
 
         imag = R * sin(ThetaPhase)
         real = R * cos(ThetaPhase)
@@ -97,10 +99,10 @@ class VonMissesGenerator(CommonGenerator):
             ThetaFreq.append(p["ThetaFreq"])
             ThetaPhase.append(p["ThetaPhase"])
 
-        self.ThetaFreq = tf.reshape(tf.constant(ThetaFreq, dtype=tf.float32), [1, -1])
-        self.FiringRate = tf.reshape(tf.constant(FiringRate, dtype=tf.float32), [1, -1])
-        self.R = tf.reshape(tf.constant(Rs, dtype=tf.float32), [1, -1])
-        self.ThetaPhase = tf.reshape(tf.constant(ThetaPhase, dtype=tf.float32), [1, -1])
+        self.ThetaFreq = tf.reshape(tf.constant(ThetaFreq, dtype=myconfig.DTYPE), [1, -1])
+        self.FiringRate = tf.reshape(tf.constant(FiringRate, dtype=myconfig.DTYPE), [1, -1])
+        self.R = tf.reshape(tf.constant(Rs, dtype=myconfig.DTYPE), [1, -1])
+        self.ThetaPhase = tf.reshape(tf.constant(ThetaPhase, dtype=myconfig.DTYPE), [1, -1])
 
     def build(self):
         input_shape = (None, 1)
@@ -108,7 +110,7 @@ class VonMissesGenerator(CommonGenerator):
         super(VonMissesGenerator, self).build(input_shape)
         self.kappa = self.r2kappa(self.R)
         tmp = 2 * PI * self.ThetaFreq * 0.001
-        self.mult4time = tf.constant(tmp, dtype=tf.float32)
+        self.mult4time = tf.constant(tmp, dtype=myconfig.DTYPE)
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.FiringRate / I0
 
@@ -159,15 +161,15 @@ class SpatialThetaGenerators(CommonGenerator):
             ThetaFreq.append( p["ThetaFreq"] )
 
 
-        self.ThetaFreq = tf.reshape( tf.constant(ThetaFreq, dtype=tf.float32), [1, -1])
-        self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=tf.float32), [1, -1])
-        self.OutPlaceThetaPhase = tf.reshape( tf.constant(OutPlaceThetaPhase, dtype=tf.float32), [1, -1])
-        self.R = tf.reshape( tf.constant(Rs, dtype=tf.float32), [1, -1])
-        self.InPlacePeakRate = tf.reshape( tf.constant(InPlacePeakRate, dtype=tf.float32), [1, -1])
-        self.CenterPlaceField = tf.reshape(  tf.constant(CenterPlaceField, dtype=tf.float32), [1, -1])
-        self.SigmaPlaceField = tf.reshape( tf.constant(SigmaPlaceField, dtype=tf.float32), [1, -1])
-        self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=tf.float32), [1, -1])
-        self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=tf.float32), [1, -1])
+        self.ThetaFreq = tf.reshape( tf.constant(ThetaFreq, dtype=myconfig.DTYPE), [1, -1])
+        self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=myconfig.DTYPE), [1, -1])
+        self.OutPlaceThetaPhase = tf.reshape( tf.constant(OutPlaceThetaPhase, dtype=myconfig.DTYPE), [1, -1])
+        self.R = tf.reshape( tf.constant(Rs, dtype=myconfig.DTYPE), [1, -1])
+        self.InPlacePeakRate = tf.reshape( tf.constant(InPlacePeakRate, dtype=myconfig.DTYPE), [1, -1])
+        self.CenterPlaceField = tf.reshape(  tf.constant(CenterPlaceField, dtype=myconfig.DTYPE), [1, -1])
+        self.SigmaPlaceField = tf.reshape( tf.constant(SigmaPlaceField, dtype=myconfig.DTYPE), [1, -1])
+        self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=myconfig.DTYPE), [1, -1])
+        self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=myconfig.DTYPE), [1, -1])
 
     def build(self):
         input_shape = (None, 1)
@@ -177,7 +179,7 @@ class SpatialThetaGenerators(CommonGenerator):
         self.kappa = self.r2kappa(self.R)
 
         tmp = 2 * PI * self.ThetaFreq * 0.001
-        self.mult4time = tf.constant(tmp, dtype=tf.float32)
+        self.mult4time = tf.constant(tmp, dtype=myconfig.DTYPE)
 
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
@@ -207,15 +209,6 @@ class SpatialThetaGenerators(CommonGenerator):
         firings = tf.reshape(firings, shape=(1, tf.shape(firings)[0], tf.shape(firings)[1]))
 
         return firings
-
-    # def get_loss(self, simulated_firings, t):
-    #     t = tf.reshape(t, shape=(-1, 1))
-    #     target_firings = self.get_firings(t)
-    #     target_firings = tf.reshape(target_firings, shape=(1, tf.size(t), tf.size(self.ThetaFreq)))
-    #     selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
-    #     loss = tf.reduce_mean( tf.keras.losses.logcosh(target_firings, selected_firings) )
-    #     return loss
-
 
 #########################################################################
 ##### Output processing classes #########################################
@@ -252,12 +245,12 @@ class FrequencyFilter(CommonOutProcessing):
         super(FrequencyFilter, self).__init__(mask)
 
         self.omega0 = 6.0 # w0 of mortet
-        freqs = tf.range(minfreq, maxfreq, dfreq, dtype=tf.float32)
+        freqs = tf.range(minfreq, maxfreq, dfreq, dtype=myconfig.DTYPE)
         self.scales = self.omega0 / freqs
-        self.dt = tf.constant(0.001 * dt, dtype=tf.float32) # dt = 0.001 * dt : convert ms to sec
+        self.dt = tf.constant(0.001 * dt, dtype=myconfig.DTYPE) # dt = 0.001 * dt : convert ms to sec
 
 
-        # tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=tf.float32)
+        # tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=myconfig.DTYPE)
         #
         # self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
         # self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
@@ -273,12 +266,12 @@ class FrequencyFilter(CommonOutProcessing):
         super(FrequencyFilter, self).build()
 
     def fftfreqs(self, n, dt):
-        val = 1.0 / (tf.cast(n, dtype=tf.float32) * dt)
+        val = 1.0 / (tf.cast(n, dtype=myconfig.DTYPE) * dt)
 
         N = tf.where((n % 2) == 0, n / 2 + 1, (n - 1) / 2)
-        p1 = tf.range(0, N, dtype=tf.float32)
+        p1 = tf.range(0, N, dtype=myconfig.DTYPE)
         N = tf.where((n % 2) == 0, -n / 2, -(n - 1) / 2)
-        p2 = tf.range(N, -1, dtype=tf.float32)
+        p2 = tf.range(N, -1, dtype=myconfig.DTYPE)
         results = tf.concat([p1, p2], axis=0)
 
         return results * val
@@ -313,45 +306,18 @@ class FrequencyFilter(CommonOutProcessing):
 
         return filtered_firings
 
-
-    # def get_loss(self, simulated_firings, t):
-    #     t = tf.reshape(t, shape=(-1, 1))
-    #     target_firings = self.get_firings(t)
-    #     target_firings = tf.reshape(target_firings, shape=(1, tf.size(t), tf.size(self.ThetaFreq)))
-    #     selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
-    #
-    #     low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME', data_format="NWC")
-    #     filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
-    #     filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME', data_format="NWC")
-    #     loss = tf.reduce_mean( tf.keras.losses.cosine_similarity(filtered_firings, target_firings) )
-    #
-    #
-    #     robast_mean = exp(tf.reduce_mean(log(selected_firings), axis=1))
-    #     loss = loss + tf.keras.losses.MSE(self.MeanFiringRate, robast_mean)
-    #
-    #     return loss
 #########################################################################
 class PhaseLockingOutput(CommonOutProcessing):
     def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1):
         super(PhaseLockingOutput, self).__init__(mask)
 
-        # Rs = []
 
+        self.ThetaFreq = tf.constant(ThetaFreq, dtype=myconfig.DTYPE)
+        self.dt = tf.constant(dt, dtype=myconfig.DTYPE)
 
-        # for p in params:
-        #     # Rs.append(p["R"])
-        #     ThetaFreq.append(p["ThetaFreq"])
-        #     # LowFiringRateBound.append(p["LowFiringRateBound"])
-        #     # HighFiringRateBound.append(p["HighFiringRateBound"])
-
-        self.ThetaFreq = tf.constant(ThetaFreq, dtype=tf.float32)
-        self.dt = tf.constant(dt, dtype=tf.float32)
-        # self.LowFiringRateBound = tf.constant(LowFiringRateBound, dtype=tf.float32)
-        # self.HighFiringRateBound = tf.constant(HighFiringRateBound, dtype=tf.float32)
-        # self.R = tf.constant(Rs, dtype=tf.float32)
 
     def compute_fourie_trasform(self, selected_firings):
-        t_max = tf.cast(tf.shape(selected_firings)[1], dtype=tf.float32) * self.dt
+        t_max = tf.cast(tf.shape(selected_firings)[1], dtype=myconfig.DTYPE) * self.dt
 
         t = tf.range(0, t_max, self.dt)
         t = tf.reshape(t, shape=(-1, 1))
@@ -383,7 +349,7 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
         for p in params:
             phases.append(p["ThetaPhase"])
 
-        self.phases = tf.constant(phases, dtype=tf.float32)
+        self.phases = tf.constant(phases, dtype=myconfig.DTYPE)
 
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
@@ -433,7 +399,7 @@ class Decorrelator(tf.keras.regularizers.Regularizer):
         self.strength = strength
 
     def __call__(self, x):
-        Ntimesteps = tf.cast(tf.shape(x)[1], dtype=tf.float32)
+        Ntimesteps = tf.cast(tf.shape(x)[1], dtype=myconfig.DTYPE)
         x = tf.reshape(x, shape=(tf.shape(x)[1], tf.shape(x)[2]))
 
         Xcentered = x - tf.reduce_mean(x, axis=0, keepdims=True)

@@ -7,8 +7,8 @@ import os
 
 
 def main():
-    TRACK_LENGTH = 200 # cm
-    THETA_FREQ = 6 # Hz
+    TRACK_LENGTH = 400  # cm
+    THETA_FREQ = myconfig.ThetaFreq # Hz
 
 
     for INPUT_TYPE in ["MEC", "LEC", "CA3"]:

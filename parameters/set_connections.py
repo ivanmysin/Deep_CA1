@@ -141,7 +141,7 @@ def main():
             else:
                 continue
 
-            if pconn < 10e-4:
+            if pconn < myconfig.PCONN_THRESHOLD:
                 continue
 
             if pconn > 1:

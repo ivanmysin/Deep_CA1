@@ -10,7 +10,7 @@ import genloss  #s import SpatialThetaGenerators
 import os
 from pprint import pprint
 
-tf.keras.backend.set_floatx('float32')
+tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 
 
@@ -105,6 +105,7 @@ class Net(tf.keras.Model):
         self.output_layers = self.get_output_layers(populations)
 
         self.firings_decorrelator = genloss.Decorrelator(strength=0.001) #strength можно определить в myconf
+        self.firings_ranger = genloss.RobastMeanOutRanger(strength=10.0) #strength можно определить в myconf
 
 
 
@@ -290,7 +291,7 @@ class Net(tf.keras.Model):
 
 
     def simulate(self,  firings0, t0=0, Nsteps=1):
-        t = tf.constant(t0, dtype=tf.float32)
+        t = tf.constant(t0, dtype=myconfig.DTYPE)
         firings = []
         for idx in range(Nsteps):
 
@@ -330,6 +331,9 @@ class Net(tf.keras.Model):
             corr_penalty = self.firings_decorrelator( firings )
             self.add_loss(corr_penalty)
 
+            outfirings_penalty = self.firings_ranger( firings )
+            self.add_loss(outfirings_penalty)
+
 
         outputs = []
         for out_layer in self.output_layers:
@@ -347,14 +351,14 @@ class Net(tf.keras.Model):
 
 
         t0, Nsteps = data   #!!!!!!
-        t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=tf.float32)
+        t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=myconfig.DTYPE)
         t = tf.reshape(t, shape=(-1, 1) )
 
 
 
 
 
-        firings0 = tf.zeros(self.Npops, dtype=tf.float32) #### возможно стоит как-то передавать снаружи!
+        firings0 = tf.zeros(self.Npops, dtype=myconfig.DTYPE) #### возможно стоит как-то передавать снаружи!
         firings0 = tf.reshape(firings0, shape=(1, 1, -1))
 
         y_trues = []
@@ -439,33 +443,12 @@ if __name__ == "__main__":
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    # for pop_idx, pop in enumerate(populations):
-    #     pop_type = pop["type"]
-    #
-    #     is_connected_mask = np.zeros(len(populations), dtype='bool')
-    #
-    #     for conn in connections:
-    #         if conn["post_idx"] != pop_idx: continue
-    #         is_connected_mask[conn["pre_idx"]] = True
-
-
-        # if np.sum(is_connected_mask) == 0:
-        #     conn = {
-        #         "pconn" : 0.0,
-        #         "pre_idx" : 0,
-        #         "post_idx" : pop_idx,
-        #         "pre_type" : populations[0],
-        #         "post_type" : populations[pop_idx],
-        #     }
-        #     connections.append(conn)
-
-
     #print("############################################")
     net = Net(populations, connections, pop_types_params, neurons_params, synapses_params)
 
     net.compile(
         optimizer = 'adam',
-        loss = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE],
+        loss = [tf.keras.losses.logcosh, tf.keras.losses.MSE, tf.keras.losses.MSE, tf.keras.losses.MSE],
     )
     print("Model compiled!!!")
 
@@ -476,7 +459,7 @@ if __name__ == "__main__":
     # test_out = net.pop_models[10](test_input)
     # print(test_out)
 
-    t = tf.constant(0.0, dtype=tf.float32)
+    t = tf.constant(0.0, dtype=myconfig.DTYPE)
     t = tf.reshape(t, shape=(-1, 1))
 
     # outs = net.generators[0](t)

@@ -4,16 +4,17 @@ import matplotlib.pyplot as plt
 import pickle
 import myconfig
 import os
+from scipy.cluster.vq import kmeans
 
 
 def main():
-    Npyr = 50 # !!!! 2200 # Всего пирамидных нейронов 159000, по 70 в каждом кластере
+    Npyr = 2200 # Всего пирамидных нейронов 159000, по 70 в каждом кластере
     Npyrdeep = Npyrsup = Npyr // 2
 
 
 
     # Hyperparameters
-    TRACK_LENGTH = 200 # cm
+    TRACK_LENGTH = 400 # cm
     PLACECELLSPROB = 0.5 # Вероятность пирамидного нейрона стать клеткой места в одном лабиринте
     PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
     PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.
@@ -47,14 +48,14 @@ def main():
     CA1_flat = pd.read_csv(filepath, header=0)
     StepH = CA1_flat["H"][1] - CA1_flat["H"][0]
     #CA1_flat["H"] = CA1_flat["H"].max() - CA1_flat["H"]
-    print(CA1_flat["H"].size)
+    #print(CA1_flat["H"].size)
 
     Square_CA1 = StepH * CA1_flat["L"].sum()
-    print("Square of CA1 field =", Square_CA1, "mkm^2")
+    #print("Square of CA1 field =", Square_CA1, "mkm^2")
 
 
-    StepProxDistDeep = Square_CA1 / StepH / Npyrdeep # mkm
-    StepProxDistSup = Square_CA1 / StepH / Npyrsup # mkm
+    StepProxDistDeep = 250 # Square_CA1 / StepH / Npyrdeep # mkm
+    StepProxDistSup = 250 #Square_CA1 / StepH / Npyrsup # mkm
 
     right_bound = 0.5*CA1_flat["L"]
     left_bound = -0.5*CA1_flat["L"]
@@ -69,34 +70,54 @@ def main():
             ThetaPhase = THETA_LOCALPHASE_DEEP
             preces_slope0 = PHASEPREC_SLOPE_DEEP_0
             precess_onset0 = PHASEPREC_ONSET_DEEP_0
+            Npyrpops = Npyrdeep
+
         elif radial_axis == "sup":
             radial_axis_pos = -1
             StepProxDist = StepProxDistSup
             ThetaPhase = THETA_LOCALPHASE_SUP
             preces_slope0 = PHASEPREC_SLOPE_SUP_0
             precess_onset0 = PHASEPREC_ONSET_SUP_0
-
+            Npyrpops = Npyrsup
 
 
         pyr_coodinates_x = np.empty(shape=0, dtype=np.float64)
         pyr_coodinates_y = np.empty_like(pyr_coodinates_x)
-        pyr_coodinates_z = np.empty_like(pyr_coodinates_x)
+
         for slice_idx, l in enumerate(CA1_flat["L"]):
+            lb = left_bound[slice_idx] + 0.5 * StepProxDist
+            rb = right_bound[slice_idx] - 0.5 * StepProxDist
 
-            lb = left_bound[slice_idx] + 0.5*StepProxDist
-            rb = right_bound[slice_idx] - 0.5*StepProxDist
-            pyrs_x = np.arange(lb, rb, StepProxDist)
-            pyrs_y = np.zeros_like(pyrs_x) + CA1_flat["H"][slice_idx]
-            pyrs_z = np.zeros_like(pyrs_x) + radial_axis_pos
+            tmp_x = np.arange(lb, rb, 0.01 * StepProxDist)
+            pyr_coodinates_x = np.append(pyr_coodinates_x, tmp_x)
+            pyr_coodinates_y = np.append(pyr_coodinates_y, np.zeros_like(tmp_x) + CA1_flat["H"][slice_idx])
 
-            pyr_coodinates_x = np.append(pyr_coodinates_x, pyrs_x)
-            pyr_coodinates_y = np.append(pyr_coodinates_y, pyrs_y)
-            pyr_coodinates_z = np.append(pyr_coodinates_z, pyrs_z)
+        print("N points for clustering =", pyr_coodinates_x.size)
+        points = np.stack([pyr_coodinates_x, pyr_coodinates_y]).transpose()
+        selected, _ = kmeans(points, Npyrpops)
+
+        pyr_coodinates_x = selected[:, 0]
+        pyr_coodinates_y = selected[:, 1]
+        pyr_coodinates_z = np.zeros_like(pyr_coodinates_x) + radial_axis_pos
+
+        #
+        #
+        # for slice_idx, l in enumerate(CA1_flat["L"]):
+        #
+        #     lb = left_bound[slice_idx] + 0.5*StepProxDist
+        #     rb = right_bound[slice_idx] - 0.5*StepProxDist
+        #     pyrs_x = np.arange(lb, rb, StepProxDist)
+        #     pyrs_y = np.zeros_like(pyrs_x) + CA1_flat["H"][slice_idx]
+        #     pyrs_z = np.zeros_like(pyrs_x) + radial_axis_pos
+        #
+        #     pyr_coodinates_x = np.append(pyr_coodinates_x, pyrs_x)
+        #     pyr_coodinates_y = np.append(pyr_coodinates_y, pyrs_y)
+        #     pyr_coodinates_z = np.append(pyr_coodinates_z, pyrs_z)
 
         for pyrs_x, pyrs_y, pyrs_z in zip(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z):
 
             if PLACECELLSPROB < np.random.rand():
-                center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1)
+                center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1)[0]
             else:
                 center_place_field = -1000000
 

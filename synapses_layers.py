@@ -1,8 +1,9 @@
 import tensorflow as tf
-from keras.src.ops import dtype
+import myconfig
 from tensorflow.keras.layers import Layer, RNN
-exp = tf.math.exp
 
+exp = tf.math.exp
+tf.keras.backend.set_floatx(myconfig.DTYPE)
 from pprint import pprint
 
 
@@ -10,12 +11,12 @@ class BaseSynapse(Layer):
 
     def __init__(self, params, dt=0.1, mask=None, **kwargs):
         super(BaseSynapse, self).__init__(**kwargs)
-        self.dt = tf.convert_to_tensor(dt, dtype=tf.float32)
-        self.pconn = tf.convert_to_tensor( params['pconn'], dtype=tf.float32 )
-        self.Erev = tf.convert_to_tensor( params['Erev'], dtype=tf.float32 )
-        self.Cm = tf.convert_to_tensor( params['Cm'], dtype=tf.float32 )
-        self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=tf.float32 )
-        self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=tf.float32 )
+        self.dt = tf.convert_to_tensor(dt, dtype=myconfig.DTYPE)
+        self.pconn = tf.convert_to_tensor( params['pconn'], dtype=myconfig.DTYPE )
+        self.Erev = tf.convert_to_tensor( params['Erev'], dtype=myconfig.DTYPE )
+        self.Cm = tf.convert_to_tensor( params['Cm'], dtype=myconfig.DTYPE )
+        self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
+        self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=myconfig.DTYPE )
 
         self.units = tf.size(self.pconn)
 
@@ -42,11 +43,11 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         super(TsodycsMarkramSynapse, self).__init__(params, dt=dt, mask=mask, **kwargs)
 
-        self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=tf.float32 )
-        self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=tf.float32)
-        self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=tf.float32 )
-        self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=tf.float32 )
-        self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=tf.float32 )
+        self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
+        self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
+        self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
+        self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
+        self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
         self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
 
@@ -144,9 +145,9 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         #print(batch_size)
 
-        R = tf.ones( shape, dtype=tf.float32)
-        U = tf.zeros( shape, dtype=tf.float32)
-        A = tf.zeros( shape, dtype=tf.float32)
+        R = tf.ones( shape, dtype=myconfig.DTYPE)
+        U = tf.zeros( shape, dtype=myconfig.DTYPE)
+        A = tf.zeros( shape, dtype=myconfig.DTYPE)
         initial_state = [R, U, A]
 
         return initial_state
@@ -160,13 +161,13 @@ if __name__ == "__main__":
 
     Ns = 5
     params = {
-        "gsyn_max" : np.zeros(Ns, dtype=np.float32) + 1.5,
-        "Uinc" :  np.zeros(Ns, dtype=np.float32) + 0.5,
-        "tau_r" : np.zeros(Ns, dtype=np.float32) + 1.5,
-        "tau_f" : np.zeros(Ns, dtype=np.float32) + 1.5,
-        "tau_d" : np.zeros(Ns, dtype=np.float32) + 1.5,
-        'pconn' : np.zeros(Ns, dtype=np.float32) + 1.0,
-        'Erev' : np.zeros(Ns, dtype=np.float32),
+        "gsyn_max" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
+        "Uinc" :  np.zeros(Ns, dtype=myconfig.DTYPE) + 0.5,
+        "tau_r" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
+        "tau_f" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
+        "tau_d" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
+        'pconn' : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.0,
+        'Erev' : np.zeros(Ns, dtype=myconfig.DTYPE),
         'Erev_min' : -75.0,
         'Erev_max' : 0.0,
         'Cm' : 0.114,

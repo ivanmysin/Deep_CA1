@@ -1,5 +1,7 @@
-#####
-ThetaFreq = 7.0
+
+
+DTYPE = "float32"
+
 
 ############## directorires  #################
 SCRIPTS4PARAMSGENERATION = "./parameters/"
@@ -25,3 +27,11 @@ NEPOCHES = 200
 TRAIN2TESTRATIO = 0.7
 VERBOSETRANINGPOPMODELS = 2
 BATCHSIZE = 100
+
+########### Net creation ######################
+PCONN_THRESHOLD = 0.01
+
+
+
+#####
+ThetaFreq = 7.0
