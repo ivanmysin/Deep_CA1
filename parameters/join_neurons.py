@@ -14,12 +14,12 @@ def main():
             neuron = pickle.load(file)
         neurons.extend(neuron)
 
-        print(pfile, len(neuron))
-
-    types = set([pop["type"]  for pop in  neurons])
+    #     print(pfile, len(neuron))
+    #
+    # types = set([pop["type"]  for pop in  neurons])
     #print(types)
 
-    with open(myconfig.STRUCTURESOFNET + "_neurons.pickle", mode="bw") as file:
+    with open(myconfig.STRUCTURESOFNET + "neurons.pickle", mode="bw") as file:
         pickle.dump(neurons, file)
 
 

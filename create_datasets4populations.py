@@ -6,9 +6,10 @@ from brian2 import ms, mV, nF, uF, mS, uS, uA, pA, second, Hz, nA, nS, pF
 from brian2 import defaultclock
 import h5py
 import os
-import pprint
+from pprint import pprint
 import myconfig
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 PATH4SAVING = myconfig.DATASETS4POPULATIONMODELS
 
@@ -142,14 +143,20 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     neuron.U = 0 * pA
     neuron.Vth = np.random.normal(loc=params['Vth_mean'], scale=4.0, size=NN) * mV # params['Vth_mean']*mV  #
 
-    M_full_V = StateMonitor(neuron, ['V', 'U'], record=np.arange(NN))
+    if myconfig.IS_SAVE_V:
+        M_full_V = StateMonitor(neuron, ['V', 'U'], record=np.arange(NN))
+
+
     # M_full_U = StateMonitor(neuron, 'U', record=np.arange(N))
     gexc_monitor = StateMonitor(neuron, 'gexc', record=0)
     ginh_monitor = StateMonitor(neuron, 'ginh', record=0)
 
     firing_monitor = SpikeMonitor(neuron)
 
-    monitors = [M_full_V, gexc_monitor, ginh_monitor, firing_monitor]
+    if myconfig.IS_SAVE_V:
+        monitors = [M_full_V, gexc_monitor, ginh_monitor, firing_monitor]
+    else:
+        monitors = [gexc_monitor, ginh_monitor, firing_monitor]
     #monitors = [M_full_V, firing_monitor]
 
     net = Network(neuron)  # automatically include G and S
@@ -160,8 +167,8 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     #Varr = np.asarray(M_full_V.V / mV)
 
     population_firing_rate, bins = np.histogram(firing_monitor.t / ms, range=[0, duration], bins=int(duration/(defaultclock.dt / ms) ))
-    # dbins = bins[1] - bins[0]
-    population_firing_rate = population_firing_rate / NN  # spikes in bin   #/ (0.001 * dbins) # spikes per second
+    dbins = bins[1] - bins[0]
+    population_firing_rate = population_firing_rate / NN  / (0.001 * dbins) # spikes per second
 
 
 
@@ -187,7 +194,7 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
 
     gexc = np.asarray(gexc_monitor.gexc / mS).astype(np.float32).ravel()
     ginh = np.asarray(ginh_monitor.ginh / mS).astype(np.float32).ravel()
-    grest = 0.0000000001
+    grest = myconfig.GREST
 
     Erev =  (params["Eexc"]/mV * gexc + params["Einh"]/mV * ginh  + params["Vrest"]/mV * grest ) / (gexc + ginh + grest)
     tau_syn = float(params['Cm']/uF) / (gexc + ginh + grest)
@@ -198,18 +205,22 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     file.create_dataset('firing_rate', data=population_firing_rate.astype(np.float32).ravel() )
     file.create_dataset('Erevsyn', data=Erev.ravel())
     file.create_dataset('tau_syn', data=tau_syn.ravel())
+    file.attrs['dt'] = dbins
 
     file.create_dataset('gexc', data=gexc)
     file.create_dataset('ginh', data=ginh)
 
-    file.create_dataset('V', data=np.asarray(M_full_V.V / mV))
+    if myconfig.IS_SAVE_V:
+        file.create_dataset('V', data=np.asarray(M_full_V.V / mV))
 
     file.close()
 
     return True
 
 
-def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
+def create_single_type_dataset(run_params):
+    params, path, Niter, duration, NN = run_params
+
     idx = 0
     while (idx < Niter):
         filepath = '{path}/{i}.hdf5'.format(path=path, i=idx)
@@ -217,20 +228,24 @@ def create_single_type_dataset(params, path, Niter=120, duration=2000, NN=4000):
         if res:
             idx += 1
 
-
-        ## break ##!!!!!!!!!!!!!
-
-
 def create_all_types_dataset(all_params, NN):
+
+    running_params = []
+    for i in range(myconfig.N_THREDS ):
+        running_params.append([])
+
     for n, (key, item) in enumerate(all_params.items()):
         path = '{path}{key}'.format(path=PATH4SAVING, key=key)
 
         if not os.path.isdir(path):
            os.mkdir(path)
 
-        print(key)
-        create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
+        running_params[ int(n%myconfig.N_THREDS)].append([item, path, myconfig.NFILESDATASETS, myconfig.DURATION, NN])
+        #create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
 
+
+    with Pool(myconfig.N_THREDS) as parallel:
+         parallel.map(create_single_type_dataset, running_params)
 
 
 def main():
@@ -284,9 +299,6 @@ def main():
         #pprint.pprint(populations_params)
         for key, val in populations_params.items():
              neuron_opt_params[key] = add_units(val, key)
-
-
-
         all_params[neuron_type] = neuron_opt_params
 
     create_all_types_dataset(all_params, NN)

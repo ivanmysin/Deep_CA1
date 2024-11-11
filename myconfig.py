@@ -2,7 +2,7 @@
 
 DTYPE = "float32"
 
-
+N_THREDS = 4
 ############## directorires  #################
 SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
@@ -20,6 +20,9 @@ NUMBERNEURONSINPOP = 4000
 NFILESDATASETS = 120
 DT = 0.1 # time step, ms
 
+IS_SAVE_V = False
+GREST = 0.0000000001
+DURATION = 2000 # ms
 
 ##############################################
 ######### fit models of populations ##########

@@ -37,7 +37,7 @@ def main():
             PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
 
         elif INPUT_TYPE == "LEC":
-            Npyr = 50 ###!!!!!!!!! 200
+            Npyr = 200
 
             PLACESIZE_MEAN = 30  # см, Средний размер поля места в дорсальном гиппокампе.
             PLACESIZE_STD = 10  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
@@ -59,7 +59,7 @@ def main():
             PHASEPRECPROB = 0.0  # Вероятность обнаружить фазовую прецессию у клетки места
 
         elif INPUT_TYPE == "CA3":
-            Npyr = 50 ###!!!!!!!!! 200
+            Npyr = 200
 
             PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.
             PLACESIZE_STD = 5  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
@@ -120,7 +120,7 @@ def main():
 
                 generators.append(gencell)
 
-        with open(myconfig.STRUCTURESOFNET + f"_{INPUT_TYPE}_generators.pickle", mode="bw") as file:
+        with open(myconfig.STRUCTURESOFNET + f"{INPUT_TYPE}_generators.pickle", mode="bw") as file:
             pickle.dump(generators, file)
 
 if __name__ == "__main__":

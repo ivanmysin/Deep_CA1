@@ -29,8 +29,8 @@ def main():
     coodinates_y = np.empty_like(coodinates_x)
     StepProxDist = 100
 
-    Npops = 30
-    stepXY = int( Square_CA1 / (StepProxDist**2 * Npops) )
+    # Npops = 30
+    # stepXY = int( Square_CA1 / (StepProxDist**2 * Npops) )
 
     for slice_idx, l in enumerate(CA1_flat["L"]):
         lb = left_bound[slice_idx] + 0.5*StepProxDist
@@ -52,7 +52,7 @@ def main():
 
         # if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
 
-        cells_pop["Npops"] = 2 #!!!!
+        #cells_pop["Npops"] = 2 #!!!!
 
         selected, _ = kmeans(points, cells_pop["Npops"])
 
@@ -90,7 +90,7 @@ def main():
 
 
 
-    with open(myconfig.STRUCTURESOFNET +  "_interneurons.pickle", mode="bw") as file:
+    with open(myconfig.STRUCTURESOFNET +  "interneurons.pickle", mode="bw") as file:
         pickle.dump(interneurons, file)
 
 
