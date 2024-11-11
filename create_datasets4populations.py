@@ -218,8 +218,8 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     return True
 
 
-def create_single_type_dataset(run_params):
-    params, path, Niter, duration, NN = run_params
+def create_single_type_dataset(params, path, Niter=100, duration=2000, NN=4000):
+
 
     idx = 0
     while (idx < Niter):
@@ -227,6 +227,11 @@ def create_single_type_dataset(run_params):
         res = run_izhikevich_neurons(params, duration, NN, filepath)
         if res:
             idx += 1
+
+def parrallel_runner(run_params):
+    for neuron_type_params in run_params:
+        params, path, Niter, duration, NN = neuron_type_params
+        create_single_type_dataset(params, path, Niter=Niter, duration=duration, NN=NN)
 
 def create_all_types_dataset(all_params, NN):
 
@@ -243,9 +248,8 @@ def create_all_types_dataset(all_params, NN):
         running_params[ int(n%myconfig.N_THREDS)].append([item, path, myconfig.NFILESDATASETS, myconfig.DURATION, NN])
         #create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
 
-
     with Pool(myconfig.N_THREDS) as parallel:
-         parallel.map(create_single_type_dataset, running_params)
+         parallel.map(parrallel_runner, running_params)
 
 
 def main():
