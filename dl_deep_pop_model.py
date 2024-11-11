@@ -75,7 +75,7 @@ def get_dataset(path, train2testratio):
 
                     #target_firing_rate.append(h5file["firing_rate"][idx_b : e_idx].ravel())
 
-                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
+                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                 else:
                     # gexc = h5file["gexc"][idx_b : e_idx]
                     # ginh = h5file["ginh"][idx_b : e_idx]
@@ -93,7 +93,7 @@ def get_dataset(path, train2testratio):
 
                     # Xtest[batch_idx, : , 0] =  gexc # / 80.0
                     # Xtest[batch_idx, : , 1] =  ginh # / 80.0
-                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() * 100.0
+                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
 
 
 
