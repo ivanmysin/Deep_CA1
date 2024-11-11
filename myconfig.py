@@ -2,7 +2,7 @@
 
 DTYPE = "float32"
 
-N_THREDS = 4
+N_THREDS = 16
 ############## directorires  #################
 SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
