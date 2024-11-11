@@ -63,6 +63,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.exp_tau_f = exp(-self.dt / self.tau_f)
         self.exp_tau_r = exp(-self.dt / self.tau_r)
 
+        #self.pconn = self.pconn
+
         self.built = True
 
     def get_config(self):
@@ -112,7 +114,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         A = states[2]
 
 
-        FRpre_normed =  0.01 * FR * self.pconn
+        FRpre_normed =  FR * self.pconn * 0.001 * self.dt # to convert firings in Hz to probability
 
         a_ = A * self.exp_tau_d
         r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A

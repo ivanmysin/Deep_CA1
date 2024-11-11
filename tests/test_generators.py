@@ -81,13 +81,17 @@ class SpatialThetaGenerators(CommonGenerator):
         self.SlopePhasePrecession = tf.constant(SlopePhasePrecession, dtype=tf.float64)
         self.PrecessionOnset = tf.constant(PrecessionOnset, dtype=tf.float64)
 
+        self.dt = 0.1
+
     def precomute(self):
         self.kappa = self.r2kappa(self.R)
 
         self.mult4time = tf.constant(2 * PI * self.ThetaFreq * 0.001, dtype=tf.float64)
 
         I0 = bessel_i0(self.kappa)
-        self.normalizator = self.OutPlaceFiringRate / I0 * 0.001
+        self.normalizator = self.OutPlaceFiringRate / I0
+
+
     def __call__(self, t):
         ## firings = self.normalizator * exp(self.kappa * cos(self.mult4time * t - self.phase) )
 
@@ -121,7 +125,7 @@ class SpatialThetaGenerators(CommonGenerator):
 
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
-        firings = multip * firings  # / (0.001 * dt)
+        firings = multip * firings
 
         return firings
 

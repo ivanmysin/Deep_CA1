@@ -135,7 +135,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.save(targetpath)
 
         #print("Training of ", datapath, file=logfile)
-        print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], "Val_mae = ", hist.history['val_mae'][-1], file=logfile)
+        print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], "Val_mae = ", hist.history['val_mae'][-1], file=logfile, flush=True)
 
 
 def main():

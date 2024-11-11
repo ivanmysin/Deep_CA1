@@ -191,6 +191,7 @@ class SpatialThetaGenerators(CommonGenerator):
     def call(self, t):
         ampl4gauss = 2 * (self.InPlacePeakRate - self.OutPlaceFiringRate) / (self.OutPlaceFiringRate + 1)
         multip = (1 + ampl4gauss * exp(-0.5 * ((t - self.CenterPlaceField) / self.SigmaPlaceField) ** 2))
+
         start_place = t - self.CenterPlaceField - 3 * self.SigmaPlaceField
         end_place = t - self.CenterPlaceField + 3 * self.SigmaPlaceField
 
