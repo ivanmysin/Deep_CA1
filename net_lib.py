@@ -443,6 +443,7 @@ if __name__ == "__main__":
     net.compile(
         optimizer = 'adam',
         loss = [tf.keras.losses.logcosh, tf.keras.losses.MSE, tf.keras.losses.MSE, tf.keras.losses.MSE],
+        jit_compile=True,
     )
     print("Model compiled!!!")
 
