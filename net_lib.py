@@ -3,6 +3,12 @@ import tensorflow as tf
 from keras import saving
 import pandas as pd
 import pickle
+import os
+
+# This guide can only be run with the TF backend.
+os.environ["KERAS_BACKEND"] = "tensorflow"
+
+
 
 import myconfig
 from synapses_layers import TsodycsMarkramSynapse
@@ -22,11 +28,20 @@ class PopModelLayer(tf.keras.layers.Layer):
         self.pop_layers = pop_layers
 
     def build(self, input_shape):
+        super(PopModelLayer, self).build(input_shape)
         self.synapses.build(input_shape)
+
+        # sequences_shape = (1, None, self.synapses.cell.units)
+        #
+        # for pop_layer in self.pop_layers:
+        #     pop_layer.build(sequences_shape)
+        #
+        #     sequences_shape =  (1, None, pop_layer.cell.units)
+
         self.built = True
 
 
-
+    #@tf.function(reduce_retracing=True)
     def call(self, firings):
 
         x = self.synapses(firings)
@@ -82,7 +97,7 @@ class Net(tf.keras.Model):
 
         self.ConcatLayer = tf.keras.layers.Concatenate(axis=-1)
         self.ConcatLayerInTime = tf.keras.layers.Concatenate(axis=1)
-        self.ReshapeLayer = tf.keras.layers.Reshape( (1, -1) )
+        #self.ReshapeLayer = tf.keras.layers.Reshape( (1, -1) )
 
         self.pop_models = []
         gen_params = []
@@ -282,48 +297,54 @@ class Net(tf.keras.Model):
         model.build(input_shape=input_shape)
 
         for l_idx, layer in enumerate(model.pop_layers):
+
             layer.trainable = False
             layer.set_weights(base_model.layers[l_idx].get_weights())
-
-        # print(model.summary())
+        #
+        #     #input_shape = (1, None, tf.size(layer.units))
+        #
+        # # print(model.summary())
 
 
         return tf.keras.models.clone_model(model)
 
     @tf.function
     def simulate(self,  firings0, t0=0, Nsteps=1):
-        t = tf.constant(t0, dtype=myconfig.DTYPE)
+        t = tf.reshape(t0, shape=(-1, 1))    #tf.constant(t0, dtype=myconfig.DTYPE)
         firings = []
+
+
+
+        Nsteps = tf.cast(Nsteps, dtype=tf.int32)
         for idx in range(Nsteps):
 
             firings_in_step = []
 
             for model in self.pop_models:
-                if idx == 0:
-                    fired = model(firings0)
-                else:
-
-                    fired = model(firings[-1])
+                fired = model(firings0)
                 firings_in_step.append(fired)
 
             for gen in self.generators:
-                t = tf.reshape(t, shape=(-1, 1))
+
                 fired = gen(t)
                 # fired = self.ReshapeLayer(fired)
-
                 fired = tf.reshape(fired, (1, 1, -1))
                 firings_in_step.append(fired)
 
-            firings_in_step = self.ConcatLayer(firings_in_step)
-            firings_in_step = self.ReshapeLayer(firings_in_step)
+
+            firings_in_step = tf.concat(firings_in_step, axis=2) #self.ConcatLayer(firings_in_step)
+            #firings_in_step = tf.reshape(firings_in_step, shape=(1, 1, -1)  )
+            firings0 = firings_in_step
+
             firings.append(firings_in_step)
 
             t += self.dt
 
-        firings = self.ConcatLayerInTime(firings)
+        firings = tf.concat(firings, axis=1) #self.ConcatLayerInTime(firings)
+
         return firings
 
-    @tf.function
+    #@tf.function( reduce_retracing=True)
     def call(self, firings0, t0=0, Nsteps=1, training=False):
 
 
@@ -345,13 +366,13 @@ class Net(tf.keras.Model):
 
         return outputs
 
-    @tf.function
+    #@tf.function
     def train_step(self, data):
 
-        #loss_functions = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE]
-
-
         t0, Nsteps = data   #!!!!!!
+        t0 = tf.reshape(t0, shape=())
+        Nsteps = tf.reshape(Nsteps, shape=())
+
         t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=myconfig.DTYPE)
         t = tf.reshape(t, shape=(-1, 1) )
 
@@ -369,6 +390,7 @@ class Net(tf.keras.Model):
             #tape.watch(self.trainable_variables)
 
             y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
+
 
             loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
 
@@ -417,7 +439,7 @@ if __name__ == "__main__":
 
     #print("############################################")
     net = Net(populations, connections, pop_types_params, neurons_params, synapses_params)
-
+    #net.build(input_shape = (1, 1))
     net.compile(
         optimizer = 'adam',
         loss = [tf.keras.losses.logcosh, tf.keras.losses.MSE, tf.keras.losses.MSE, tf.keras.losses.MSE],
@@ -431,8 +453,8 @@ if __name__ == "__main__":
     # test_out = net.pop_models[10](test_input)
     # print(test_out)
 
-    t = tf.constant(0.0, dtype=myconfig.DTYPE)
-    t = tf.reshape(t, shape=(-1, 1))
+    # t = tf.constant(0.0, dtype=myconfig.DTYPE)
+    # t = tf.reshape(t, shape=(-1, 1))
 
     # outs = net.generators[0](t)
     #
@@ -448,8 +470,25 @@ if __name__ == "__main__":
     # fired = net(firings0, t0=0.0, Nsteps=10)
     # print(fired[0])
 
-    Nsteps = 10
+    Nsteps = 10.0
+
+
 
     data = (t, Nsteps)
     l = net.train_step(data)
-    print(l)
+    X = tf.range(0.0, 10.0, 1.0, dtype=myconfig.DTYPE, name="t0s") # t
+    X = tf.reshape(X, shape=(-1, 1))
+
+    Y = tf.zeros_like(X, name="Nsteps") + 10.0 # Nsteps # dtype=myconfig.DTYPE)
+    #
+    # print(tf.shape(X))
+    # print(tf.shape(Y))
+    #
+    #
+    #hist = net.fit(X, Y, epochs=3, batch_size=1)
+
+
+
+
+
+    #print(l)

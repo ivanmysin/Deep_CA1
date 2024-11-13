@@ -318,6 +318,7 @@ class PhaseLockingOutput(CommonOutProcessing):
         self.dt = tf.constant(dt, dtype=myconfig.DTYPE)
 
 
+
     def compute_fourie_trasform(self, selected_firings):
         t_max = tf.cast(tf.shape(selected_firings)[1], dtype=myconfig.DTYPE) * self.dt
 
