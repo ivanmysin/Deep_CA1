@@ -178,8 +178,9 @@ class SpatialThetaGenerators(CommonGenerator):
 
         self.kappa = self.r2kappa(self.R)
 
-        tmp = 2 * PI * self.ThetaFreq * 0.001
-        self.mult4time = tf.constant(tmp, dtype=myconfig.DTYPE)
+        #tmp =
+
+        self.mult4time = 2 * PI * self.ThetaFreq * 0.001 #tf.constant(tmp, dtype=myconfig.DTYPE)
 
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
@@ -197,7 +198,7 @@ class SpatialThetaGenerators(CommonGenerator):
 
 
 
-        inplace = 0.25 * (1.0 - (start_place / (self.ALPHA + np.abs(start_place)))) * (
+        inplace = 0.25 * (1.0 - (start_place / (self.ALPHA + tf.math.abs(start_place)))) * (
                 1.0 + end_place / (self.ALPHA + abs(end_place)))
 
         precession = self.SlopePhasePrecession * inplace
@@ -338,7 +339,7 @@ class PhaseLockingOutput(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
         Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
-        Rsim = tf.reshape(Rsim, shape=(-1))
+        Rsim = tf.reshape(Rsim, shape=(-1, 1))
         return Rsim
 
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
@@ -374,7 +375,7 @@ class RobastMeanOut(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
-        robast_mean = tf.reshape(robast_mean, shape=(-1))
+        robast_mean = tf.reshape(robast_mean, shape=(-1, 1))
 
         return robast_mean
 

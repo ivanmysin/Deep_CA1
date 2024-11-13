@@ -166,6 +166,8 @@ class Net(tf.keras.Model):
 
         self.CompTargets = []
         self.CompTargets.append( genloss.SpatialThetaGenerators(target_params[0]) )
+        self.CompTargets[0].build()
+
 
         self.CompTargets.append( genloss.RILayer(target_params[1]) )
 
@@ -288,8 +290,7 @@ class Net(tf.keras.Model):
 
         return tf.keras.models.clone_model(model)
 
-
-
+    @tf.function
     def simulate(self,  firings0, t0=0, Nsteps=1):
         t = tf.constant(t0, dtype=myconfig.DTYPE)
         firings = []
@@ -322,7 +323,7 @@ class Net(tf.keras.Model):
         firings = self.ConcatLayerInTime(firings)
         return firings
 
-
+    @tf.function
     def call(self, firings0, t0=0, Nsteps=1, training=False):
 
 
@@ -344,7 +345,7 @@ class Net(tf.keras.Model):
 
         return outputs
 
-
+    @tf.function
     def train_step(self, data):
 
         #loss_functions = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE]
@@ -353,10 +354,6 @@ class Net(tf.keras.Model):
         t0, Nsteps = data   #!!!!!!
         t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=myconfig.DTYPE)
         t = tf.reshape(t, shape=(-1, 1) )
-
-
-
-
 
         firings0 = tf.zeros(self.Npops, dtype=myconfig.DTYPE) #### возможно стоит как-то передавать снаружи!
         firings0 = tf.reshape(firings0, shape=(1, 1, -1))
@@ -373,31 +370,6 @@ class Net(tf.keras.Model):
 
             y_preds = self(firings0, t0=t0, Nsteps=Nsteps, training=True)  # Forward pass
 
-
-
-            # l = 0
-            # for y_pred in y_preds:
-            #     #print(tf.shape(y_pred))
-            #     l += tf.reduce_sum(y_pred)
-            # = tf.reduce_sum(y_preds[3])
-
-            # # Compute the loss value
-            # loss_value = 0
-            # for layer_loss in self.losses:
-            #     loss_value += layer_loss
-
-            # for y_true, y_pred, loss_func in zip(y_trues, y_preds, loss_functions):
-            #     # print("Nans y_true", tf.math.reduce_sum( tf.cast(tf.math.is_nan(y_true), dtype=tf.int32)  ))
-            #     # print("Nans y_pred", tf.math.reduce_sum( tf.cast(tf.math.is_nan(y_pred), dtype=tf.int32)  ))
-            #     #
-            #     # print("#################")
-            #     tmp_loss = loss_func(y_true, y_pred)
-            #     print("Nans tmp_loss", tf.math.reduce_sum(tf.cast(tf.math.is_nan(tmp_loss), dtype=tf.int32)))
-            #
-            #
-            #     loss_value += tf.math.reduce_sum( tmp_loss )
-
-
             loss_value = self.compute_loss(y=y_trues, y_pred=y_preds)
 
         #print("Loss value = ", loss_value)
@@ -405,9 +377,9 @@ class Net(tf.keras.Model):
 
 
         for grad_idx, grad in enumerate(gradients):
-            print(grad_idx)
-            print(grad)
-            print("###################################################")
+            tf.print(grad_idx)
+            tf.print(grad)
+            tf.print("###################################################")
 
         self.optimizer.apply(gradients, self.trainable_variables)
         # # Update metrics (includes the metric that tracks the loss)
