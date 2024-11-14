@@ -171,6 +171,10 @@ class SpatialThetaGenerators(CommonGenerator):
         self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=myconfig.DTYPE), [1, -1])
         self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=myconfig.DTYPE), [1, -1])
 
+        Mask = tf.math.is_nan(self.PrecessionOnset)
+        self.PrecessionOnset = tf.where(Mask, 0., self.PrecessionOnset )
+        self.PhaseOnsetMask = tf.cast(Mask, dtype=myconfig.DTYPE) - 1.0
+
     def build(self):
         input_shape = (None, 1)
 
@@ -202,8 +206,8 @@ class SpatialThetaGenerators(CommonGenerator):
                 1.0 + end_place / (self.ALPHA + abs(end_place)))
 
         precession = self.SlopePhasePrecession * inplace
-        #phases = self.OutPlaceThetaPhase * (1 - inplace) + self.PrecessionOnset * inplace #!!!!
-        phases = self.OutPlaceThetaPhase
+        phases = self.OutPlaceThetaPhase * (1 - inplace * self.PhaseOnsetMask ) + self.PrecessionOnset * inplace * self.PhaseOnsetMask
+
 
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 

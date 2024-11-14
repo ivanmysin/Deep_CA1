@@ -81,6 +81,12 @@ class SpatialThetaGenerators(CommonGenerator):
         self.SlopePhasePrecession = tf.constant(SlopePhasePrecession, dtype=tf.float64)
         self.PrecessionOnset = tf.constant(PrecessionOnset, dtype=tf.float64)
 
+        Mask = tf.math.is_nan(self.PrecessionOnset)
+        self.PrecessionOnset = tf.where(Mask, 0., self.PrecessionOnset )
+        self.PhaseOnsetMask = tf.cast(Mask, dtype=tf.float64) - 1.0
+
+        print(self.PhaseOnsetMask)
+
         self.dt = 0.1
 
     def precomute(self):
@@ -121,7 +127,7 @@ class SpatialThetaGenerators(CommonGenerator):
                 1.0 + end_place / (self.ALPHA + abs(end_place)))
 
         precession = self.SlopePhasePrecession * inplace
-        phases = self.OutPlaceThetaPhase * (1 - inplace) + self.PrecessionOnset * inplace
+        phases = self.OutPlaceThetaPhase * (1 - inplace  * self.PhaseOnsetMask) + self.PrecessionOnset * inplace * self.PhaseOnsetMask
 
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
@@ -139,8 +145,8 @@ if __name__ == "__main__":
             "InPlacePeakRate" : 8.0,
             "CenterPlaceField" : 5000.0,
             "SigmaPlaceField" : 500,
-            "SlopePhasePrecession" : np.deg2rad(10)*10 * 0.001,
-            "PrecessionOnset" : -1.57,
+            "SlopePhasePrecession" : 0.0, # np.deg2rad(10)*10 * 0.001,
+            "PrecessionOnset" : np.nan, # -1.57,
             "ThetaFreq" : 8.0,
          },
     ]
