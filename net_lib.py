@@ -6,9 +6,10 @@ import pickle
 
 import myconfig
 from synapses_layers import TsodycsMarkramSynapse
-import genloss  #s import SpatialThetaGenerators
+import genloss
 import os
 from pprint import pprint
+import warnings
 
 
 
@@ -267,7 +268,8 @@ class Net(tf.keras.Model):
 
 
         if np.sum(is_connected_mask) == 0:
-            print("Not connected", pop["type"], "with index", pop_idx)
+            warns_message = "No presynaptic population " + pop["type"] + " with index " + str(pop_idx)
+            warnings.warn(warns_message)
 
         # print(is_connected_mask)
         # print("#################################")
