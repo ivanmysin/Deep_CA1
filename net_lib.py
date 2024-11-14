@@ -10,6 +10,8 @@ import genloss  #s import SpatialThetaGenerators
 import os
 from pprint import pprint
 
+
+
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 
@@ -292,7 +294,7 @@ class Net(tf.keras.Model):
 
     @tf.function
     def simulate(self,  firings0, t0=0, Nsteps=1):
-        t = tf.constant(t0, dtype=myconfig.DTYPE)
+        t = t0 #tf.constant(t0, dtype=myconfig.DTYPE)
         firings = []
         for idx in range(Nsteps):
 
@@ -317,6 +319,7 @@ class Net(tf.keras.Model):
 
             t += self.dt
 
+        self.last_firings = firings_in_step
         firings = self.ConcatLayerInTime(firings)
         return firings
 
@@ -326,11 +329,12 @@ class Net(tf.keras.Model):
 
         firings = self.simulate(firings0, t0=t0, Nsteps=Nsteps)
         if training:
-            corr_penalty = self.firings_decorrelator( firings )
-            self.add_loss(corr_penalty)
-
-            outfirings_penalty = self.firings_ranger( firings )
-            self.add_loss(outfirings_penalty)
+            pass
+            # corr_penalty = self.firings_decorrelator( firings )
+            # self.add_loss(corr_penalty)
+            #
+            # outfirings_penalty = self.firings_ranger( firings )
+            # self.add_loss(outfirings_penalty)
 
 
         outputs = []
@@ -343,17 +347,16 @@ class Net(tf.keras.Model):
         return outputs
 
     @tf.function
-    def train_step(self, data):
+    def train_step(self, t0, firings0, Nsteps):
 
         #loss_functions = [tf.keras.losses.logcosh,  tf.keras.losses.cosine_similarity, tf.keras.losses.MSE, tf.keras.losses.MSE]
 
 
-        t0, Nsteps = data   #!!!!!!
+        #t0, Nsteps = data   #!!!!!!
         t = tf.range(t0, Nsteps*self.dt, self.dt, dtype=myconfig.DTYPE)
         t = tf.reshape(t, shape=(-1, 1) )
 
-        firings0 = tf.zeros(self.Npops, dtype=myconfig.DTYPE) #### возможно стоит как-то передавать снаружи!
-        firings0 = tf.reshape(firings0, shape=(1, 1, -1))
+
 
         y_trues = []
         for CompTarget in self.CompTargets:
@@ -390,9 +393,19 @@ class Net(tf.keras.Model):
         # return {m.name: m.result() for m in self.metrics}
         return {"loss" : loss_value}
 
-    #@tf.function
-    def fit(self, t0, firings0, Nsteps, Nperiods):
-        pass
+    @tf.function
+    def fit(self, firings0, t0=0.0, Nsteps=10, Nperiods=2):
+        hist = []
+        for pre_idx in range(Nperiods):
+            loss = self.train_step(t0, firings0, Nsteps)
+
+            firings0 = self.last_firings
+            t0 = t0 + self.dt*tf.cast(Nsteps, dtype=myconfig.DTYPE)
+
+            hist.append(loss)
+        return hist
+
+
 
 if __name__ == "__main__":
     with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file:
@@ -451,5 +464,11 @@ if __name__ == "__main__":
     Nsteps = 10
 
     data = (t, Nsteps)
-    l = net.train_step(data)
-    print(l)
+
+    firings0 = tf.zeros(len(populations), dtype=myconfig.DTYPE)  #### возможно стоит как-то передавать снаружи!
+    firings0 = tf.reshape(firings0, shape=(1, 1, -1))
+    #l = net.train_step(t, firings0, Nsteps)
+    #print(l)
+
+    hist = net.fit(firings0, t0=0.0, Nsteps=10, Nperiods=2)
+    pprint(hist)
