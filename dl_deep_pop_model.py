@@ -118,7 +118,6 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
         model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) #, stateful=True
         model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
-        #model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
 
         model.compile(loss=keras.losses.logcosh, optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mean_squared_logarithmic_error'])
