@@ -127,12 +127,21 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.save(targetpath)
 
         #print("Training of ", datapath, file=logfile)
-        print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
+        with h5py.File(datapath, "a") as h5file:
+            #print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
+            pop_type = datapath.split("/")[-1]
+            model_group = h5file.create_group(pop_type)
+
+            model_group.create_dataset("Training_Loss", data=hist.history['loss'])
+            model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
+            model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
+            model_group.create_dataset("Training_MSLogError", data=hist.history['mean_squared_logarithmic_error'])
+            model_group.create_dataset("Validation_MSLogError", data=hist.history['val_mean_squared_logarithmic_error'])
 
 
 def main():
 
-    logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.txt"
+    logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.h5"
 
     logfile = open(logfilepath, mode="a")
     logfile.write("################################################\n")
