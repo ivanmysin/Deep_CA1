@@ -104,6 +104,8 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
     Xtrain, Ytrain, Xtest, Ytest = dataset
 
 
+
+
     if USE_SAVED_MODEL:
         model = load_model(targetpath)
     else:
@@ -114,7 +116,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) #, stateful=True
         model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         #model.add( GRU(1, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
@@ -127,7 +129,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.save(targetpath)
 
         #print("Training of ", datapath, file=logfile)
-        with h5py.File(datapath, "a") as h5file:
+        with h5py.File(logfile, "a") as h5file:
             #print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
             pop_type = datapath.split("/")[-1]
             model_group = h5file.create_group(pop_type)
