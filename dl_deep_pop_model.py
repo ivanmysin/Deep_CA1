@@ -135,7 +135,7 @@ def main():
     logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.txt"
 
     logfile = open(logfilepath, mode="a")
-    logfile.write("#######################################\n")
+    logfile.write("################################################\n")
 
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
