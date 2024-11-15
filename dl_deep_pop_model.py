@@ -53,49 +53,41 @@ def get_dataset(path, train2testratio):
                 e_idx = idx_b + N_in_batch
 
                 if idx <= Niter_train:
+                    X_tmp = Xtrain
+                    Y_tmp = Ytrain
 
-                    # gexc = h5file["gexc"][idx_b : e_idx]
-                    # ginh = h5file["ginh"][idx_b : e_idx]
-                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
-
-                    #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
-                    Erevsyn = 1 + Erevsyn/75.0
-
-                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
-
-                    logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
-                    # logtausyn = logtausyn / 10.0
-                    #print(logtausyn.min(), logtausyn.max())
-
-                    Xtrain[batch_idx, : , 0] = Erevsyn
-                    Xtrain[batch_idx, : , 1] = logtausyn
-
-                    # Xtrain[batch_idx, : , 0] =  gexc #/ 80.0
-                    # Xtrain[batch_idx, : , 1] =  ginh #/ 80.0
-
-                    #target_firing_rate.append(h5file["firing_rate"][idx_b : e_idx].ravel())
-
-                    Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
+                    # # gexc = h5file["gexc"][idx_b : e_idx]
+                    # # ginh = h5file["ginh"][idx_b : e_idx]
+                    # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
+                    #
+                    # #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                    # Erevsyn = 1 + Erevsyn/75.0
+                    #
+                    # logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                    #
+                    # logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
+                    # # logtausyn = logtausyn / 10.0
+                    # #print(logtausyn.min(), logtausyn.max())
+                    #
+                    # Xtrain[batch_idx, : , 0] = Erevsyn
+                    # Xtrain[batch_idx, : , 1] = logtausyn
+                    # Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                 else:
-                    # gexc = h5file["gexc"][idx_b : e_idx]
-                    # ginh = h5file["ginh"][idx_b : e_idx]
+                    X_tmp = Xtest
+                    Y_tmp = Ytest
 
-                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
-                    Erevsyn = 1 + Erevsyn / 75.0
+                Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
+                Erevsyn = 1 + Erevsyn / 75.0
 
-                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn =  2 * np.exp(-myconfig.DT / logtausyn) - 1 ##np.log( logtausyn + 1.0 ) ####
+                logtausyn =  2 * np.exp(-myconfig.DT / logtausyn) - 1
 
-                    Xtest[batch_idx, : , 0] = Erevsyn#/ 80.0
-                    Xtest[batch_idx, : , 1] = logtausyn #/ 50.0
+                X_tmp[batch_idx, : , 0] = Erevsyn
+                X_tmp[batch_idx, : , 1] = logtausyn
 
-                    # Xtest[batch_idx, : , 0] =  gexc # / 80.0
-                    # Xtest[batch_idx, : , 1] =  ginh # / 80.0
-                    Ytest[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
-
-
+                firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel()
+                Y_tmp[batch_idx, : , 0] = np.log(firing_rate + 1.0)
 
                 batch_idx += 1
 

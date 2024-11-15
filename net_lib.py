@@ -304,6 +304,7 @@ class Net(tf.keras.Model):
 
             for model in self.pop_models:
                 fired = model(firings0)
+                fired = tf.math.exp(fired) - 1.0
                 firings_in_step.append(fired)
 
             for gen in self.generators:
