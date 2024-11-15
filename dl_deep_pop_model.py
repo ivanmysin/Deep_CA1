@@ -120,7 +120,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss=keras.losses.logcosh, optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mean_squared_logarithmic_error'])
+        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
@@ -130,22 +130,28 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         #print("Training of ", datapath, file=logfile)
         with h5py.File(logfile, "a") as h5file:
             #print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
-            pop_type = datapath.split("/")[-1]
-            model_group = h5file.create_group(pop_type)
+            pop_type = datapath.split("/")[-2]
+            print(pop_type)
+            try:
+                model_group = h5file.create_group(pop_type)
 
-            model_group.create_dataset("Training_Loss", data=hist.history['loss'])
-            model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
-            model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
-            model_group.create_dataset("Training_MSLogError", data=hist.history['mean_squared_logarithmic_error'])
-            model_group.create_dataset("Validation_MSLogError", data=hist.history['val_mean_squared_logarithmic_error'])
-
+                model_group.create_dataset("Training_Loss", data=hist.history['loss'])
+                model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
+                model_group.create_dataset("Training_MSLogError", data=hist.history['mean_squared_logarithmic_error'])
+                model_group.create_dataset("Validation_MSLogError", data=hist.history['val_mean_squared_logarithmic_error'])
+            except ValueError:
+                model_group = h5file[pop_type]
+                model_group["Training_Loss"][:] = hist.history['loss']
+                model_group["Validation_Loss"][:] = hist.history['val_loss']
+                model_group["Training_MSLogError"][:] = hist.history['mean_squared_logarithmic_error']
+                model_group["Validation_MSLogError"][:] = hist.history['val_mean_squared_logarithmic_error']
 
 def main():
 
     logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.h5"
 
-    logfile = open(logfilepath, mode="a")
-    logfile.write("################################################\n")
+    # logfile = open(logfilepath, mode="a")
+    # logfile.write("################################################\n")
 
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
@@ -154,7 +160,7 @@ def main():
             continue
 
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
-        fit_dl_model_of_population(datapath, targetpath, logfile)
+        fit_dl_model_of_population(datapath, targetpath, logfilepath)
 
     logfile.close()
 
