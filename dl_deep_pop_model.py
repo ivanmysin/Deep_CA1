@@ -162,7 +162,7 @@ def main():
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
         fit_dl_model_of_population(datapath, targetpath, logfilepath)
 
-    logfile.close()
+    #logfile.close()
 
 if __name__ == '__main__':
     main()
