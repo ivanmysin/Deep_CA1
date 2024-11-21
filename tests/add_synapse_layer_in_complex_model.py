@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, RNN
+
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.saving import load_model
 import h5py
 import matplotlib.pyplot as plt
@@ -30,26 +32,20 @@ if True:
 
     synapses = TsodycsMarkramSynapse(params, dt=dt, mask=mask)
 
-    synapses_layer = RNN(synapses, return_sequences=True, stateful=True)
+    synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name="Synapses_Layer")
 
     population_model = load_model("../pretrained_models/NO_Trained.keras")
 
-
-    model = tf.keras.Sequential()
-    model.add(synapses_layer)
-
     for layer in population_model.layers:
-
-        print(layer.__class__.__name__)
-        print(len(layer.get_weights()) )
-        model.add( tf.keras.models.clone_model(layer) )
-
-
-    for layer in model.layers[1:]:
         layer.trainable = False
 
+    input_layer = Input(shape=(None, Ns), batch_size=1)
+    synapses_layer = synapses_layer(input_layer)
+    model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name="Population_with_synapses")
 
-    model.build(input_shape=input_shape)
+    print(model.input_shape)
+
+    #model.build(input_shape=input_shape)
 
     print("###################################")
     print(model.summary())
