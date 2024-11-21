@@ -140,6 +140,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         output = tf.stack([E, tau], axis=-1)
 
+        self.add_loss(self.gmax_regulizer(self.gsyn_max))
+
         return output, [R, U, A]
 
     def get_initial_state(self, batch_size=None):
