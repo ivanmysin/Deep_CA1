@@ -43,13 +43,23 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         super(TsodycsMarkramSynapse, self).__init__(params, dt=dt, mask=mask, **kwargs)
 
-        self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
+        #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
+        self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
+        gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
+        self.gsyn_max = self.add_weight( initializer=tf.keras.initializers.Constant(gsyn_max), \
+                                        regularizer=self.gmax_regulizer, \
+                                        trainable=True, \
+                                        dtype = myconfig.DTYPE,
+                                        constraint = tf.keras.constraints.NonNeg(),
+                                        name="gsyn_max")
+
+
         self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
         self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
         self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
-        self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
+
 
 
 
@@ -140,7 +150,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         output = tf.stack([E, tau], axis=-1)
 
-        self.add_loss(self.gmax_regulizer(self.gsyn_max))
+        #self.add_loss(self.gmax_regulizer(self.gsyn_max))
 
         return output, [R, U, A]
 
