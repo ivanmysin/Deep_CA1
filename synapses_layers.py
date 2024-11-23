@@ -46,9 +46,9 @@ class TsodycsMarkramSynapse(BaseSynapse):
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
         self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
         gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
-        self.gsyn_max = self.add_weight( initializer=tf.keras.initializers.Constant(gsyn_max), \
-                                        regularizer=self.gmax_regulizer, \
-                                        trainable=True, \
+        self.gsyn_max = self.add_weight( initializer=tf.keras.initializers.Constant(gsyn_max),
+                                        regularizer=self.gmax_regulizer,
+                                        trainable=True,
                                         dtype = myconfig.DTYPE,
                                         constraint = tf.keras.constraints.NonNeg(),
                                         name="gsyn_max")
