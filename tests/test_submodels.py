@@ -8,8 +8,12 @@ from tensorflow.keras.saving import load_model
 
 
 import os
+
+import myconfig
+
 os.chdir("../")
 from synapses_layers import TsodycsMarkramSynapse
+from genloss import SpatialThetaGenerators
 
 class TimeStepLayer(Layer):
 
@@ -100,6 +104,44 @@ params = {
     'Erev_max': 0.0,
 }
 
+spatial_gen_params = [
+    {
+        "OutPlaceFiringRate" : 0.5,
+        "OutPlaceThetaPhase": 3.14,
+        "InPlacePeakRate" : 8.0,
+        "R" : 0.3,
+        "CenterPlaceField" : 200,
+        "SigmaPlaceField" : 50,
+        "SlopePhasePrecession" : 10,
+        "PrecessionOnset" : -1.5,
+        "ThetaFreq" : 6.0,
+    },
+    {
+        "OutPlaceFiringRate": 0.5,
+        "OutPlaceThetaPhase": 3.14,
+        "InPlacePeakRate": 8.0,
+        "R": 0.3,
+        "CenterPlaceField": 200,
+        "SigmaPlaceField": 50,
+        "SlopePhasePrecession": 10,
+        "PrecessionOnset": -1.5,
+        "ThetaFreq": 6.0,
+    },
+    {
+        "OutPlaceFiringRate": 0.5,
+        "OutPlaceThetaPhase" : 3.14,
+        "InPlacePeakRate": 8.0,
+        "R": 0.3,
+        "CenterPlaceField": 200,
+        "SigmaPlaceField": 50,
+        "SlopePhasePrecession": 10,
+        "PrecessionOnset": -1.5,
+        "ThetaFreq": 6.0,
+    },
+
+]
+
+
 synapse_params = [params for _ in range(Ns)]
 
 base_model = load_model("./pretrained_models/NO_Trained.keras")
@@ -107,22 +149,28 @@ for layer in base_model.layers:
     layer.trainable = False
 
 time_step_layer = TimeStepLayer(Ns, base_model, synapse_params)
+time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+
+input = Input(shape=(None, 1), batch_size=1)
+generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
 
-big_model = Sequential()
-my_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+big_model = Model(inputs=input, outputs=time_step_layer(generators))
 
-big_model.add(Input(shape=(None, ext_input), batch_size=1))
-big_model.add(my_layer)
-big_model.compile(loss="mean_squared_logarithmic_error", optimizer="adam")
+
+# big_model = Sequential()
+# big_model.add(Input(shape=(None, ext_input), batch_size=1))
+# big_model.add(my_layer)
+# big_model.compile(loss="mean_squared_logarithmic_error", optimizer="adam")
 
 #print(big_model.trainable_variables)
 
 
 timesteps = 100
 # Генерация случайных входных данных
-X = np.random.rand(1, timesteps, ext_input)
-
+# X = np.random.rand(1, timesteps, ext_input)
+dt = myconfig.DT
+X = np.arange(0, timesteps*dt, dt).reshape(1, -1, 1)
 
 # Генерация ответов
 Y = np.random.rand(timesteps, Ns).reshape(1, timesteps, Ns)

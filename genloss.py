@@ -212,7 +212,7 @@ class SpatialThetaGenerators(CommonGenerator):
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
         firings = multip * firings  # / (0.001 * dt)
-        firings = tf.reshape(firings, shape=(1, tf.shape(firings)[0], tf.shape(firings)[1]))
+        firings = tf.reshape(firings, shape=(1, tf.shape(firings)[1], tf.shape(firings)[2]))
 
         return firings
 
