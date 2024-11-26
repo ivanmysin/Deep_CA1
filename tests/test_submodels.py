@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 from keras.src.backend import shape
 from tensorflow.keras.models import Model, Sequential
-from tensorflow.keras.layers import Input, GRU, Dense, Concatenate, RNN, Layer
+from tensorflow.keras.layers import Input, GRU, Dense, Concatenate, RNN, Layer, Reshape
 from tensorflow.keras.saving import load_model
 
 
@@ -13,7 +13,7 @@ import myconfig
 
 os.chdir("../")
 from synapses_layers import TsodycsMarkramSynapse
-from genloss import SpatialThetaGenerators
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut
 
 class TimeStepLayer(Layer):
 
@@ -141,6 +141,8 @@ spatial_gen_params = [
 
 ]
 
+ints_phases = [{"ThetaPhase": 3.14} for _ in range(Ns)]
+
 
 synapse_params = [params for _ in range(Ns)]
 
@@ -154,8 +156,32 @@ time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
 input = Input(shape=(None, 1), batch_size=1)
 generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
+time_step_layer = time_step_layer(generators)
 
-big_model = Model(inputs=input, outputs=time_step_layer(generators))
+time_step_layer = Reshape(target_shape=(-1, Ns))(time_step_layer)
+
+
+
+output_layers = []
+simple_out_mask = np.ones(Ns, dtype='bool')
+simple_selector = CommonOutProcessing(simple_out_mask)
+output_layers.append(simple_selector(time_step_layer) )
+
+frequecy_filter_out_mask = np.ones(Ns, dtype='bool')
+theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask,\
+                                                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+output_layers.append(theta_phase_locking_with_phase(time_step_layer))
+
+
+robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask)
+output_layers.append(robast_mean_out(time_step_layer))
+
+phase_locking_out_mask = np.ones(Ns, dtype='bool')
+phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
+                                                    ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+output_layers.append(phase_locking_selector(time_step_layer))
+
+big_model = Model(inputs=input, outputs=output_layers)
 
 
 # big_model = Sequential()
@@ -179,7 +205,7 @@ X = tf.convert_to_tensor(value=X, dtype='float32')
 y_pred = big_model.predict(X)
 #hist = big_model.fit(X, Y, epochs=2)
 
-print(y_pred.shape)
+print(y_pred)
 
 
 

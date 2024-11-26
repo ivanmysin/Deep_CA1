@@ -349,14 +349,14 @@ class PhaseLockingOutput(CommonOutProcessing):
 
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
-    def __init__(self, params, mask=None, ThetaFreq=5.0, dt=0.1):
+    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1):
         super(PhaseLockingOutputWithPhase, self).__init__(mask=mask, ThetaFreq=ThetaFreq, dt=dt)
 
-        phases = []
-        for p in params:
-            phases.append(p["ThetaPhase"])
+        # phases = []
+        # for p in params:
+        #     phases.append(p["ThetaPhase"])
 
-        self.phases = tf.constant(phases, dtype=myconfig.DTYPE)
+        #self.phases = tf.constant(phases, dtype=myconfig.DTYPE)
 
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
