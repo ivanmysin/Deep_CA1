@@ -6,7 +6,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, GRU, Dense, Concatenate, RNN, Layer, Reshape
 from tensorflow.keras.saving import load_model
 
-
+from pprint import pprint
 import os
 
 import myconfig
@@ -182,10 +182,16 @@ phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
 output_layers.append(phase_locking_selector(time_step_layer))
 
 big_model = Model(inputs=input, outputs=output_layers)
+big_model.build(input_shape = (None, 1))
 
 big_model.compile(
-    optimizer='adam',
-    loss=[tf.keras.losses.logcosh, tf.keras.losses.MSE, tf.keras.losses.MSE, tf.keras.losses.MSE],
+    optimizer=tf.keras.optimizers.RMSprop(),
+    loss={
+        'pyramilad_mask' : tf.keras.losses.logcosh,
+        'locking_with_phase' : tf.keras.losses.MSE,
+        'robast_mean' : tf.keras.losses.MSE,
+        'locking' : tf.keras.losses.MSE,
+    }
 )
 
 # big_model = Sequential()
@@ -193,7 +199,8 @@ big_model.compile(
 # big_model.add(my_layer)
 # big_model.compile(loss="mean_squared_logarithmic_error", optimizer="adam")
 
-#print(big_model.trainable_variables)
+for tv in big_model.trainable_variables:
+    pprint( tf.shape(tv))
 
 
 timesteps = 100
@@ -206,8 +213,8 @@ X = np.arange(0, timesteps*dt, dt).reshape(1, -1, 1)
 Ys = {
     'pyramilad_mask' : np.random.rand(timesteps, Ns).reshape(1, timesteps, Ns),
     'locking_with_phase': np.random.rand(2, Ns).reshape(1, 2, Ns),
-    'robast_mean' : np.random.rand(Ns).reshape(1, Ns),
-    'locking' : np.random.rand(Ns).reshape(1, Ns),
+    'robast_mean' : np.random.rand(Ns).reshape(1, 1, Ns),
+    'locking' : np.random.rand(Ns).reshape(1, 1, Ns),
 }
 
 
@@ -218,7 +225,7 @@ for y_pred in y_preds:
 
 
 
-hist = big_model.fit(X, Ys, epochs=2, batch_size=1)
+hist = big_model.fit(X, Ys, epochs=2, batch_size=1, verbose=2)
 
 
 

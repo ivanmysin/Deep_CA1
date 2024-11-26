@@ -344,7 +344,7 @@ class PhaseLockingOutput(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
         Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
-        Rsim = tf.reshape(Rsim, shape=(1, -1))
+        Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
         return Rsim
 
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
@@ -364,7 +364,7 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
         output = tf.stack([real_sim, imag_sim], axis=1)
 
-        #Rsim = tf.reshape(Rsim, shape=(-1))
+        output = tf.reshape(output, shape=(1, 2, -1))
         return output
 
 
@@ -380,7 +380,7 @@ class RobastMeanOut(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
-        robast_mean = tf.reshape(robast_mean, shape=(1, -1))
+        robast_mean = tf.reshape(robast_mean, shape=(1, 1, -1))
 
         return robast_mean
 
