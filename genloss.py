@@ -220,8 +220,8 @@ class SpatialThetaGenerators(CommonGenerator):
 ##### Output processing classes #########################################
 
 class CommonOutProcessing(tf.keras.layers.Layer):
-    def __init__(self, mask):
-        super(CommonOutProcessing, self).__init__()
+    def __init__(self, mask, **kwargs):
+        super(CommonOutProcessing, self).__init__(**kwargs)
         #
         # self.inputs_size = len(params)
         #
@@ -246,9 +246,9 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 
 
 class FrequencyFilter(CommonOutProcessing):
-    def __init__(self, mask, minfreq=3, maxfreq=8, dfreq=1, dt=0.1):
+    def __init__(self, mask, minfreq=3, maxfreq=8, dfreq=1, dt=0.1, **kwargs):
     # def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
-        super(FrequencyFilter, self).__init__(mask)
+        super(FrequencyFilter, self).__init__(mask, **kwargs)
 
         self.omega0 = 6.0 # w0 of mortet
         freqs = tf.range(minfreq, maxfreq, dfreq, dtype=myconfig.DTYPE)
@@ -314,8 +314,8 @@ class FrequencyFilter(CommonOutProcessing):
 
 #########################################################################
 class PhaseLockingOutput(CommonOutProcessing):
-    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1):
-        super(PhaseLockingOutput, self).__init__(mask)
+    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
+        super(PhaseLockingOutput, self).__init__(mask, **kwargs)
 
 
         self.ThetaFreq = tf.constant(ThetaFreq, dtype=myconfig.DTYPE)
@@ -344,13 +344,13 @@ class PhaseLockingOutput(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
         Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
-        Rsim = tf.reshape(Rsim, shape=(-1, 1))
+        Rsim = tf.reshape(Rsim, shape=(1, -1))
         return Rsim
 
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
-    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1):
-        super(PhaseLockingOutputWithPhase, self).__init__(mask=mask, ThetaFreq=ThetaFreq, dt=dt)
+    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
+        super(PhaseLockingOutputWithPhase, self).__init__(mask=mask, ThetaFreq=ThetaFreq, dt=dt, **kwargs)
 
         # phases = []
         # for p in params:
@@ -373,14 +373,14 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
 class RobastMeanOut(CommonOutProcessing):
 
-    def __init__(self, mask=None):
-        super(RobastMeanOut, self).__init__(mask)
+    def __init__(self, mask=None, **kwargs):
+        super(RobastMeanOut, self).__init__(mask, **kwargs)
 
     def call(self, simulated_firings):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
-        robast_mean = tf.reshape(robast_mean, shape=(-1, 1))
+        robast_mean = tf.reshape(robast_mean, shape=(1, -1))
 
         return robast_mean
 

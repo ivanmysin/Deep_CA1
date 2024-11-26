@@ -164,25 +164,29 @@ time_step_layer = Reshape(target_shape=(-1, Ns))(time_step_layer)
 
 output_layers = []
 simple_out_mask = np.ones(Ns, dtype='bool')
-simple_selector = CommonOutProcessing(simple_out_mask)
+simple_selector = CommonOutProcessing(simple_out_mask, name='pyramilad_mask')
 output_layers.append(simple_selector(time_step_layer) )
 
 frequecy_filter_out_mask = np.ones(Ns, dtype='bool')
 theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask,\
-                                                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+                                                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking_with_phase')
 output_layers.append(theta_phase_locking_with_phase(time_step_layer))
 
 
-robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask)
+robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
 output_layers.append(robast_mean_out(time_step_layer))
 
 phase_locking_out_mask = np.ones(Ns, dtype='bool')
 phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
-                                                    ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT)
+                                                    ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
 output_layers.append(phase_locking_selector(time_step_layer))
 
 big_model = Model(inputs=input, outputs=output_layers)
 
+big_model.compile(
+    optimizer='adam',
+    loss=[tf.keras.losses.logcosh, tf.keras.losses.MSE, tf.keras.losses.MSE, tf.keras.losses.MSE],
+)
 
 # big_model = Sequential()
 # big_model.add(Input(shape=(None, ext_input), batch_size=1))
@@ -199,13 +203,22 @@ dt = myconfig.DT
 X = np.arange(0, timesteps*dt, dt).reshape(1, -1, 1)
 
 # Генерация ответов
-Y = np.random.rand(timesteps, Ns).reshape(1, timesteps, Ns)
+Ys = {
+    'pyramilad_mask' : np.random.rand(timesteps, Ns).reshape(1, timesteps, Ns),
+    'locking_with_phase': np.random.rand(2, Ns).reshape(1, 2, Ns),
+    'robast_mean' : np.random.rand(Ns).reshape(1, Ns),
+    'locking' : np.random.rand(Ns).reshape(1, Ns),
+}
+
 
 X = tf.convert_to_tensor(value=X, dtype='float32')
-y_pred = big_model.predict(X)
-#hist = big_model.fit(X, Y, epochs=2)
+y_preds = big_model.predict(X)
+for y_pred in y_preds:
+    print(y_pred.shape)
 
-print(y_pred)
+
+
+hist = big_model.fit(X, Ys, epochs=2, batch_size=1)
 
 
 
