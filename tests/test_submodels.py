@@ -13,7 +13,8 @@ import myconfig
 
 os.chdir("../")
 from synapses_layers import TsodycsMarkramSynapse
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
+
 
 class TimeStepLayer(Layer):
 
@@ -28,7 +29,6 @@ class TimeStepLayer(Layer):
 
     def get_initial_state(self, batch_size=1):
         state = K.zeros(shape=(batch_size, self.state_size), dtype=tf.float32)
-        state = tf.convert_to_tensor(state)
         return state
 
     def get_pop_model_with_synapses(self, input_shape, syn_params):
@@ -60,14 +60,7 @@ class TimeStepLayer(Layer):
 
         self.pop_models = []
         for syn_params in self.synapses_params:
-
-
             model = self.get_pop_model_with_synapses(input_shape, syn_params)
-            # model = Sequential()
-            # model.add(Input(shape=(None, input_shape[-1]+self.state_size)))
-            # model.add(GRU(16, return_sequences=True, stateful=False) )  #
-            # model.add(GRU(16, return_sequences=True, stateful=False))  #
-            # model.add(Dense(1, activation='relu'))  #
             self.pop_models.append(model)
 
     def call(self, input, state):
@@ -151,14 +144,14 @@ for layer in base_model.layers:
     layer.trainable = False
 
 time_step_layer = TimeStepLayer(Ns, base_model, synapse_params)
-time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True, activity_regularizer=RobastMeanOutRanger() )
 
 input = Input(shape=(None, 1), batch_size=1)
 generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
 time_step_layer = time_step_layer(generators)
 
-time_step_layer = Reshape(target_shape=(-1, Ns))(time_step_layer)
+time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1))(time_step_layer)
 
 
 
@@ -182,7 +175,7 @@ phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
 output_layers.append(phase_locking_selector(time_step_layer))
 
 big_model = Model(inputs=input, outputs=output_layers)
-big_model.build(input_shape = (None, 1))
+# big_model.build(input_shape = (None, 1))
 
 big_model.compile(
     optimizer=tf.keras.optimizers.RMSprop(),
@@ -194,13 +187,7 @@ big_model.compile(
     }
 )
 
-# big_model = Sequential()
-# big_model.add(Input(shape=(None, ext_input), batch_size=1))
-# big_model.add(my_layer)
-# big_model.compile(loss="mean_squared_logarithmic_error", optimizer="adam")
-
-for tv in big_model.trainable_variables:
-    pprint( tf.shape(tv))
+print(big_model.summary())
 
 
 timesteps = 100
