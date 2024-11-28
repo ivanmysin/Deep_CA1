@@ -22,11 +22,28 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     spatial_gen_params = []
     Ns = 0
-    for pop in populations:
+    for pop_idx, pop in enumerate(populations):
         if pop["type"].find("generator") == -1:
             Ns += 1
         else:
             spatial_gen_params.append(pop)
+
+    simple_out_mask = np.zeros(Ns, dtype='bool')
+    frequecy_filter_out_mask = np.zeros(Ns, dtype='bool')
+    phase_locking_out_mask = np.zeros(Ns, dtype='bool')
+    for pop_idx, pop in enumerate(populations):
+        if pop["type"] == "CA1 Pyramidal":
+            simple_out_mask[pop_idx] = True
+
+        else:
+            try:
+                if np.isnan(pop["ThetaPhase"]) or (pop["ThetaPhase"] is None):
+                    phase_locking_out_mask[pop_idx] = True
+                else:
+                    frequecy_filter_out_mask[pop_idx] = True
+
+            except KeyError:
+                continue
 
 
 
@@ -42,11 +59,10 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1))(time_step_layer)
 
     output_layers = []
-    simple_out_mask = np.ones(Ns, dtype='bool')
+
     simple_selector = CommonOutProcessing(simple_out_mask, name='pyramilad_mask')
     output_layers.append(simple_selector(time_step_layer))
 
-    frequecy_filter_out_mask = np.ones(Ns, dtype='bool')
     theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask, \
                                                                  ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                                                  name='locking_with_phase')
@@ -80,9 +96,11 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 def main():
     # load data about network
     with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file:
+    # with open(myconfig.STRUCTURESOFNET + "neurons.pickle", "rb") as neurons_file:
         populations = pickle.load(neurons_file)
 
     with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file:
+    #with open(myconfig.STRUCTURESOFNET + "connections.pickle", "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
     pop_types_params = pd.read_excel(myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2",
