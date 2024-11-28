@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
-from keras.src.backend import shape
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, GRU, Dense, Concatenate, RNN, Layer, Reshape
 from tensorflow.keras.saving import load_model
@@ -134,7 +133,7 @@ spatial_gen_params = [
 
 ]
 
-ints_phases = [{"ThetaPhase": 3.14} for _ in range(Ns)]
+#ints_phases = [{"ThetaPhase": 3.14} for _ in range(Ns)]
 
 
 synapse_params = [params for _ in range(Ns)]

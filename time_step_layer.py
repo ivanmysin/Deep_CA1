@@ -12,21 +12,22 @@ from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOut
 
 class TimeStepLayer(Layer):
 
-    def __init__(self, units, populations, connections, pop_types_params, neurons_params, synapses_params, base_pop_models, dt=0.1,  **kwargs):
+    def __init__(self, units, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1,  **kwargs):
         super().__init__(**kwargs)
         self.units = units
         self.state_size = units
         self.dt = dt
+        self.input_size = len(populations)
 
 
         self.pop_models = []
         for pop_idx, pop in enumerate(populations):
+            if "_generator" in pop["type"]: continue
             base_model = base_pop_models[pop["type"]]
             pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
             self.pop_models.append(pop_model)
 
-            # model = self.get_pop_model_with_synapses(input_shape, syn_params)
-            # self.pop_models.append(model)
+
 
 
 
@@ -52,15 +53,13 @@ class TimeStepLayer(Layer):
             'Erev_max': 0.0,
         }
 
-        is_connected_mask = np.zeros(self.Npops, dtype='bool')
+        is_connected_mask = np.zeros(self.input_size, dtype='bool')
 
 
         #print(pop_idx)
 
         for conn in connections:
             if conn["post_idx"] != pop_idx: continue
-
-            #pprint(conn)
 
             pre_type = conn['pre_type']
 
@@ -104,10 +103,10 @@ class TimeStepLayer(Layer):
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
-        input_layer = Input(shape=(None, self.Npops), batch_size=1)
+        input_layer = Input(shape=(None, self.input_size), batch_size=1)
         synapses_layer = synapses_layer(input_layer)
 
-        base_model = tf.keras.models.clone_model(self.base_pop_model)
+        base_model = tf.keras.models.clone_model(base_model)
 
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name="Population_with_synapses")
 
