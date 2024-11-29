@@ -95,21 +95,25 @@ connections = [
         "pconn" : 1.0,
         "pre_idx" : 0,
         "post_idx" : 0,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 1,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 1,
         "post_idx": 1,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 1,
         "post_idx": 0,
+        "gsyn_max": np.random.rand(),
     },
 
 
@@ -118,16 +122,19 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 2,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 3,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 4,
+        "gsyn_max": np.random.rand(),
     },
 
     ##########
@@ -135,47 +142,56 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 0,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 1,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 3,
+        "gsyn_max": np.random.rand(),
     },
    ##########
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 1,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 2,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 3,
+        "gsyn_max": np.random.rand(),
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 4,
+        "gsyn_max": np.random.rand(),
     },
 ]
 

@@ -9,10 +9,28 @@ import myconfig
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Reshape
 from tensorflow.keras.saving import load_model
-from synapses_layers import TsodycsMarkramSynapse
 from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
 from time_step_layer import TimeStepLayer
 
+
+def save_trained_to_pickle(trainable_variables, connections):
+
+    for tv in trainable_variables:
+        pop_idx = int(tv.name.split("_")[-1])
+
+        tv = tv.numpy()
+
+        conn_counter = 0
+        for conn in connections:
+            if conn["post_idx"] != pop_idx:
+                continue
+
+            conn["gsyn"] = tv[conn_counter]
+
+            conn_counter += 1
+
+    with open("./presimulation_files/test_conns.pickle", mode="bw") as file:  ##!!
+        pickle.dump(connections, file)
 
 def get_model(populations, connections, neurons_params, synapses_params, base_pop_models):
 
@@ -95,11 +113,11 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
 def main():
     # load data about network
-    with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file:
+    with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file: ##!!
     # with open(myconfig.STRUCTURESOFNET + "neurons.pickle", "rb") as neurons_file:
         populations = pickle.load(neurons_file)
 
-    with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file:
+    with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file: ##!!
     #with open(myconfig.STRUCTURESOFNET + "connections.pickle", "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
@@ -117,16 +135,17 @@ def main():
     base_pop_models = {}
     for pop_type in pop_types_params["neurons"]:
         #model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
-        model_file = "./pretrained_models/NO_Trained.keras"
+        model_file = "./pretrained_models/NO_Trained.keras" ##!!
         base_pop_models[pop_type] = load_model(model_file)
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
 
     print(model.summary())
 
-    for tv in model.trainable_variables:
-        pop_idx = (int(tv.path.split("/")[0].split("_")[-1]) - 1) / 2
-        print(tv.path, tv.numpy(), pop_idx)
+    save_trained_to_pickle(model.trainable_variables, connections)
+
+
+
 
 ##########################################################################
 main()

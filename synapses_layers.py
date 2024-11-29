@@ -18,6 +18,11 @@ class BaseSynapse(Layer):
         self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
         self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=myconfig.DTYPE )
 
+        try:
+            self.pop_idx = params['pop_idx']
+        except:
+            self.pop_idx = 0
+
         self.units = tf.size(self.pconn)
 
         if mask is None:
@@ -53,7 +58,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
                                         trainable = True,
                                         dtype = myconfig.DTYPE,
                                         constraint = tf.keras.constraints.NonNeg(),
-                                        name = "gsyn_max")
+                                        name = f"gsyn_max_{self.pop_idx}")
 
 
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE)
@@ -95,6 +100,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
             "Cm": self.Cm,
             "dt" : self.dt,
             "mask" : self.mask,
+            "pop_idx" : self.pop_idx
         })
         return config
 
@@ -113,6 +119,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         params['Erev_min'] = config['Erev_min']['config']["value"]
         params['Erev_max'] = config['Erev_max']['config']["value"]
         params['Cm'] = config['Cm']['config']["value"]
+        params['pop_idx'] = config['pop_idx']
         dt = config['dt']['config']["value"]
         mask = config['mask']['config']["value"]
 

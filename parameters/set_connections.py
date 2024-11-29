@@ -49,6 +49,9 @@ def set_connections(params):
                     (presyn["x_anat"] - postsyn["x_anat"]) ** 2 + (presyn["y_anat"] - postsyn["y_anat"]) ** 2)
                 pconn = AMPL_PYR2PYR_CONNECTIONS * np.exp(-0.5 * (dist / SIGMA_PYR2PYR_CONNECTIONS) ** 2)
 
+                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == presyn["type"]) & ( \
+                            CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
+
             elif presyn["type"] == "CA1 Pyramidal" and postsyn["type"] in INTERNEURONS_TYPES:
                 ## set pyr to int connctions
 
@@ -138,13 +141,15 @@ def set_connections(params):
             if pconn > 1:
                 pconn = 1.0
 
+            gsyn_max = conn['g'].values[0]
+
             conn = {
                 "pre_type": presyn["type"],
                 "post_type": postsyn["type"],
                 "pre_idx": pre_idx,
                 "post_idx": post_idx,
 
-                "gsyn": None,
+                "gsyn_max": gsyn_max,
                 "pconn": pconn,
 
             }

@@ -7,7 +7,7 @@ import warnings
 import myconfig
 
 from synapses_layers import TsodycsMarkramSynapse
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
+# from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
 
 
 class TimeStepLayer(Layer):
@@ -54,6 +54,7 @@ class TimeStepLayer(Layer):
             'Cm': neurons_params[neurons_params["Neuron Type"] == pop_type]["Cm"].values[0],
             'Erev_min': -75.0,
             'Erev_max': 0.0,
+            "pop_idx" : pop_idx,
         }
 
         is_connected_mask = np.zeros(self.input_size, dtype='bool')
@@ -79,7 +80,7 @@ class TimeStepLayer(Layer):
 
             is_connected_mask[conn["pre_idx"]] = True
 
-            conn_params["gsyn_max"].append(0.8)  # np.random.rand()!!!
+            conn_params["gsyn_max"].append(conn['gsyn_max'])
             conn_params['pconn'].append(conn['pconn'])
 
             Uinc = syn['Uinc'].values[0]
@@ -99,14 +100,14 @@ class TimeStepLayer(Layer):
             conn_params['Erev'].append(Erev)
 
 
-
         if np.sum(is_connected_mask) == 0:
             warns_message = "No presynaptic population " + pop["type"] + " with index " + str(pop_idx)
             warnings.warn(warns_message)
 
+
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
 
-        print("pop_idx: ", pop_idx)
+
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
         input_layer = Input(shape=(None, self.input_size), batch_size=1)
