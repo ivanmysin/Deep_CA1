@@ -22,7 +22,10 @@ class TimeStepLayer(Layer):
 
         self.pop_models = []
         for pop_idx, pop in enumerate(populations):
-            if "_generator" in pop["type"]: continue
+            if "_generator" in pop["type"]:
+                continue
+
+
             base_model = base_pop_models[pop["type"]]
             pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
             self.pop_models.append(pop_model)
@@ -96,11 +99,14 @@ class TimeStepLayer(Layer):
             conn_params['Erev'].append(Erev)
 
 
+
         if np.sum(is_connected_mask) == 0:
             warns_message = "No presynaptic population " + pop["type"] + " with index " + str(pop_idx)
             warnings.warn(warns_message)
 
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
+
+        print("pop_idx: ", pop_idx)
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
         input_layer = Input(shape=(None, self.input_size), batch_size=1)

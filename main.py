@@ -124,6 +124,8 @@ def main():
 
     print(model.summary())
 
+    for tv in model.trainable_variables:
+        print(tv.path, tv.numpy())
 
 ##########################################################################
 main()
