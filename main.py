@@ -125,7 +125,8 @@ def main():
     print(model.summary())
 
     for tv in model.trainable_variables:
-        print(tv.path, tv.numpy())
+        pop_idx = (int(tv.path.split("/")[0].split("_")[-1]) - 1) / 2
+        print(tv.path, tv.numpy(), pop_idx)
 
 ##########################################################################
 main()
