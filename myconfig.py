@@ -38,3 +38,11 @@ PCONN_THRESHOLD = 0.01
 
 #####
 ThetaFreq = 7.0
+
+##############################################
+######### fit whole model of CA1 net #########
+TRACK_LENGTH = 400 # cm
+ANIMAL_VELOCITY = 20 # cm/sec
+N_TIMESTEPS = 100
+
+EPOCHES_ON_BATCH = 3

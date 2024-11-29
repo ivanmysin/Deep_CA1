@@ -32,6 +32,76 @@ def save_trained_to_pickle(trainable_variables, connections):
     with open("./presimulation_files/test_conns.pickle", mode="bw") as file:  ##!!
         pickle.dump(connections, file)
 
+
+
+def get_dataset(populations):
+    dt = myconfig.DT
+    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    full_time_steps = duration_full_simulation / dt
+
+    n_times_batches = int(np.floor(full_time_steps / myconfig.N_TIMESTEPS))
+
+    pyramidal_targets = []
+    phase_locking_with_phase = []
+    phase_locking_without_phase = []
+    robast_mean_firing_rate = []
+
+    for pop_idx, pop in enumerate(populations):
+        if pop["type"] == "CA1 Pyramidal":
+            pyramidal_targets.append(pop)
+
+        else:
+            try:
+                if np.isnan(pop["ThetaPhase"]) or (pop["ThetaPhase"] is None):
+                    phase_locking_without_phase.append(pop["R"])
+
+                else:
+                    phase_locking_with_phase.append([pop["ThetaPhase"], pop["R"]])
+                    robast_mean_firing_rate.append(pop["MeanFiringRate"])
+
+            except KeyError:
+                continue
+
+    phase_locking_without_phase = np.asarray(phase_locking_without_phase).reshape(1, -1)
+    robast_mean_firing_rate = np.asarray(robast_mean_firing_rate).reshape(1, -1)
+
+    phase_locking_with_phase = np.asarray(phase_locking_with_phase)
+
+    im = phase_locking_with_phase[1, :] * np.sin(phase_locking_with_phase[0, :])
+    re = phase_locking_with_phase[1, :] * np.cos(phase_locking_with_phase[0, :])
+
+    phase_locking_with_phase = np.stack([re, im], axis=1).reshape(1, 2, -1)
+
+    generators = SpatialThetaGenerators(pyramidal_targets)
+
+    Xtrain = []
+    Ytrain = []
+
+    t0 = 0.0
+    for batch_idx in range(n_times_batches):
+        tend = t0 + myconfig.N_TIMESTEPS * dt
+        t = np.arange(t0, tend, dt).reshape(1, -1, 1)
+        t0 = tend
+
+        Xtrain.append(t)
+
+        pyr_targets = generators(t)
+
+        Ytrain.append({
+            'pyramilad_mask': pyr_targets,
+            'locking_with_phase': np.copy(phase_locking_with_phase),
+            'robast_mean': np.copy(robast_mean_firing_rate),
+            'locking' : np.copy(phase_locking_without_phase),
+        })
+
+    return Xtrain, Ytrain
+
+
+
+
+
+
+
 def get_model(populations, connections, neurons_params, synapses_params, base_pop_models):
 
     for base_model in base_pop_models.values():
@@ -121,6 +191,9 @@ def main():
     #with open(myconfig.STRUCTURESOFNET + "connections.pickle", "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
+    Xtrain, Ytrain = get_dataset(populations)
+
+
     pop_types_params = pd.read_excel(myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2",
                                      header=0)
 
@@ -139,8 +212,10 @@ def main():
         base_pop_models[pop_type] = load_model(model_file)
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
-
     print(model.summary())
+
+    for x_train, y_train in zip(Xtrain, Ytrain):
+        model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
 
     save_trained_to_pickle(model.trainable_variables, connections)
 
