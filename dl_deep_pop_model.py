@@ -145,10 +145,10 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
                 model_group = h5file[pop_type]
                 model_group["Training_Loss"][:] = hist.history['loss']
                 model_group["Validation_Loss"][:] = hist.history['val_loss']
-                model_group["Training_MSE",][:] = hist.history['mse'])
-                model_group["Validation_MSE"][:] = hist.history['val_mse'])
-                model_group["Training_MAE"][:] = hist.history['mae'])
-                model_group["Validation_MAE"][:] = hist.history['val_mae'])
+                model_group["Training_MSE",][:] = hist.history['mse']
+                model_group["Validation_MSE"][:] = hist.history['val_mse']
+                model_group["Training_MAE"][:] = hist.history['mae']
+                model_group["Validation_MAE"][:] = hist.history['val_mae']
 
 def main():
 
