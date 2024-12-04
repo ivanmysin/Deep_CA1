@@ -87,7 +87,7 @@ def get_dataset(path, train2testratio):
                 X_tmp[batch_idx, : , 1] = logtausyn
 
                 firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel()
-                Y_tmp[batch_idx, : , 0] = np.log(firing_rate + 1.0)
+                Y_tmp[batch_idx, : , 0] = firing_rate  # np.log(firing_rate + 1.0)
 
                 batch_idx += 1
 
@@ -112,15 +112,15 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
         # create and fit the LSTM network
         model = Sequential()
-        model.add( Input(shape=(None, 2)) )
+        model.add( Input(shape=(None, 2), batch_size=Xtrain.shape[0]) )
         # model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) #, stateful=True
-        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform() ) ) # , stateful=True
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
+        model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mean_squared_logarithmic_error'])
+        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', tf.keras.losses.logcosh])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
@@ -137,14 +137,18 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
                 model_group.create_dataset("Training_Loss", data=hist.history['loss'])
                 model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
-                model_group.create_dataset("Training_MSLogError", data=hist.history['mean_squared_logarithmic_error'])
-                model_group.create_dataset("Validation_MSLogError", data=hist.history['val_mean_squared_logarithmic_error'])
+                model_group.create_dataset("Training_MSE", data=hist.history['mse'])
+                model_group.create_dataset("Validation_MSE", data=hist.history['val_mse'])
+                model_group.create_dataset("Training_MAE", data=hist.history['mae'])
+                model_group.create_dataset("Validation_MAE", data=hist.history['val_mae'])
             except ValueError:
                 model_group = h5file[pop_type]
                 model_group["Training_Loss"][:] = hist.history['loss']
                 model_group["Validation_Loss"][:] = hist.history['val_loss']
-                model_group["Training_MSLogError"][:] = hist.history['mean_squared_logarithmic_error']
-                model_group["Validation_MSLogError"][:] = hist.history['val_mean_squared_logarithmic_error']
+                model_group["Training_MSE",][:] = hist.history['mse'])
+                model_group["Validation_MSE"][:] = hist.history['val_mse'])
+                model_group["Training_MAE"][:] = hist.history['mae'])
+                model_group["Validation_MAE"][:] = hist.history['val_mae'])
 
 def main():
 

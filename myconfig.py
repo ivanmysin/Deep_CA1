@@ -1,5 +1,7 @@
+import os
 
 
+RUNMODE = 'DEBUG'
 DTYPE = "float32"
 
 N_THREDS = 8
@@ -7,7 +9,12 @@ N_THREDS = 8
 SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
 STRUCTURESOFNET = "./presimulation_files/"  # Path to files with parameters of full net
-DATASETS4POPULATIONMODELS = "./population_datasets/"  # Path to files with datasets for traning models of populations
+
+DATASETS4POPULATIONMODELS = "/media/bdisk/Deep_CA1/population_datasets/"  # Path to files with datasets for traning models of populations
+if not os.path.isdir(DATASETS4POPULATIONMODELS):
+    DATASETS4POPULATIONMODELS = "./population_datasets/"
+
+
 
 IZHIKEVICNNEURONSPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv'
 TSODYCSMARKRAMPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv'

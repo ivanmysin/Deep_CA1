@@ -29,7 +29,12 @@ def save_trained_to_pickle(trainable_variables, connections):
 
             conn_counter += 1
 
-    with open("./presimulation_files/test_conns.pickle", mode="bw") as file:  ##!!
+    if myconfig.RUNMODE == 'DEBUG':
+        saving_path = "./presimulation_files/test_conns.pickle"
+    else:
+        saving_path = myconfig.STRUCTURESOFNET + "connections.pickle"
+
+    with open(saving_path, mode="bw") as file:
         pickle.dump(connections, file)
 
 
@@ -183,12 +188,18 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
 def main():
     # load data about network
-    with open(myconfig.STRUCTURESOFNET + "test_neurons.pickle", "rb") as neurons_file: ##!!
-    # with open(myconfig.STRUCTURESOFNET + "neurons.pickle", "rb") as neurons_file:
+    if myconfig.RUNMODE == 'DEBUG':
+        neurons_path = myconfig.STRUCTURESOFNET + "test_neurons.pickle"
+        connections_path = myconfig.STRUCTURESOFNET + "test_conns.pickle"
+    else:
+        neurons_path = myconfig.STRUCTURESOFNET + "neurons.pickle"
+        connections_path = myconfig.STRUCTURESOFNET + "connections.pickle"
+
+
+    with open(neurons_path, "rb") as neurons_file: ##!!
         populations = pickle.load(neurons_file)
 
-    with open(myconfig.STRUCTURESOFNET + "test_conns.pickle", "rb") as synapses_file: ##!!
-    #with open(myconfig.STRUCTURESOFNET + "connections.pickle", "rb") as synapses_file:
+    with open(connections_path, "rb") as synapses_file: ##!!
         connections = pickle.load(synapses_file)
 
     Xtrain, Ytrain = get_dataset(populations)
@@ -207,8 +218,12 @@ def main():
 
     base_pop_models = {}
     for pop_type in pop_types_params["neurons"]:
-        #model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
-        model_file = "./pretrained_models/NO_Trained.keras" ##!!
+
+        if myconfig.RUNMODE == 'DEBUG':
+            model_file = "./pretrained_models/NO_Trained.keras"
+        else:
+            model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
+
         base_pop_models[pop_type] = load_model(model_file)
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
