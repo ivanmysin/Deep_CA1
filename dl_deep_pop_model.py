@@ -141,14 +141,22 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
                 model_group.create_dataset("Validation_MSE", data=hist.history['val_mse'])
                 model_group.create_dataset("Training_MAE", data=hist.history['mae'])
                 model_group.create_dataset("Validation_MAE", data=hist.history['val_mae'])
+
+                model_group.create_dataset("Training_log_cosh", data=hist.history['log_cosh'])
+                model_group.create_dataset("Validation_log_cosh", data=hist.history['val_log_cosh'])
+
+
             except ValueError:
                 model_group = h5file[pop_type]
                 model_group["Training_Loss"][:] = hist.history['loss']
                 model_group["Validation_Loss"][:] = hist.history['val_loss']
-                model_group["Training_MSE",][:] = hist.history['mse']
+                model_group["Training_MSE"][:] = hist.history['mse']
                 model_group["Validation_MSE"][:] = hist.history['val_mse']
                 model_group["Training_MAE"][:] = hist.history['mae']
                 model_group["Validation_MAE"][:] = hist.history['val_mae']
+
+                model_group["Training_log_cosh"][:] = hist.history['log_cosh']
+                model_group["Validation_log_cosh"][:] = hist.history['val_log_cosh']
 
 def main():
 
