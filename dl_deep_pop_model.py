@@ -112,8 +112,8 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
         # create and fit the LSTM network
         model = Sequential()
-        model.add( Input(shape=(None, 2), batch_size=Xtrain.shape[0]) )
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
+        model.add( Input(shape=(None, 2)) )
+        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
         model.add( Dense(1, activation='relu') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
