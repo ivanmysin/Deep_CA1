@@ -128,39 +128,21 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.save(targetpath)
 
         #print("Training of ", datapath, file=logfile)
-        with h5py.File(logfile, "a") as h5file:
+        pop_type = datapath.split("/")[-2]
+        with h5py.File(logfile + pop_type + ".h5", "w") as h5file:
             #print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
-            pop_type = datapath.split("/")[-2]
-            print(pop_type)
-            try:
-                model_group = h5file.create_group(pop_type)
 
-                model_group.create_dataset("Training_Loss", data=hist.history['loss'])
-                model_group.create_dataset("Validation_Loss", data=hist.history['val_loss'])
-                model_group.create_dataset("Training_MSE", data=hist.history['mse'])
-                model_group.create_dataset("Validation_MSE", data=hist.history['val_mse'])
-                model_group.create_dataset("Training_MAE", data=hist.history['mae'])
-                model_group.create_dataset("Validation_MAE", data=hist.history['val_mae'])
-
-                model_group.create_dataset("Training_log_cosh", data=hist.history['log_cosh'])
-                model_group.create_dataset("Validation_log_cosh", data=hist.history['val_log_cosh'])
+            #print(pop_type)
+            for key, values in hist.history.items():
+                h5file.create_dataset(key, data=values)
 
 
-            except ValueError:
-                model_group = h5file[pop_type]
-                model_group["Training_Loss"][:] = hist.history['loss']
-                model_group["Validation_Loss"][:] = hist.history['val_loss']
-                model_group["Training_MSE"][:] = hist.history['mse']
-                model_group["Validation_MSE"][:] = hist.history['val_mse']
-                model_group["Training_MAE"][:] = hist.history['mae']
-                model_group["Validation_MAE"][:] = hist.history['val_mae']
 
-                model_group["Training_log_cosh"][:] = hist.history['log_cosh']
-                model_group["Validation_log_cosh"][:] = hist.history['val_log_cosh']
+
 
 def main():
 
-    logfilepath = myconfig.PRETRANEDMODELS + "logfitmodels.h5"
+    logfilepath = myconfig.PRETRANEDMODELS #+ "logfitmodels.h5"
 
     # logfile = open(logfilepath, mode="a")
     # logfile.write("################################################\n")
