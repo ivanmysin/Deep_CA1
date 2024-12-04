@@ -120,7 +120,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', tf.keras.losses.logcosh])
+        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', keras.losses.logcosh])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
