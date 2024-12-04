@@ -1,7 +1,7 @@
 import os
 
 
-RUNMODE = 'DEBUG'
+RUNMODE = '' #'DEBUG'
 DTYPE = "float32"
 
 N_THREDS = 8
@@ -24,7 +24,7 @@ FIRINGSNEURONPARAMS = "./parameters/neurons_parameters.xlsx"
 ##############################################
 ####### global parameters for simulation #####
 NUMBERNEURONSINPOP = 4000
-NFILESDATASETS = 120
+NFILESDATASETS = 1100
 DT = 0.1 # time step, ms
 
 IS_SAVE_V = False
@@ -33,10 +33,10 @@ DURATION = 2000 # ms
 
 ##############################################
 ######### fit models of populations ##########
-NEPOCHES = 200
-TRAIN2TESTRATIO = 0.7
+NEPOCHES = 2000
+TRAIN2TESTRATIO = 0.9
 VERBOSETRANINGPOPMODELS = 2
-BATCHSIZE = 100
+BATCHSIZE = 1000
 
 ########### Net creation ######################
 PCONN_THRESHOLD = 0.01
