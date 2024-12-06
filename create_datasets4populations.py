@@ -224,6 +224,8 @@ def create_single_type_dataset(params, path, Niter=100, duration=2000, NN=4000):
     idx = 0
     while (idx < Niter):
         filepath = '{path}/{i}.hdf5'.format(path=path, i=idx)
+        if os.path.isfile(filepath):
+            continue
         res = run_izhikevich_neurons(params, duration, NN, filepath)
         if res:
             idx += 1
@@ -248,6 +250,7 @@ def create_all_types_dataset(all_params, NN):
         running_params[ int(n%myconfig.N_THREDS)].append([item, path, myconfig.NFILESDATASETS, myconfig.DURATION, NN])
         #create_single_type_dataset(item, path, Niter=myconfig.NFILESDATASETS, NN=NN)
 
+    #pprint(running_params)
     with Pool(myconfig.N_THREDS) as parallel:
          parallel.map(parrallel_runner, running_params)
 
