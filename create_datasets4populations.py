@@ -225,7 +225,9 @@ def create_single_type_dataset(params, path, Niter=100, duration=2000, NN=4000):
     while (idx < Niter):
         filepath = '{path}/{i}.hdf5'.format(path=path, i=idx)
         if os.path.isfile(filepath):
+            idx += 1
             continue
+
         res = run_izhikevich_neurons(params, duration, NN, filepath)
         if res:
             idx += 1
