@@ -86,7 +86,7 @@ def get_dataset(path, train2testratio):
                 X_tmp[batch_idx, : , 0] = Erevsyn
                 X_tmp[batch_idx, : , 1] = logtausyn
 
-                firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel()
+                firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() / 100
                 Y_tmp[batch_idx, : , 0] = firing_rate  # np.log(firing_rate + 1.0)
 
                 batch_idx += 1
@@ -117,7 +117,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', keras.losses.logcosh])
+        model.compile(loss="log_cosh", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', "mean_squared_logarithmic_error"])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
