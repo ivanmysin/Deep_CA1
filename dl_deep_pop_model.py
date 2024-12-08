@@ -81,7 +81,7 @@ def get_dataset(path, train2testratio):
 
                 logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                logtausyn =  2 * np.exp(-myconfig.DT / logtausyn) - 1
+                logtausyn =  np.exp(-myconfig.DT / logtausyn) / np.exp(-0.25)
 
                 X_tmp[batch_idx, : , 0] = Erevsyn
                 X_tmp[batch_idx, : , 1] = logtausyn
@@ -102,9 +102,6 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         return
 
     Xtrain, Ytrain, Xtest, Ytest = dataset
-
-
-
 
     if USE_SAVED_MODEL:
         model = load_model(targetpath)
