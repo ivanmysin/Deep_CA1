@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, GRU, Dense, Concatenate, RNN, Layer, Reshape
+from tensorflow.keras.saving import load_model
 import warnings
 import myconfig
 
@@ -24,10 +26,12 @@ class TimeStepLayer(Layer):
         self.neurons_params = neurons_params
         self.synapses_params = synapses_params
 
-        self.base_pop_models = []
-        # for base_pop_model in base_pop_models:
-        #     if isinstance(base_pop_model, dict):
-        #         base_pop_model = from
+        self.base_pop_models_files = base_pop_models
+        for base_pop_model_name, base_pop_model_path in base_pop_models.items():
+            base_model =  load_model(base_pop_model_path)
+            base_pop_models[base_pop_model_name] = base_model
+            for layer in base_model.layers:
+                layer.trainable = False
 
         self.pop_models = []
         for pop_idx, pop in enumerate(populations):
@@ -35,7 +39,7 @@ class TimeStepLayer(Layer):
                 continue
 
 
-            base_model = self.base_pop_models[pop["type"]]
+            base_model = base_pop_models[pop["type"]]
             pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
             self.pop_models.append(pop_model)
 
@@ -163,8 +167,9 @@ class TimeStepLayer(Layer):
             'dt': self.dt,
             'populations' : self.populations,
             'connections' : self.connections,
-            'neurons_params' : self.neurons_params,
-            'synapses_params' : self.synapses_params,
+            'neurons_params' : self.neurons_params.to_dict(),
+            'synapses_params' : self.synapses_params.to_dict(),
+            'base_pop_models' : self.base_pop_models_files,
         })
 
         return config
@@ -173,4 +178,20 @@ class TimeStepLayer(Layer):
     # Статический метод для создания экземпляра класса из конфигурации
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        params_dict = super().get_config()
+
+        params = []
+        params.append(config['units']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+        params.append(config['populations']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+        params.append(config['connections']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+        params.append( pd.DataFrame(config['neurons_params']) ) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+        params.append( pd.DataFrame(config['synapses_params']) ) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+        params.append(config['base_pop_models']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
+
+        params_dict.update({
+            'dt' : config['dt'],
+        })
+
+
+
+        return cls(*params, **params_dict)

@@ -109,9 +109,8 @@ def get_dataset(populations):
 
 def get_model(populations, connections, neurons_params, synapses_params, base_pop_models):
 
-    for base_model in base_pop_models.values():
-        for layer in base_model.layers:
-            layer.trainable = False
+
+
 
     spatial_gen_params = []
     Ns = 0
@@ -224,7 +223,7 @@ def main():
         else:
             model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
 
-        base_pop_models[pop_type] = load_model(model_file)
+        base_pop_models[pop_type] = model_file # load_model(model_file)
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
     print(model.summary())
