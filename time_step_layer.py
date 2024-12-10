@@ -19,6 +19,15 @@ class TimeStepLayer(Layer):
         self.dt = dt
         self.input_size = len(populations)
 
+        self.populations = populations
+        self.connections = connections
+        self.neurons_params = neurons_params
+        self.synapses_params = synapses_params
+
+        self.base_pop_models = []
+        # for base_pop_model in base_pop_models:
+        #     if isinstance(base_pop_model, dict):
+        #         base_pop_model = from
 
         self.pop_models = []
         for pop_idx, pop in enumerate(populations):
@@ -26,7 +35,7 @@ class TimeStepLayer(Layer):
                 continue
 
 
-            base_model = base_pop_models[pop["type"]]
+            base_model = self.base_pop_models[pop["type"]]
             pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
             self.pop_models.append(pop_model)
 
@@ -145,3 +154,23 @@ class TimeStepLayer(Layer):
         output = K.concatenate(output, axis=-1)
 
         return output, output[0]
+
+    def get_config(self):
+        config = super().get_config()
+
+        config.update({
+            'units' : self.units,
+            'dt': self.dt,
+            'populations' : self.populations,
+            'connections' : self.connections,
+            'neurons_params' : self.neurons_params,
+            'synapses_params' : self.synapses_params,
+        })
+
+        return config
+
+
+    # Статический метод для создания экземпляра класса из конфигурации
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)

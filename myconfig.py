@@ -1,7 +1,7 @@
 import os
 
 
-RUNMODE = '' #'DEBUG'
+RUNMODE = 'DEBUG' #'DEBUG'
 DTYPE = "float32"
 
 N_THREDS = 8

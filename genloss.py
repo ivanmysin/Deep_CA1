@@ -28,6 +28,17 @@ class SimplestKeepLayer(tf.keras.layers.Layer):
     def call(self, t):
         return self.targets_vals
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'targets_vals': self.targets_vals,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(config['targets_vals'])
+
 class RILayer(tf.keras.layers.Layer):
     def __init__(self, params):
         super(RILayer, self).__init__()
@@ -39,8 +50,8 @@ class RILayer(tf.keras.layers.Layer):
             R.append(p["R"])
             ThetaPhase.append(p["ThetaPhase"])
 
-        R = tf.constant(R, dtype=myconfig.DTYPE)
-        ThetaPhase = tf.constant(ThetaPhase, dtype=myconfig.DTYPE)
+        self.R = tf.constant(R, dtype=myconfig.DTYPE)
+        self.ThetaPhase = tf.constant(ThetaPhase, dtype=myconfig.DTYPE)
 
         imag = R * sin(ThetaPhase)
         real = R * cos(ThetaPhase)
@@ -49,6 +60,18 @@ class RILayer(tf.keras.layers.Layer):
 
     def call(self, t):
         return self.targets_vals
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'R': self.R,
+            'ThetaPhase': self.ThetaPhase,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
 
 
@@ -126,6 +149,22 @@ class VonMissesGenerator(CommonGenerator):
 
         return firings
 
+    # Реализация метода get_config
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'n_outs': self.n_outs,
+            'ThetaFreq': self.ThetaFreq.numpy().tolist(),
+            'FiringRate': self.FiringRate.numpy().tolist(),
+            'R': self.R.numpy().tolist(),
+            'ThetaPhase': self.ThetaPhase.numpy().tolist(),
+        })
+        return config
+
+    # Реализация метода from_config
+    @classmethod
+    def from_config(cls, config):
+        return cls(config)
 
 class SpatialThetaGenerators(CommonGenerator):
     def __init__(self, params):
@@ -216,6 +255,28 @@ class SpatialThetaGenerators(CommonGenerator):
 
         return firings
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'n_outs': self.n_outs,
+            'ThetaFreq': self.ThetaFreq.numpy().tolist(),
+            'R': self.R.numpy().tolist(),
+            "OutPlaceFiringRate" : self.OutPlaceFiringRate.numpy().tolist(),
+            "OutPlaceThetaPhase" : self.OutPlaceThetaPhase.numpy().tolist(),
+            "InPlacePeakRate" : self.InPlacePeakRate.numpy().tolist(),
+            "CenterPlaceField" : self.CenterPlaceField.numpy().tolist(),
+            "SigmaPlaceField" : self.SigmaPlaceField.numpy().tolist(),
+            "SlopePhasePrecession" : self.SlopePhasePrecession.numpy().tolist(),
+            "PrecessionOnset" : self.PrecessionOnset.numpy().tolist(),
+        })
+        return config
+
+    # Реализация метода from_config
+    @classmethod
+    def from_config(cls, config):
+        return cls(config)
+
+
 #########################################################################
 ##### Output processing classes #########################################
 
@@ -242,75 +303,85 @@ class CommonOutProcessing(tf.keras.layers.Layer):
         selected_firings = tf.boolean_mask(firings, self.mask, axis=2)
         return selected_firings
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'mask': self.mask.numpy().tolist(),
+        })
+        return config
+
+    # Реализация метода from_config
+    @classmethod
+    def from_config(cls, config):
+        return cls(config['mask'])
 
 
-
-class FrequencyFilter(CommonOutProcessing):
-    def __init__(self, mask, minfreq=3, maxfreq=8, dfreq=1, dt=0.1, **kwargs):
-    # def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
-        super(FrequencyFilter, self).__init__(mask, **kwargs)
-
-        self.omega0 = 6.0 # w0 of mortet
-        freqs = tf.range(minfreq, maxfreq, dfreq, dtype=myconfig.DTYPE)
-        self.scales = self.omega0 / freqs
-        self.dt = tf.constant(0.001 * dt, dtype=myconfig.DTYPE) # dt = 0.001 * dt : convert ms to sec
-
-
-        # tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=myconfig.DTYPE)
-        #
-        # self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
-        # self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
-        # self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
-        # self.gauss_low = tf.concat( int(self.n_selected) *(self.gauss_low, ), axis=2)
-        #
-        # self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
-        # self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
-        # self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
-        # self.gauss_high = tf.concat( int(self.n_selected) * (self.gauss_high,), axis=2)
-
-    def build(self):
-        super(FrequencyFilter, self).build()
-
-    def fftfreqs(self, n, dt):
-        val = 1.0 / (tf.cast(n, dtype=myconfig.DTYPE) * dt)
-
-        N = tf.where((n % 2) == 0, n / 2 + 1, (n - 1) / 2)
-        p1 = tf.range(0, N, dtype=myconfig.DTYPE)
-        N = tf.where((n % 2) == 0, -n / 2, -(n - 1) / 2)
-        p2 = tf.range(N, -1, dtype=myconfig.DTYPE)
-        results = tf.concat([p1, p2], axis=0)
-
-        return results * val
-
-
-    def call(self, simulated_firings):
-
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
-
-        # !!!!!!!!!!!!!!!!
-        # low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME') # , data_format="NWC"
-        # filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
-        # filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
-
-        coeff_map = ()
-
-        signal_FT = tf.signal.fft(selected_firings)
-        omegas = self.fftfreqs(tf.shape(selected_firings)[1], self.dt)
-
-        for idx, s in enumerate(self.scales):
-            morlet_FT = PI ** (-0.25) * tf.math.exp(-0.5 * (s * omegas - self.omega0)**2)
-            morlet_FT = tf.cast(morlet_FT, dtype=tf.complex64)
-
-            coeff = tf.signal.ifft(signal_FT * morlet_FT) / tf.cast(tf.math.sqrt(s), dtype=tf.complex64)
-            coeff_map = coeff_map + (coeff,)
-
-        coeff_map = tf.stack(coeff_map, axis=1)
-
-
-        filtered_firings = tf.reduce_sum(tf.math.real(coeff_map), axis=1)
-        filtered_firings = filtered_firings - tf.reduce_min(filtered_firings)
-
-        return filtered_firings
+# class FrequencyFilter(CommonOutProcessing):
+#     def __init__(self, mask, minfreq=3, maxfreq=8, dfreq=1, dt=0.1, **kwargs):
+#     # def __init__(self, mask, sigma_low=0.2, sigma_hight=0.01, dt=0.1):
+#         super(FrequencyFilter, self).__init__(mask, **kwargs)
+#
+#         self.omega0 = 6.0 # w0 of mortet
+#         freqs = tf.range(minfreq, maxfreq, dfreq, dtype=myconfig.DTYPE)
+#         self.scales = self.omega0 / freqs
+#         self.dt = tf.constant(0.001 * dt, dtype=myconfig.DTYPE) # dt = 0.001 * dt : convert ms to sec
+#
+#
+#         # tw = tf.range(-3*sigma_low, 3*sigma_low, 0.001*dt, dtype=myconfig.DTYPE)
+#         #
+#         # self.gauss_low = exp(-0.5 * (tw/sigma_low)**2 )
+#         # self.gauss_low = self.gauss_low / tf.reduce_sum(self.gauss_low)
+#         # self.gauss_low = tf.reshape(self.gauss_low, shape=(-1, 1, 1))
+#         # self.gauss_low = tf.concat( int(self.n_selected) *(self.gauss_low, ), axis=2)
+#         #
+#         # self.gauss_high =  exp(-0.5 * (tw/sigma_hight)**2 )
+#         # self.gauss_high = self.gauss_high / tf.reduce_sum(self.gauss_high)
+#         # self.gauss_high = tf.reshape(self.gauss_high, shape=(-1, 1, 1))
+#         # self.gauss_high = tf.concat( int(self.n_selected) * (self.gauss_high,), axis=2)
+#
+#     def build(self):
+#         super(FrequencyFilter, self).build()
+#
+#     def fftfreqs(self, n, dt):
+#         val = 1.0 / (tf.cast(n, dtype=myconfig.DTYPE) * dt)
+#
+#         N = tf.where((n % 2) == 0, n / 2 + 1, (n - 1) / 2)
+#         p1 = tf.range(0, N, dtype=myconfig.DTYPE)
+#         N = tf.where((n % 2) == 0, -n / 2, -(n - 1) / 2)
+#         p2 = tf.range(N, -1, dtype=myconfig.DTYPE)
+#         results = tf.concat([p1, p2], axis=0)
+#
+#         return results * val
+#
+#
+#     def call(self, simulated_firings):
+#
+#         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+#
+#         # !!!!!!!!!!!!!!!!
+#         # low_component = tf.nn.conv1d(selected_firings, self.gauss_low, stride=1, padding='SAME') # , data_format="NWC"
+#         # filtered_firings = (selected_firings - low_component) + tf.reduce_mean(low_component)
+#         # filtered_firings = tf.nn.conv1d(filtered_firings, self.gauss_high, stride=1, padding='SAME') # , data_format="NWC"
+#
+#         coeff_map = ()
+#
+#         signal_FT = tf.signal.fft(selected_firings)
+#         omegas = self.fftfreqs(tf.shape(selected_firings)[1], self.dt)
+#
+#         for idx, s in enumerate(self.scales):
+#             morlet_FT = PI ** (-0.25) * tf.math.exp(-0.5 * (s * omegas - self.omega0)**2)
+#             morlet_FT = tf.cast(morlet_FT, dtype=tf.complex64)
+#
+#             coeff = tf.signal.ifft(signal_FT * morlet_FT) / tf.cast(tf.math.sqrt(s), dtype=tf.complex64)
+#             coeff_map = coeff_map + (coeff,)
+#
+#         coeff_map = tf.stack(coeff_map, axis=1)
+#
+#
+#         filtered_firings = tf.reduce_sum(tf.math.real(coeff_map), axis=1)
+#         filtered_firings = filtered_firings - tf.reduce_min(filtered_firings)
+#
+#         return filtered_firings
 
 #########################################################################
 class PhaseLockingOutput(CommonOutProcessing):
@@ -347,6 +418,21 @@ class PhaseLockingOutput(CommonOutProcessing):
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
         return Rsim
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'ThetaFreq': self.ThetaFreq.numpy().tolist(),
+            'dt': self.dt.numpy().tolist(),
+        })
+        return config
+
+    # Реализация метода from_config
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
     def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
@@ -368,6 +454,18 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
         return output
 
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'ThetaFreq': self.ThetaFreq.numpy().tolist(),
+            'dt': self.dt.numpy().tolist(),
+        })
+        return config
+
+    # Реализация метода from_config
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
 
 
@@ -384,11 +482,19 @@ class RobastMeanOut(CommonOutProcessing):
 
         return robast_mean
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'mask': self.mask.numpy().tolist(),
+        })
+        return config
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(config['mask'])
 ########################################################################################################################
 ##### outputs regulizers
-#@tf.keras.utils.register_keras_serializable(package='Custom', name='l2')
-class RobastMeanOutRanger(tf.keras.regularizers.Regularizer):
+class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def __init__(self, LowFiringRateBound=0.1, HighFiringRateBound=90.0, strength=10):
         self.LowFiringRateBound = LowFiringRateBound
         self.HighFiringRateBound = HighFiringRateBound
@@ -399,8 +505,19 @@ class RobastMeanOutRanger(tf.keras.regularizers.Regularizer):
         loss_add += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - x) )
         return self.rw * loss_add
 
-    # def get_config(self):
-    #   return {'l2': float(self.l2)}
+    # Метод для получения конфигурации
+    def get_config(self):
+        return {
+            "LowFiringRateBound": self.LowFiringRateBound,
+            "HighFiringRateBound": self.HighFiringRateBound,
+            "rw": self.rw
+        }
+
+    # Статический метод для создания экземпляра класса из конфигурации
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 class Decorrelator(tf.keras.regularizers.Regularizer):
     def __init__(self, strength=0.1):
         self.strength = strength
@@ -414,3 +531,12 @@ class Decorrelator(tf.keras.regularizers.Regularizer):
         corr_matrix = (tf.transpose(Xcentered) @ Xcentered) / Ntimesteps
 
         return self.strength * tf.reduce_mean(corr_matrix**2)
+
+    # Метод для получения конфигурации
+    def get_config(self):
+        return {"strength": self.strength}
+
+    # Статический метод для создания экземпляра класса из конфигурации
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)

@@ -9,7 +9,7 @@ import myconfig
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Reshape
 from tensorflow.keras.saving import load_model
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 from time_step_layer import TimeStepLayer
 
 
@@ -145,7 +145,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
     time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True,
-                          activity_regularizer=RobastMeanOutRanger())
+                          activity_regularizer=FiringsMeanOutRanger())
 
     time_step_layer = time_step_layer(generators)
 
@@ -229,10 +229,12 @@ def main():
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
     print(model.summary())
 
-    for x_train, y_train in zip(Xtrain, Ytrain):
-        model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+    model.save('big_model.keras')
 
-    save_trained_to_pickle(model.trainable_variables, connections)
+    # for x_train, y_train in zip(Xtrain, Ytrain):
+    #     model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+    #
+    # save_trained_to_pickle(model.trainable_variables, connections)
 
 
 
