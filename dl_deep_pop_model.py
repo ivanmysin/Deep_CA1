@@ -34,62 +34,67 @@ def get_dataset(path, train2testratio):
             batch_idx = 0
 
         filepath = "{path}{file}".format(path=path, file=datafile)
-        with (h5py.File(filepath, mode='r') as h5file):
 
-            if idx == 0:
-                N_in_time = h5file["gexc"].size # 20000
-                N_in_batch = int(0.25 * N_in_time)
 
-                Nbatches_train = int(Niter_train * N_in_time / N_in_batch)
-                Nbatches_test = int(Niter_test * N_in_time / N_in_batch)
+        try:
+            with (h5py.File(filepath, mode='r') as h5file):
 
-                Xtrain = np.zeros((Nbatches_train, N_in_batch, 2), dtype=np.float32)
-                Ytrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
+                if idx == 0:
+                    N_in_time = h5file["gexc"].size # 20000
+                    N_in_batch = int(0.25 * N_in_time)
 
-                Xtest = np.zeros((Nbatches_test, N_in_batch, 2), dtype=np.float32)
-                Ytest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
+                    Nbatches_train = int(Niter_train * N_in_time / N_in_batch)
+                    Nbatches_test = int(Niter_test * N_in_time / N_in_batch)
 
-            for idx_b in range(0, N_in_time, N_in_batch ):
-                e_idx = idx_b + N_in_batch
+                    Xtrain = np.zeros((Nbatches_train, N_in_batch, 2), dtype=np.float32)
+                    Ytrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
 
-                if idx <= Niter_train:
-                    X_tmp = Xtrain
-                    Y_tmp = Ytrain
+                    Xtest = np.zeros((Nbatches_test, N_in_batch, 2), dtype=np.float32)
+                    Ytest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
 
-                    # # gexc = h5file["gexc"][idx_b : e_idx]
-                    # # ginh = h5file["ginh"][idx_b : e_idx]
-                    # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
-                    #
-                    # #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
-                    # Erevsyn = 1 + Erevsyn/75.0
-                    #
-                    # logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
-                    #
-                    # logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
-                    # # logtausyn = logtausyn / 10.0
-                    # #print(logtausyn.min(), logtausyn.max())
-                    #
-                    # Xtrain[batch_idx, : , 0] = Erevsyn
-                    # Xtrain[batch_idx, : , 1] = logtausyn
-                    # Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
-                else:
-                    X_tmp = Xtest
-                    Y_tmp = Ytest
+                for idx_b in range(0, N_in_time, N_in_batch ):
+                    e_idx = idx_b + N_in_batch
 
-                Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                Erevsyn = 1 + Erevsyn / 75.0
+                    if idx <= Niter_train:
+                        X_tmp = Xtrain
+                        Y_tmp = Ytrain
 
-                logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                        # # gexc = h5file["gexc"][idx_b : e_idx]
+                        # # ginh = h5file["ginh"][idx_b : e_idx]
+                        # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
+                        #
+                        # #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
+                        # Erevsyn = 1 + Erevsyn/75.0
+                        #
+                        # logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                        #
+                        # logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
+                        # # logtausyn = logtausyn / 10.0
+                        # #print(logtausyn.min(), logtausyn.max())
+                        #
+                        # Xtrain[batch_idx, : , 0] = Erevsyn
+                        # Xtrain[batch_idx, : , 1] = logtausyn
+                        # Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
+                    else:
+                        X_tmp = Xtest
+                        Y_tmp = Ytest
 
-                logtausyn =  np.exp(-myconfig.DT / logtausyn) / np.exp(-0.25)
+                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
+                    Erevsyn = 1 + Erevsyn / 75.0
 
-                X_tmp[batch_idx, : , 0] = Erevsyn
-                X_tmp[batch_idx, : , 1] = logtausyn
+                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() #/ 100
-                Y_tmp[batch_idx, : , 0] = firing_rate  # np.log(firing_rate + 1.0)
+                    logtausyn =  np.exp(-myconfig.DT / logtausyn) / np.exp(-0.25)
 
-                batch_idx += 1
+                    X_tmp[batch_idx, : , 0] = Erevsyn
+                    X_tmp[batch_idx, : , 1] = logtausyn
+
+                    firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() #/ 100
+                    Y_tmp[batch_idx, : , 0] = firing_rate  # np.log(firing_rate + 1.0)
+
+                    batch_idx += 1
+        except OSError:
+            continue
 
     return Xtrain, Ytrain, Xtest, Ytest
 
