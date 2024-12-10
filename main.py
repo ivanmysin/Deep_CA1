@@ -230,6 +230,13 @@ def main():
 
     model.save('big_model.keras')
 
+    custom_objects = {
+        'FiringsMeanOutRanger': FiringsMeanOutRanger,
+        'Decorrelator' : Decorrelator,
+    }
+    model = load_model('big_model.keras',  custom_objects = custom_objects)
+    print(model.summary())
+
     # for x_train, y_train in zip(Xtrain, Ytrain):
     #     model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
     #

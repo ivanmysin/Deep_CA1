@@ -178,7 +178,9 @@ class TimeStepLayer(Layer):
     # Статический метод для создания экземпляра класса из конфигурации
     @classmethod
     def from_config(cls, config):
-        params_dict = super().get_config()
+        params_dict = {
+            'dt': config['dt'],
+        }
 
         params = []
         params.append(config['units']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
@@ -187,11 +189,6 @@ class TimeStepLayer(Layer):
         params.append( pd.DataFrame(config['neurons_params']) ) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
         params.append( pd.DataFrame(config['synapses_params']) ) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
         params.append(config['base_pop_models']) #= [configunits, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1]
-
-        params_dict.update({
-            'dt' : config['dt'],
-        })
-
 
 
         return cls(*params, **params_dict)

@@ -79,8 +79,8 @@ class RILayer(tf.keras.layers.Layer):
 
     #### inputs generators
 class CommonGenerator(tf.keras.layers.Layer):
-    def __init__(self, params):
-        super(CommonGenerator, self).__init__()
+    def __init__(self, params, **kwargs):
+        super(CommonGenerator, self).__init__(**kwargs)
 
 
     # def build(self):
@@ -103,6 +103,10 @@ class CommonGenerator(tf.keras.layers.Layer):
         kappa = tf.where(logical_and(R >= 0.53, R < 0.85),  -0.4 + 1.39 * R + 0.43 / (1 - R), kappa)
         kappa = tf.where(R >= 0.85,  1 / (3 * R - 4 * R**2 + R**3), kappa)
         return kappa
+
+    def get_config(self):
+        config = super().get_config()
+        return config
 
 class VonMissesGenerator(CommonGenerator):
     def __init__(self, params):
@@ -167,8 +171,8 @@ class VonMissesGenerator(CommonGenerator):
         return cls(config)
 
 class SpatialThetaGenerators(CommonGenerator):
-    def __init__(self, params):
-        super(SpatialThetaGenerators, self).__init__(params)
+    def __init__(self, params, **kwargs):
+        super(SpatialThetaGenerators, self).__init__(params, **kwargs)
         self.ALPHA = 5.0
 
         ThetaFreq = []
@@ -221,8 +225,6 @@ class SpatialThetaGenerators(CommonGenerator):
 
         self.kappa = self.r2kappa(self.R)
 
-        #tmp =
-
         self.mult4time = 2 * PI * self.ThetaFreq * 0.001 #tf.constant(tmp, dtype=myconfig.DTYPE)
 
         I0 = bessel_i0(self.kappa)
@@ -257,24 +259,41 @@ class SpatialThetaGenerators(CommonGenerator):
 
     def get_config(self):
         config = super().get_config()
+        ThetaFreq = self.ThetaFreq.numpy().tolist()
+        R = self.R.numpy().tolist()
+        OutPlaceFiringRate = self.OutPlaceFiringRate.numpy().tolist()
+        OutPlaceThetaPhase = self.OutPlaceThetaPhase.numpy().tolist()
+        InPlacePeakRate = self.InPlacePeakRate.numpy().tolist()
+        CenterPlaceField = self.CenterPlaceField.numpy().tolist()
+        SigmaPlaceField  = self.SigmaPlaceField.numpy().tolist()
+        SlopePhasePrecession = self.SlopePhasePrecession.numpy().tolist()
+        PrecessionOnset = self.PrecessionOnset.numpy().tolist()
+
+        myparams = []
+        for idx in range(self.n_outs):
+            p = {
+                "ThetaFreq" : ThetaFreq[0][idx],
+                "R" : R[0][idx],
+                "OutPlaceFiringRate" : OutPlaceFiringRate[0][idx],
+                "OutPlaceThetaPhase" : OutPlaceThetaPhase[0][idx],
+                "InPlacePeakRate" : InPlacePeakRate[0][idx],
+                "CenterPlaceField" : CenterPlaceField[0][idx],
+                "SigmaPlaceField" : SigmaPlaceField[0][idx],
+                "SlopePhasePrecession" : SlopePhasePrecession[0][idx],
+                "PrecessionOnset" : PrecessionOnset[0][idx],
+            }
+            myparams.append(p)
+
         config.update({
-            'n_outs': self.n_outs,
-            'ThetaFreq': self.ThetaFreq.numpy().tolist(),
-            'R': self.R.numpy().tolist(),
-            "OutPlaceFiringRate" : self.OutPlaceFiringRate.numpy().tolist(),
-            "OutPlaceThetaPhase" : self.OutPlaceThetaPhase.numpy().tolist(),
-            "InPlacePeakRate" : self.InPlacePeakRate.numpy().tolist(),
-            "CenterPlaceField" : self.CenterPlaceField.numpy().tolist(),
-            "SigmaPlaceField" : self.SigmaPlaceField.numpy().tolist(),
-            "SlopePhasePrecession" : self.SlopePhasePrecession.numpy().tolist(),
-            "PrecessionOnset" : self.PrecessionOnset.numpy().tolist(),
+            'myparams' : myparams,
         })
         return config
 
     # Реализация метода from_config
     @classmethod
     def from_config(cls, config):
-        return cls(config)
+        params = config.pop('myparams')
+        return cls(params, **config)
 
 
 #########################################################################
@@ -505,17 +524,21 @@ class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
         loss_add += tf.reduce_sum( tf.nn.relu( self.LowFiringRateBound - x) )
         return self.rw * loss_add
 
-    # Метод для получения конфигурации
+
     def get_config(self):
-        return {
+        config = {
             "LowFiringRateBound": self.LowFiringRateBound,
             "HighFiringRateBound": self.HighFiringRateBound,
-            "rw": self.rw
+            "strength": self.rw,
         }
 
-    # Статический метод для создания экземпляра класса из конфигурации
+        return config
+
+
     @classmethod
     def from_config(cls, config):
+        print('##########################')
+        print(config)
         return cls(**config)
 
 class Decorrelator(tf.keras.regularizers.Regularizer):
