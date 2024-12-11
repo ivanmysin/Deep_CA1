@@ -1,9 +1,10 @@
 import os
+print(os.getcwd())
 os.chdir("../")
 import h5py
 import myconfig
 
-print(os.getcwd())
+
 
 for dirpath, dirnames, filenames in os.walk(myconfig.DATASETS4POPULATIONMODELS):
     for filename in filenames:
