@@ -2,11 +2,11 @@ import os
 os.chdir("../")
 
 print(os.getcwd())
-import myconfig
+#import myconfig
 import h5py
 
 
-for dirpath, dirnames, filenames in os.walk(myconfig.DATASETS4POPULATIONMODELS):
+for dirpath, dirnames, filenames in os.walk("/media/sdisk/Deep_CA1/population_datasets/"):
     for filename in filenames:
         pathfile = dirpath + "/" + filename
         if not "hdf5" in pathfile:
