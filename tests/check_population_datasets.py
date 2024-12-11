@@ -1,6 +1,6 @@
 import os
 print(os.getcwd())
-os.chdir("../")
+#os.chdir("../")
 import h5py
 import myconfig
 
