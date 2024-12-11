@@ -1,9 +1,9 @@
 import os
-print(os.getcwd())
-#os.chdir("../")
-import h5py
-import myconfig
+os.chdir("../")
 
+print(os.getcwd())
+import myconfig
+import h5py
 
 
 for dirpath, dirnames, filenames in os.walk(myconfig.DATASETS4POPULATIONMODELS):
