@@ -10,7 +10,7 @@ SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
 STRUCTURESOFNET = "./presimulation_files/"  # Path to files with parameters of full net
 
-DATASETS4POPULATIONMODELS = "/media/bdisk/Deep_CA1/population_datasets/"  # Path to files with datasets for traning models of populations
+DATASETS4POPULATIONMODELS = "/media/sdisk/Deep_CA1/population_datasets/"  # Path to files with datasets for traning models of populations
 if not os.path.isdir(DATASETS4POPULATIONMODELS):
     DATASETS4POPULATIONMODELS = "./population_datasets/"
 
