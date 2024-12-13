@@ -109,9 +109,6 @@ def get_dataset(populations):
 
 def get_model(populations, connections, neurons_params, synapses_params, base_pop_models):
 
-
-
-
     spatial_gen_params = []
     Ns = 0
     for pop_idx, pop in enumerate(populations):
@@ -123,7 +120,17 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     simple_out_mask = np.zeros(Ns, dtype='bool')
     frequecy_filter_out_mask = np.zeros(Ns, dtype='bool')
     phase_locking_out_mask = np.zeros(Ns, dtype='bool')
+    LowFiringRateBound = []
+    HighFiringRateBound = []
+
     for pop_idx, pop in enumerate(populations):
+
+        try:
+            LowFiringRateBound.append(pop["MinFiringRate"])
+            HighFiringRateBound.append(pop["MaxFiringRate"])
+        except KeyError:
+            continue
+
         if pop["type"] == "CA1 Pyramidal":
             simple_out_mask[pop_idx] = True
 
@@ -144,7 +151,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
     time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True,
-                          activity_regularizer=FiringsMeanOutRanger())
+                          activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
@@ -237,8 +244,8 @@ def main():
     model = load_model('big_model.keras',  custom_objects = custom_objects)
     print(model.summary())
 
-    # for x_train, y_train in zip(Xtrain, Ytrain):
-    #     model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+    for x_train, y_train in zip(Xtrain, Ytrain):
+        model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
     #
     # save_trained_to_pickle(model.trainable_variables, connections)
 

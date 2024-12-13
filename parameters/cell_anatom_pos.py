@@ -151,6 +151,9 @@ def main():
                 "SlopePhasePrecession" : phase_precession_slope, # DV
                 "PrecessionOnset" : THETA_SLOPE_DV * pyrs_y + precess_onset0,
 
+                "MinFiringRate": 0.1,
+                "MaxFiringRate": 50.0,
+
             }
 
             pyramidal_cells.append(pyr_cell)

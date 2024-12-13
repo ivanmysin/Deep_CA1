@@ -332,7 +332,8 @@ class CommonOutProcessing(tf.keras.layers.Layer):
     # Реализация метода from_config
     @classmethod
     def from_config(cls, config):
-        return cls(config['mask'])
+        mask = config.pop('mask')
+        return cls(mask, **config)
 
 
 # class FrequencyFilter(CommonOutProcessing):
@@ -508,15 +509,16 @@ class RobastMeanOut(CommonOutProcessing):
         })
         return config
 
-    @classmethod
-    def from_config(cls, config):
-        return cls(config['mask'])
 ########################################################################################################################
 ##### outputs regulizers
 class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def __init__(self, LowFiringRateBound=0.1, HighFiringRateBound=90.0, strength=10):
-        self.LowFiringRateBound = LowFiringRateBound
-        self.HighFiringRateBound = HighFiringRateBound
+        self.LowFiringRateBound = tf.convert_to_tensor(LowFiringRateBound)
+        self.LowFiringRateBound = tf.reshape(self.LowFiringRateBound, shape=(1, 1, 1, -1))
+        self.HighFiringRateBound = tf.convert_to_tensor(HighFiringRateBound)
+        self.HighFiringRateBound = tf.reshape(self.HighFiringRateBound, shape=(1, 1, 1, -1))
+
+
         self.rw = strength
 
     def __call__(self, x):
@@ -527,8 +529,8 @@ class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
 
     def get_config(self):
         config = {
-            "LowFiringRateBound": self.LowFiringRateBound,
-            "HighFiringRateBound": self.HighFiringRateBound,
+            "LowFiringRateBound": self.LowFiringRateBound.numpy().ravel().tolist(),
+            "HighFiringRateBound": self.HighFiringRateBound.numpy().ravel().tolist(),
             "strength": self.rw,
         }
 
@@ -537,8 +539,6 @@ class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
 
     @classmethod
     def from_config(cls, config):
-        print('##########################')
-        print(config)
         return cls(**config)
 
 class Decorrelator(tf.keras.regularizers.Regularizer):

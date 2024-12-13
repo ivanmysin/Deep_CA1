@@ -71,6 +71,9 @@ def main():
                 "MeanFiringRate": cells_pop["MeanFiringRate"],  # Хорошо бы сделать лог-нормальное распределение
                 "ThetaPhase": THETA_SLOPE_DV * selected[cell_idx, 1] + cells_pop["MeanFiringRate"],  # DV
                 "R": THETA_R_SLOPE_DV * selected[cell_idx, 1] + THETA_R_0,
+
+                "MinFiringRate": 1.0,
+                "MaxFiringRate": 80.0,
             }
 
             interneurons.append(int_cell)
