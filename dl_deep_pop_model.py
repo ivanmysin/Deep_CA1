@@ -16,7 +16,7 @@ def get_dataset(path, train2testratio):
 
 
     ##!!
-    datafiles = sorted( [file for file in os.listdir(path)[:150] if file[-5:] ==".hdf5"] )
+    datafiles = sorted( [file for file in os.listdir(path) if file[-5:] ==".hdf5"] )
 
     if len(datafiles) < 2:
         print(f"Empty folder!!! {path}")
@@ -101,7 +101,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx] #* 0.01 ##!!
+                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx]
 
                     batch_idx += 1
         except OSError:
@@ -141,13 +141,13 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model = Sequential()
         model.add( Input(shape=(None, 2)) )
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( Dense(1, activation='leaky_relu') ) #
+        model.add( Dense(1, activation='tanh') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mse", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', "mean_squared_logarithmic_error"])
+        model.compile(loss="mae", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', "mean_squared_logarithmic_error", 'mse'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
