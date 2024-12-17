@@ -102,14 +102,17 @@ def get_dataset(path, train2testratio):
 def fit_dl_model_of_population(datapath, targetpath, logfile):
     pop_type = datapath.split("/")[-2]
 
-    ## !!!!!
-    with h5py.File(logfile + pop_type + ".h5", "r") as h5file:
-        hist_len = h5file['loss'].size
 
-    if hist_len > 1000:
-        print(pop_type, " is already fitted!")
-        return
+    ## !!!!
+    try:
+        with h5py.File(logfile + pop_type + ".h5", "r") as h5file:
+            hist_len = h5file['loss'].size
 
+        if hist_len > 1000:
+            print(pop_type, " is already fitted!")
+            return
+    except FileNotFoundError:
+        pass
     train2testratio = myconfig.TRAIN2TESTRATIO
     dataset = get_dataset(datapath, train2testratio)
     if dataset is None:
