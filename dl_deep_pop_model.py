@@ -39,9 +39,14 @@ def get_dataset(path, train2testratio):
         try:
             with (h5py.File(filepath, mode='r') as h5file):
 
+                firing_rate = h5file["firing_rate"][:].ravel()  # / 100
+
+                dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
+                dfr = np.append(1.0, dfr)
+
                 if idx == 0:
-                    N_in_time = h5file["gexc"].size # 20000
-                    N_in_batch = int(0.25 * N_in_time)
+                    N_in_time = h5file["firing_rate"].size # 20000
+                    N_in_batch = int(myconfig.BATCH_LEN_PART * N_in_time)
 
                     Nbatches_train = int(Niter_train * N_in_time / N_in_batch)
                     Nbatches_test = int(Niter_test * N_in_time / N_in_batch)
@@ -79,24 +84,24 @@ def get_dataset(path, train2testratio):
                         X_tmp = Xtest
                         Y_tmp = Ytest
 
-                    # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    # Erevsyn = 1 + Erevsyn / 75.0
-                    #
-                    # tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
-                    #
-                    # logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
-                    #
-                    # X_tmp[batch_idx, : , 0] = Erevsyn
-                    # X_tmp[batch_idx, : , 1] = logtausyn
+                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
+                    Erevsyn = 1 + Erevsyn / 75.0
 
-                    gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
-                    ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
+                    tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    X_tmp[batch_idx, :, 0] = gexc
-                    X_tmp[batch_idx, : , 1] = ginh
+                    logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
 
-                    firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() #/ 100
-                    Y_tmp[batch_idx, : , 0] = firing_rate * 0.01 ##!!
+                    X_tmp[batch_idx, : , 0] = Erevsyn
+                    X_tmp[batch_idx, : , 1] = logtausyn
+
+                    # gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
+                    # ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
+
+                    # X_tmp[batch_idx, :, 0] = gexc
+                    # X_tmp[batch_idx, : , 1] = ginh
+
+
+                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx] * 0.01 ##!!
 
                     batch_idx += 1
         except OSError:
