@@ -14,6 +14,10 @@ def main():
 
 
     # Hyperparameters
+    OUTPLACE_FIRINGRATE_GEN = 'lognormal' # 'normal' or 'constant'
+    INPLACE_FIRINGRATE_GEN = 'lognormal' # 'normal' or 'constant'
+    PLACESIZE_GEN = 'lognormal' # 'normal' or 'constant'
+
     TRACK_LENGTH = 400 # cm
     PLACECELLSPROB = 0.5 # Вероятность пирамидного нейрона стать клеткой места в одном лабиринте
     PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
@@ -21,7 +25,9 @@ def main():
     PLACESIZE_STD = 5  # см, Стандартное отклонение размера поля места в дорсальном гиппокампе.
 
     PEAKFIRING = 8.0
+    PEAKFIRING_STD = 0.4
     OUTPLACEFIRING = 0.5
+    OUTPLACEFIRING_STD = 0.7
 
 
     PLACESIZE_SLOPE_DV = 1.8e-2 # cm (поля места) / mkm (по оси DV)
@@ -100,20 +106,6 @@ def main():
         pyr_coodinates_y = selected[:, 1]
         pyr_coodinates_z = np.zeros_like(pyr_coodinates_x) + radial_axis_pos
 
-        #
-        #
-        # for slice_idx, l in enumerate(CA1_flat["L"]):
-        #
-        #     lb = left_bound[slice_idx] + 0.5*StepProxDist
-        #     rb = right_bound[slice_idx] - 0.5*StepProxDist
-        #     pyrs_x = np.arange(lb, rb, StepProxDist)
-        #     pyrs_y = np.zeros_like(pyrs_x) + CA1_flat["H"][slice_idx]
-        #     pyrs_z = np.zeros_like(pyrs_x) + radial_axis_pos
-        #
-        #     pyr_coodinates_x = np.append(pyr_coodinates_x, pyrs_x)
-        #     pyr_coodinates_y = np.append(pyr_coodinates_y, pyrs_y)
-        #     pyr_coodinates_z = np.append(pyr_coodinates_z, pyrs_z)
-
         for pyrs_x, pyrs_y, pyrs_z in zip(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z):
 
             if PLACECELLSPROB < np.random.rand():
@@ -129,6 +121,29 @@ def main():
             place_size = (PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_MEAN) / 6
             place_size_std = (PLACESIZE_SLOPE_DV * pyrs_y + PLACESIZE_STD) / 6
 
+
+            if PLACESIZE_GEN == 'lognormal':
+                place_size = np.random.lognormal(mean=np.log(place_size), sigma=0.05*place_size_std) # !!!!!!
+
+            elif PLACESIZE_GEN == 'normal':
+                place_size = np.random.normal(loc=place_size, scale=place_size_std)
+
+            outplacefiringrate = OUTPLACEFIRING
+            if OUTPLACE_FIRINGRATE_GEN == 'lognormal':
+                outplacefiringrate =  np.random.lognormal(mean=np.log(outplacefiringrate), sigma=OUTPLACEFIRING_STD)
+            elif OUTPLACE_FIRINGRATE_GEN == 'normal':
+                outplacefiringrate = np.random.normal(loc=outplacefiringrate, scale=OUTPLACEFIRING_STD)
+
+
+            inplacefiringrate = PEAKFIRING
+            if INPLACE_FIRINGRATE_GEN == 'lognormal':
+                inplacefiringrate =  np.random.lognormal(mean=np.log(inplacefiringrate), sigma=PEAKFIRING_STD)
+            elif INPLACE_FIRINGRATE_GEN == 'normal':
+                inplacefiringrate = np.random.normal(loc=inplacefiringrate, scale=PEAKFIRING_STD)
+
+
+
+
             pyr_cell = {
                 "type" : "CA1 Pyramidal",
 
@@ -138,18 +153,21 @@ def main():
 
                 "ThetaFreq" : myconfig.ThetaFreq,
 
-                "OutPlaceFiringRate" : OUTPLACEFIRING,  # Хорошо бы сделать лог-нормальное распределение
+                "OutPlaceFiringRate" : outplacefiringrate,
                 "OutPlaceThetaPhase": THETA_SLOPE_DV * pyrs_y + ThetaPhase,  # DV
                 "R": THETA_R_SLOPE_DV * pyrs_y + THETA_R_0,
 
 
-                "InPlacePeakRate" : PEAKFIRING, # Хорошо бы сделать лог-нормальное распределение
+                "InPlacePeakRate" : inplacefiringrate,
                 "CenterPlaceField" : float(center_place_field),
-                "SigmaPlaceField" : np.random.normal(loc=place_size, scale=place_size_std), #!!!!  Хорошо бы сделать лог-нормальное распределение
+                "SigmaPlaceField" : place_size,
 
 
                 "SlopePhasePrecession" : phase_precession_slope, # DV
                 "PrecessionOnset" : THETA_SLOPE_DV * pyrs_y + precess_onset0,
+
+                "MinFiringRate": 0.1,
+                "MaxFiringRate": 50.0,
 
             }
 

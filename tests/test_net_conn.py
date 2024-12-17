@@ -16,6 +16,9 @@ neurons = [
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
+        "MinFiringRate" : 0.1,
+        "MaxFiringRate" : 50.0,
+
     },
     {
         "type": "CA1 Pyramidal",
@@ -31,6 +34,8 @@ neurons = [
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
+        "MinFiringRate": 0.1,
+        "MaxFiringRate": 50.0,
     },
     {
         "type": "CA1 Basket",
@@ -39,6 +44,8 @@ neurons = [
         "MeanFiringRate": 15.0,  # Хорошо бы сделать лог-нормальное распределение
         "ThetaPhase": 3.14*0.5,  # DV
         "R": 0.3,
+        "MinFiringRate": 1.0,
+        "MaxFiringRate": 80.0,
     },
     {
         "type": "CA1 Basket CCK+",
@@ -47,6 +54,8 @@ neurons = [
         "MeanFiringRate": 15.0,  # Хорошо бы сделать лог-нормальное распределение
         "ThetaPhase": -3.14 * 0.5,  # DV
         "R": 0.3,
+        "MinFiringRate": 1.0,
+        "MaxFiringRate": 80.0,
     },
     {
         "type": "CA1 Oriens-Alveus",
@@ -55,6 +64,8 @@ neurons = [
         "MeanFiringRate": np.nan,  # Хорошо бы сделать лог-нормальное распределение
         "ThetaPhase": np.nan,  # DV
         "R": 0.3,
+        "MinFiringRate": 1.0,
+        "MaxFiringRate": 80.0,
     },
     {
         "type": "CA3 Pyramidal_generator",
@@ -71,6 +82,7 @@ neurons = [
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
+
 
     },
     {
