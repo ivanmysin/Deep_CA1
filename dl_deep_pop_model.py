@@ -15,8 +15,8 @@ IS_FIT_MODEL = True
 def get_dataset(path, train2testratio):
 
 
-
-    datafiles = sorted( [file for file in os.listdir(path) if file[-5:] ==".hdf5"] )
+    ##!!
+    datafiles = sorted( [file for file in os.listdir(path)[:150] if file[-5:] ==".hdf5"] )
 
     if len(datafiles) < 2:
         print(f"Empty folder!!! {path}")
@@ -82,15 +82,15 @@ def get_dataset(path, train2testratio):
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
                     Erevsyn = 1 + Erevsyn / 75.0
 
-                    logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                    tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn =  np.exp(-myconfig.DT / logtausyn) / np.exp(-0.25)
+                    logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
 
                     X_tmp[batch_idx, : , 0] = Erevsyn
                     X_tmp[batch_idx, : , 1] = logtausyn
 
                     firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() #/ 100
-                    Y_tmp[batch_idx, : , 0] = firing_rate  # np.log(firing_rate + 1.0)
+                    Y_tmp[batch_idx, : , 0] = firing_rate * 0.01 ##!!
 
                     batch_idx += 1
         except OSError:
@@ -103,16 +103,18 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
     pop_type = datapath.split("/")[-2]
 
 
-    ## !!!!
-    try:
-        with h5py.File(logfile + pop_type + ".h5", "r") as h5file:
-            hist_len = h5file['loss'].size
+    # ## !!!!
+    # try:
+    #     with h5py.File(logfile + pop_type + ".h5", "r") as h5file:
+    #         hist_len = h5file['loss'].size
+    #
+    #     if hist_len > 1000:
+    #         print(pop_type, " is already fitted!")
+    #         return
+    # except FileNotFoundError:
+    #     pass
 
-        if hist_len > 1000:
-            print(pop_type, " is already fitted!")
-            return
-    except FileNotFoundError:
-        pass
+
     train2testratio = myconfig.TRAIN2TESTRATIO
     dataset = get_dataset(datapath, train2testratio)
     if dataset is None:
@@ -151,6 +153,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
                 h5file.create_dataset(key, data=values)
 
 
+    print(pop_type, " is fitted!")
 
 
 
