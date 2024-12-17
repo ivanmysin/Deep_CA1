@@ -100,6 +100,15 @@ def get_dataset(path, train2testratio):
 
 #######################################################################################
 def fit_dl_model_of_population(datapath, targetpath, logfile):
+    pop_type = datapath.split("/")[-2]
+
+    ## !!!!!
+    with h5py.File(logfile + pop_type + ".h5", "r") as h5file:
+        hist_len = h5file['loss'].size
+
+    if hist_len > 1000:
+        print(pop_type, " is already fitted!")
+        return
 
     train2testratio = myconfig.TRAIN2TESTRATIO
     dataset = get_dataset(datapath, train2testratio)
@@ -130,7 +139,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.save(targetpath)
 
         #print("Training of ", datapath, file=logfile)
-        pop_type = datapath.split("/")[-2]
+
         with h5py.File(logfile + pop_type + ".h5", "w") as h5file:
             #print(datapath, "Training Loss =", hist.history['loss'][-1], 'Validation Loss = ', hist.history['val_loss'][-1], file=logfile, flush=True)
 

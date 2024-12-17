@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 import pickle
+import h5py
 
 from pprint import pprint
 import myconfig
@@ -102,15 +103,7 @@ def get_dataset(populations):
     return Xtrain, Ytrain
 
 
-
-
-
-
-
 def get_model(populations, connections, neurons_params, synapses_params, base_pop_models):
-
-
-
 
     spatial_gen_params = []
     Ns = 0
@@ -148,7 +141,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     time_step_layer = time_step_layer(generators)
 
-    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1))(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
@@ -168,7 +161,9 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
     output_layers.append(phase_locking_selector(time_step_layer))
 
+    #firings_model = Model(inputs=input, outputs=time_step_layer)
     big_model = Model(inputs=input, outputs=output_layers)
+
     # big_model.build(input_shape = (None, 1))
 
     big_model.compile(
@@ -181,7 +176,12 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
         }
     )
 
-    return big_model
+    return big_model #, firings_model
+
+def get_firings_model(bigmodel):
+    firings_outputs_layer = bigmodel.get_layer('firings_outputs').output
+    new_model = Model(inputs=bigmodel.input, outputs=firings_outputs_layer)
+    return new_model
 
 
 
@@ -230,20 +230,30 @@ def main():
 
     model.save('big_model.keras')
 
-    custom_objects = {
-        'FiringsMeanOutRanger': FiringsMeanOutRanger,
-        'Decorrelator' : Decorrelator,
-    }
-    model = load_model('big_model.keras',  custom_objects = custom_objects)
-    print(model.summary())
+    # custom_objects = {
+    #     'FiringsMeanOutRanger': FiringsMeanOutRanger,
+    #     'Decorrelator' : Decorrelator,
+    # }
+    # model = load_model('big_model.keras',  custom_objects = custom_objects)
+    # print(model.summary())
 
     # for x_train, y_train in zip(Xtrain, Ytrain):
     #     model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
     #
     # save_trained_to_pickle(model.trainable_variables, connections)
+    model.save('big_model.keras')
+
+    firings_model = get_firings_model(model)
+
+    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
+    firings = firings_model.predict(t)
+    with h5py.File("firings.h5", mode='w') as h5file:
+        h5file.create_dataset('firings', data=firings)
 
 
 
 
 ##########################################################################
-main()
+if __name__ == '__main__':
+    main()
