@@ -79,15 +79,21 @@ def get_dataset(path, train2testratio):
                         X_tmp = Xtest
                         Y_tmp = Ytest
 
-                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    Erevsyn = 1 + Erevsyn / 75.0
+                    # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
+                    # Erevsyn = 1 + Erevsyn / 75.0
+                    #
+                    # tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                    #
+                    # logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
+                    #
+                    # X_tmp[batch_idx, : , 0] = Erevsyn
+                    # X_tmp[batch_idx, : , 1] = logtausyn
 
-                    tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
+                    gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
+                    ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
 
-                    logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
-
-                    X_tmp[batch_idx, : , 0] = Erevsyn
-                    X_tmp[batch_idx, : , 1] = logtausyn
+                    X_tmp[batch_idx, :, 0] = gexc
+                    X_tmp[batch_idx, : , 1] = ginh
 
                     firing_rate = h5file["firing_rate"][idx_b : e_idx].ravel() #/ 100
                     Y_tmp[batch_idx, : , 0] = firing_rate * 0.01 ##!!
@@ -136,7 +142,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse'])
+        model.compile(loss="log_cosh", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', "mean_squared_logarithmic_error"])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
