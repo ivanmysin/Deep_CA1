@@ -42,7 +42,7 @@ def get_dataset(path, train2testratio):
                 firing_rate = h5file["firing_rate"][:].ravel()  # / 100
 
                 dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
-                dfr = np.append(1.0, dfr)
+                dfr = np.append(0.0, dfr)
 
                 if idx == 0:
                     N_in_time = h5file["firing_rate"].size # 20000
@@ -101,7 +101,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx] * 0.01 ##!!
+                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx] #* 0.01 ##!!
 
                     batch_idx += 1
         except OSError:
@@ -147,7 +147,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="log_cosh", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', "mean_squared_logarithmic_error"])
+        model.compile(loss="mse", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', "mean_squared_logarithmic_error"])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
