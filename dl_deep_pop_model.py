@@ -41,8 +41,8 @@ def get_dataset(path, train2testratio):
 
                 firing_rate = h5file["firing_rate"][:].ravel()  # / 100
 
-                dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
-                dfr = np.append(0.0, dfr)
+                # dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
+                # dfr = np.append(0.0, dfr)
 
                 if idx == 0:
                     N_in_time = h5file["firing_rate"].size # 20000
@@ -116,7 +116,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx]
+                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx]
 
                     batch_idx += 1
         except OSError:
