@@ -51,10 +51,10 @@ def get_dataset(path, train2testratio):
                     Nbatches_train = int(Niter_train * N_in_time / N_in_batch)
                     Nbatches_test = int(Niter_test * N_in_time / N_in_batch)
 
-                    Xtrain = np.zeros((Nbatches_train, N_in_batch, 2), dtype=np.float32)
+                    Xtrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
                     Ytrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
 
-                    Xtest = np.zeros((Nbatches_test, N_in_batch, 2), dtype=np.float32)
+                    Xtest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
                     Ytest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
 
                 for idx_b in range(0, N_in_time, N_in_batch ):
@@ -85,14 +85,29 @@ def get_dataset(path, train2testratio):
                         Y_tmp = Ytest
 
                     Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    Erevsyn = 1 + Erevsyn / 75.0
-
                     tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
 
-                    logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
+                    E_rest = -60.0 ##!!!
 
-                    X_tmp[batch_idx, : , 0] = Erevsyn
-                    X_tmp[batch_idx, : , 1] = logtausyn
+                    E_t = np.zeros_like(Erevsyn)
+                    for idx, E in enumerate(E_t):
+                        E_inf = Erevsyn[idx]
+                        if idx == 0:
+                            E0 = E_rest
+                        else:
+                            E0 = E_t[idx - 1]
+
+                        E_t[idx] = E0 - (E0 - E_inf) * (1 - np.exp(-myconfig.DT / tau_syn[idx]))
+
+
+                    E_t = 1 + E_t / 75.0
+
+
+
+                    #logtausyn = np.exp(-myconfig.DT / tau_syn)
+
+                    X_tmp[batch_idx, : , 0] = E_t
+                    #X_tmp[batch_idx, : , 1] = logtausyn
 
                     # gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
                     # ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
@@ -139,16 +154,16 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
         # create and fit the LSTM network
         model = Sequential()
-        model.add( Input(shape=(None, 2)) )
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( Dense(1, activation='tanh') ) #
+        model.add( Input(shape=(None, 1)) )
+        model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
+        model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
+        model.add( Dense(1, activation='relu') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss="mae", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', "mean_squared_logarithmic_error", 'mse'])
+        model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
