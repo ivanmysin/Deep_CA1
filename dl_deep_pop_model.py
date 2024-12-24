@@ -165,13 +165,13 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
                          bias_initializer = 'zeros',
-                         activation = 'exponential') ) #
+                         activation = 'selu') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mean_squared_logarithmic_error'])
+        model.compile(loss='logcosh', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
