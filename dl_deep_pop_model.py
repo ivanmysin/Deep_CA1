@@ -18,8 +18,8 @@ def get_dataset(path, train2testratio):
 
     datafiles = sorted( [file for file in os.listdir(path) if file[-5:] ==".hdf5"] )
 
-    ##!!
-    datafiles = datafiles[:120]
+    # ##!!
+    # datafiles = datafiles[:120]
 
     if len(datafiles) < 2:
         print(f"Empty folder!!! {path}")
