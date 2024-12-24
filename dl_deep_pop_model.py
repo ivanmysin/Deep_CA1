@@ -116,7 +116,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx]
+                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx] * 0.001
 
                     batch_idx += 1
         except OSError:
@@ -157,7 +157,6 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Input(shape=(None, 1)) )
         model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
         model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( Dense(16, activation='exponential') ) #
         model.add( Dense(1, activation='relu') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
