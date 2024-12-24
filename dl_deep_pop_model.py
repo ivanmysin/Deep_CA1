@@ -119,7 +119,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx] * 0.01
+                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx] #* 0.01
 
                     batch_idx += 1
         except OSError:
@@ -158,20 +158,20 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # create and fit the LSTM network
         model = Sequential()
         model.add( Input(shape=(None, 1)) )
-        model.add( Dense(16, activation='sigmoid') )  #
-        model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
+        #model.add( Dense(16, activation='sigmoid') )  #
+        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
+        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
         #model.add( Dense(1, activation='relu') ) #
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
-                         bias_initializer = 'ones',
-                         activation = 'relu') ) #
+                         bias_initializer = 'zeros',
+                         activation = 'exponential') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss='mean_squared_logarithmic_error', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mse'])
+        model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
