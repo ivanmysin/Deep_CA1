@@ -157,6 +157,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Input(shape=(None, 1)) )
         model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
         model.add( LSTM(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
+        model.add( Dense(16, activation='exponential') ) #
         model.add( Dense(1, activation='relu') ) #
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
