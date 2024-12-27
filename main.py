@@ -5,7 +5,7 @@ import pickle
 import h5py
 
 from pprint import pprint
-import myconfigpython
+import myconfig
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Reshape
