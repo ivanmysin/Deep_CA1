@@ -226,9 +226,11 @@ def main():
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
     base_pop_models = {}
-    for pop_type in pop_types_params["neurons"]:
-        if not pop_type["is_include"]:
+    for population in pop_types_params["neurons"]:
+        if not population["is_include"]:
             continue
+
+        pop_type = population["neurons"]
 
         if myconfig.RUNMODE == 'DEBUG':
             model_file = "./pretrained_models/NO_Trained.keras"
