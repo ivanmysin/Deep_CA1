@@ -226,7 +226,7 @@ def main():
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
     base_pop_models = {}
-    for population in pop_types_params:
+    for pop_idx, population in pop_types_params.iterrows():
         if not population["is_include"]:
             continue
 
