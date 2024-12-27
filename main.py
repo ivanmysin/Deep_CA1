@@ -227,6 +227,8 @@ def main():
 
     base_pop_models = {}
     for pop_type in pop_types_params["neurons"]:
+        if not pop_type["is_include"]:
+            continue
 
         if myconfig.RUNMODE == 'DEBUG':
             model_file = "./pretrained_models/NO_Trained.keras"

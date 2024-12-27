@@ -52,7 +52,9 @@ def main():
 
     for type_idx, cells_pop in interneurons_types.iterrows():
         if str(cells_pop["neurons"]) == "CA1 Pyramidal": continue
-        if not cells_pop["is_include"]: continue
+        if not cells_pop["is_include"]:
+            #print(cells_pop)
+            continue
 
         # if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
 
