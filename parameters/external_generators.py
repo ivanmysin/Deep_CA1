@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-import myconfig
-import os
 
+import os
+os.chdir("../")
+import myconfig
 
 def main():
     TRACK_LENGTH = 400  # cm
@@ -124,5 +125,5 @@ def main():
             pickle.dump(generators, file)
 
 if __name__ == "__main__":
-    os.chdir("../")
+
     main()

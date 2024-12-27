@@ -2,9 +2,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-import myconfig
+
 import os
+
+os.chdir("../")
 from scipy.cluster.vq import kmeans
+import myconfig
 
 
 def main():
@@ -181,14 +184,14 @@ def main():
 
 
 if __name__ == "__main__":
-    os.chdir("../")
+
     pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, right_bound, left_bound, CA1_flat = main()
     #print(pyr_coodinates_x.size, pyr_coodinates_x.size//2)
 
-    fig, axes = plt.subplots()
-    axes.plot( right_bound, CA1_flat["H"], color="blue")
-    axes.plot( left_bound, CA1_flat["H"], color="blue")
-
-    axes.scatter(pyr_coodinates_x, pyr_coodinates_y)
-
-    plt.show()
+    # fig, axes = plt.subplots()
+    # axes.plot( right_bound, CA1_flat["H"], color="blue")
+    # axes.plot( left_bound, CA1_flat["H"], color="blue")
+    #
+    # axes.scatter(pyr_coodinates_x, pyr_coodinates_y)
+    #
+    # plt.show()

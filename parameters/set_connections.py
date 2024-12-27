@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 import os
 
+os.chdir("../")
 from pprint import pprint
 
 import myconfig
@@ -191,5 +192,5 @@ def main():
         pickle.dump(connections, file)
 
 if __name__ == '__main__':
-    os.chdir("../")
+
     main()

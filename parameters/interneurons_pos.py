@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.cluster.vq import kmeans
 import pickle
 import os
+
+os.chdir("../")
 import myconfig
 
 
@@ -99,5 +101,4 @@ def main():
 
 
 if __name__ == "__main__":
-    os.chdir("../")
     main()
