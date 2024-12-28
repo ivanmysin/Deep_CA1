@@ -68,8 +68,8 @@ def get_dataset(populations):
             except KeyError:
                 continue
 
-    phase_locking_without_phase = np.asarray(phase_locking_without_phase).reshape(1, -1)
-    robast_mean_firing_rate = np.asarray(robast_mean_firing_rate).reshape(1, -1)
+    phase_locking_without_phase = np.asarray(phase_locking_without_phase).reshape(1, 1, -1)
+    robast_mean_firing_rate = np.asarray(robast_mean_firing_rate).reshape(1, 1, -1)
 
     phase_locking_with_phase = np.asarray(phase_locking_with_phase)
 
@@ -93,12 +93,25 @@ def get_dataset(populations):
 
         pyr_targets = generators(t)
 
+        # print(pyr_targets.shape)
+        # print(phase_locking_with_phase.shape)
+        # print(robast_mean_firing_rate.shape)
+        # print(phase_locking_without_phase.shape)
+
         Ytrain.append({
             'pyramilad_mask': pyr_targets,
             'locking_with_phase': np.copy(phase_locking_with_phase),
             'robast_mean': np.copy(robast_mean_firing_rate),
             'locking' : np.copy(phase_locking_without_phase),
         })
+
+        if batch_idx == 0:
+            print(pyr_targets.shape)
+            print(phase_locking_with_phase.shape)
+            print(robast_mean_firing_rate.shape)
+            print(phase_locking_without_phase.shape)
+
+
 
     return Xtrain, Ytrain
 
@@ -125,6 +138,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
             LowFiringRateBound.append(pop["MinFiringRate"])
             HighFiringRateBound.append(pop["MaxFiringRate"])
         except KeyError:
+            print(pop['type'], "No MinFiringRate or MaxFiringRate")
             continue
 
         if pop["type"] == "CA1 Pyramidal":
@@ -136,10 +150,13 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
                     phase_locking_out_mask[pop_idx] = True
                 else:
                     frequecy_filter_out_mask[pop_idx] = True
-
             except KeyError:
                 continue
 
+
+    # print("Pyramidal", np.sum(simple_out_mask))
+    # print("frequecy_filter_out_mask", np.sum(frequecy_filter_out_mask))
+    # print("phase_locking_out_mask", np.sum(phase_locking_out_mask))
 
 
     input = Input(shape=(None, 1), batch_size=1)
@@ -166,7 +183,6 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
     output_layers.append(robast_mean_out(time_step_layer))
 
-    phase_locking_out_mask = np.ones(Ns, dtype='bool')
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
     output_layers.append(phase_locking_selector(time_step_layer))
@@ -231,18 +247,17 @@ def main():
             continue
 
         pop_type = population["neurons"]
-
-        if myconfig.RUNMODE == 'DEBUG':
-            model_file = "./pretrained_models/NO_Trained.keras"
-        else:
-            model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
-
-        base_pop_models[pop_type] = model_file # load_model(model_file)
+        base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + pop_type + '.keras'
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
     print(model.summary())
 
-    model.save('big_model.keras')
+    #model.save('big_model.keras')
+
+    # Ypreds = model.predict(Xtrain[0])
+    #
+    # for y in Ypreds:
+    #     print(y.shape)
 
     # custom_objects = {
     #     'FiringsMeanOutRanger': FiringsMeanOutRanger,
@@ -254,16 +269,16 @@ def main():
     for x_train, y_train in zip(Xtrain, Ytrain):
         model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
     #
-    # save_trained_to_pickle(model.trainable_variables, connections)
-    model.save('big_model.keras')
-
-    firings_model = get_firings_model(model)
-
-    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
-    t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
-    firings = firings_model.predict(t)
-    with h5py.File("firings.h5", mode='w') as h5file:
-        h5file.create_dataset('firings', data=firings)
+    # # save_trained_to_pickle(model.trainable_variables, connections)
+    # model.save('big_model.keras')
+    #
+    # firings_model = get_firings_model(model)
+    #
+    # duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    # t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
+    # firings = firings_model.predict(t)
+    # with h5py.File("firings.h5", mode='w') as h5file:
+    #     h5file.create_dataset('firings', data=firings)
 
 
 

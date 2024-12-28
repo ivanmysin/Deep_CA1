@@ -65,6 +65,7 @@ class TimeStepLayer(Layer):
             'pconn': [],
             'Erev': [],
             'Cm': neurons_params[neurons_params["Neuron Type"] == pop_type]["Cm"].values[0],
+            'Vrest': neurons_params[neurons_params["Neuron Type"] == pop_type]["Vrest"].values[0],
             'Erev_min': -75.0,
             'Erev_max': 0.0,
             "pop_idx" : pop_idx,
@@ -101,6 +102,7 @@ class TimeStepLayer(Layer):
             tau_f = syn['tau_f'].values[0]
             tau_d = syn['tau_d'].values[0]
 
+
             if neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "e":
                 Erev = 0
             elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
@@ -113,23 +115,20 @@ class TimeStepLayer(Layer):
             conn_params['Erev'].append(Erev)
 
 
+
         if np.sum(is_connected_mask) == 0:
             warns_message = "No presynaptic population " + pop["type"] + " with index " + str(pop_idx)
             warnings.warn(warns_message)
 
 
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
-
-
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
         input_layer = Input(shape=(None, self.input_size), batch_size=1)
         synapses_layer = synapses_layer(input_layer)
 
         base_model = tf.keras.models.clone_model(base_model)
-
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name="Population_with_synapses")
-
 
         return tf.keras.models.clone_model(model)
 

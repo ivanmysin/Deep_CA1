@@ -17,6 +17,7 @@ class BaseSynapse(Layer):
         self.Cm = tf.convert_to_tensor( params['Cm'], dtype=myconfig.DTYPE )
         self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
         self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=myconfig.DTYPE )
+        self.Vrest = tf.convert_to_tensor( params['Vrest'], dtype=myconfig.DTYPE )
 
         try:
             self.pop_idx = params['pop_idx']
@@ -32,7 +33,7 @@ class BaseSynapse(Layer):
 
 
 
-        self.output_size = 2
+        self.output_size = 1
         self.state_size = []
 
     def build(self, input_shape):
@@ -75,7 +76,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         super(TsodycsMarkramSynapse, self).build(input_shape)
 
         self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-        self.state_size = [self.units, self.units, self.units]
+        self.state_size = [self.units, self.units, self.units, self.units]
 
         self.exp_tau_d = exp(-self.dt / self.tau_d)
         self.exp_tau_f = exp(-self.dt / self.tau_f)
@@ -97,6 +98,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
             "Erev": self.Erev,
             "Erev_min": self.Erev_min,
             "Erev_max": self.Erev_max,
+            "Vrest": self.Vrest,
             "Cm": self.Cm,
             "dt" : self.dt,
             "mask" : self.mask,
@@ -118,6 +120,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         params['Erev'] = config['Erev']['config']["value"]
         params['Erev_min'] = config['Erev_min']['config']["value"]
         params['Erev_max'] = config['Erev_max']['config']["value"]
+        params['Vrest'] = config['Vrest']['config']["value"]
         params['Cm'] = config['Cm']['config']["value"]
         params['pop_idx'] = config['pop_idx']
         dt = config['dt']['config']["value"]
@@ -132,6 +135,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         R = states[0]
         U = states[1]
         A = states[2]
+        Vsyn = states[3]
+
 
 
         FRpre_normed =  FR * self.pconn * 0.001 * self.dt # to convert firings in Hz to probability
@@ -146,33 +151,27 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
         gsyn = tf.nn.relu(self.gsyn_max) * A
-
         g_tot = tf.reduce_sum(gsyn, axis=-1) + 0.0000001
-
-        E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
-
-        E = (E - self.Erev_min) / (self.Erev_max - self.Erev_min) #- 1
-
+        gE = gsyn * self.Erev + 0.0000001*self.Vrest
+        E_inf = tf.reduce_sum(gE, axis=-1) / g_tot
         tau = self.Cm / g_tot
 
-        #tau = tf.math.log(tau + 1.0)
-        tau = 2 * exp(-self.dt / tau) - 1
+        #        tau = exp(-self.dt / tau)
+        Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt/ tau))
+        output = (Vsyn - self.Erev_min) / (self.Erev_max - self.Erev_min)
+        output = tf.reshape(output, shape=(1, 1))
 
-        output = tf.stack([E, tau], axis=-1)
+        return output, [R, U, A, Vsyn]
 
-        #self.add_loss(self.gmax_regulizer(self.gsyn_max))
-
-        return output, [R, U, A]
-
-    def get_initial_state(self, batch_size=None):
+    def get_initial_state(self, batch_size=1):
         shape = [batch_size, self.units]
-
-        #print(batch_size)
 
         R = tf.ones( shape, dtype=myconfig.DTYPE)
         U = tf.zeros( shape, dtype=myconfig.DTYPE)
         A = tf.zeros( shape, dtype=myconfig.DTYPE)
-        initial_state = [R, U, A]
+
+        Vsyn = tf.zeros((batch_size, 1), dtype=myconfig.DTYPE) + self.Vrest
+        initial_state = [R, U, A, Vsyn]
 
         return initial_state
 
@@ -192,6 +191,7 @@ if __name__ == "__main__":
         "tau_d" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
         'pconn' : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.0,
         'Erev' : np.zeros(Ns, dtype=myconfig.DTYPE),
+        'Vrest' : np.zeros(Ns, dtype=myconfig.DTYPE) - 65.0,
         'Erev_min' : -75.0,
         'Erev_max' : 0.0,
         'Cm' : 0.114,
@@ -207,11 +207,7 @@ if __name__ == "__main__":
 
     model = tf.keras.Sequential()
     model.add(synapses_layer)
-
     model.build(input_shape=input_shape)
-
-
-
     X = np.random.rand(50).reshape(1, 10, 5)
 
     Y = model.predict(X)
