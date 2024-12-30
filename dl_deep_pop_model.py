@@ -160,10 +160,10 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Input(shape=(None, 1)) )
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, \
-                        kernel_regularizer='l1_l2', recurrent_regularizer='l1_l2' ) ) # , stateful=True
+                        kernel_regularizer=keras.regularizers.L1L2(), recurrent_regularizer=keras.regularizers.L1L2()) ) # , stateful=True
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, \
-                        kernel_regularizer='l1_l2', recurrent_regularizer='l1_l2' ) ) # , stateful=True
+                        kernel_regularizer=keras.regularizers.L1L2(), recurrent_regularizer=keras.regularizers.L1L2() ) ) # , stateful=True
         #model.add( Dense(1, activation='relu') ) #
         model.add( Dense(16, activation='leaky_relu' ) )  #
         model.add( Dense(units = 1,
