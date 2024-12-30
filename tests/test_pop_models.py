@@ -50,7 +50,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
 
         firing_rate_pred = model.predict(X_test)
 
-        loss = tf.keras.losses.log_cosh(firing_rate_pred, firing_rate)
+        loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate)
         val_loss.append(loss)
 
         firing_rate_preds.append(firing_rate_pred)
