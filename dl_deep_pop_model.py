@@ -167,7 +167,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
                         kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
                         recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
 
-        model.add( Dense(16, activation='leaky_relu', dropout=0.1 ) )  #
+        model.add( Dense(16, activation='leaky_relu' ) )  #
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
                          bias_initializer = 'zeros',
