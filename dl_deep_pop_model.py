@@ -160,11 +160,13 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Input(shape=(None, 1)) )
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, \
-                        kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01), recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
+                        kernel_regularizer=keras.regularizers.L1L2(l1=0.1, l2=0.1),\
+                        recurrent_regularizer=keras.regularizers.L1L2(l1=0.1, l2=0.1))) # , stateful=True
         model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, \
-                        kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01), recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
-        #model.add( Dense(1, activation='relu') ) #
+                        kernel_regularizer=keras.regularizers.L1L2(l1=0.1, l2=0.1),\
+                        recurrent_regularizer=keras.regularizers.L1L2(l1=0.1, l2=0.1))) # , stateful=True
+
         model.add( Dense(16, activation='leaky_relu' ) )  #
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
