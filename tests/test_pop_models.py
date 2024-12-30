@@ -33,7 +33,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
             Erev = hfile["Erevsyn"][:]
             tau_syn = hfile["tau_syn"][:]
             firing_rate = hfile["firing_rate"][:]
-            firing_rate = firing_rate.reshape(1, -1)
+            #firing_rate = firing_rate.reshape(1, -1)
 
 
         E_t = np.zeros_like(Erev)
@@ -52,7 +52,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
         firing_rate_pred = model.predict(X_test)
         with tf.device('/cpu:0'):
             loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate)
-
+        print(loss)
         val_loss.append(float(loss))
 
         firing_rate_preds.append(firing_rate_pred)
