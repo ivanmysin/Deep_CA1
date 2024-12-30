@@ -25,12 +25,6 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     #datafiles_train = datafiles[:Niter_train]
     datafiles_test = datafiles[Niter_train:]
 
-    firing_rate_preds = []
-    firing_rates = []
-    val_loss = []
-
-
-
     for dfile_idx, dfile in enumerate(datafiles_test):
         with h5py.File(path + dfile, "r") as hfile:
             Erev = hfile["Erevsyn"][:]
@@ -58,7 +52,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
 
         X_test[dfile_idx, :, 0] = 1 + E_t / 75.0
 
-    print("firing_rates.shape ", firing_rates.shape)
+    #print("firing_rates.shape ", firing_rates.shape)
 
     firing_rate_pred = model.predict(X_test)
     with tf.device('/cpu:0'):
@@ -68,20 +62,20 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
         #
         # firing_rate_preds.append(firing_rate_pred)
         # firing_rates.append(firing_rate)
-    print('loss.shape ', loss.shape)
+    #print('loss.shape ', loss.shape)
     valsorted_idx = np.argsort(loss)
 
-    print('valsorted_idx.shape ', valsorted_idx.shape)
+    #print('valsorted_idx.shape ', valsorted_idx.shape)
 
     t = np.linspace(0, firing_rate.size*dt, firing_rate.size )
 
-    best_pred = firing_rate_preds[valsorted_idx[0]]
-    median_pred = firing_rate_preds[valsorted_idx[len(datafiles_test)//2]]
-    poor_pred = firing_rate_preds[valsorted_idx[-1]]
+    best_pred = firing_rate_pred[valsorted_idx[0], :]
+    median_pred = firing_rate_pred[valsorted_idx[len(datafiles_test)//2], :]
+    poor_pred = firing_rate_pred[valsorted_idx[-1], :]
 
-    fr_best = firing_rate_preds[valsorted_idx[0]]
-    fr_median = firing_rate_preds[valsorted_idx[len(datafiles_test)//2]]
-    fr_poor = firing_rate_preds[valsorted_idx[-1]]
+    fr_best = firing_rates[valsorted_idx[0], :]
+    fr_median = firing_rates[valsorted_idx[len(datafiles_test)//2], :]
+    fr_poor = firing_rates[valsorted_idx[-1], :]
 
     fig, axes = plt.subplots(nrows=3, figsize=(15, 5))
     fig.suptitle(pop_type, fontsize=14)
