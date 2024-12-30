@@ -28,12 +28,15 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     firing_rate_preds = []
     firing_rates = []
     val_loss = []
+
+
+
     for dfile_idx, dfile in enumerate(datafiles_test):
         with h5py.File(path + dfile, "r") as hfile:
             Erev = hfile["Erevsyn"][:]
             tau_syn = hfile["tau_syn"][:]
             firing_rate = hfile["firing_rate"][:]
-            #firing_rate = firing_rate.reshape(1, -1)
+            firing_rate = firing_rate.reshape(1, -1)
 
 
         E_t = np.zeros_like(Erev)
@@ -46,20 +49,29 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
 
             E_t[idx] = E0 - (E0 - E_inf) * (1 - np.exp(-dt / tau_syn[idx]))
 
-        X_test = np.zeros(shape=(1, E_t.size, 1), dtype=np.float32)
-        X_test[0, :, 0] = 1 + E_t / 75.0
+        if dfile_idx == 0:
+            X_test = np.zeros(shape=(len(datafiles_test), E_t.size, 1), dtype=np.float32)
+            firing_rates = firing_rate
+        else:
+            firing_rates = np.append(firing_rates, firing_rate, axis=0)
 
-        firing_rate_pred = model.predict(X_test)
-        with tf.device('/cpu:0'):
-            loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate)
-        print(loss)
-        val_loss.append(float(loss))
 
-        firing_rate_preds.append(firing_rate_pred)
-        firing_rates.append(firing_rate)
+        X_test[dfile_idx, :, 0] = 1 + E_t / 75.0
 
-    val_loss = np.asarray(val_loss)
-    valsorted_idx = np.argsort(val_loss)
+    print("firing_rates.shape ", firing_rates.shape)
+
+    firing_rate_pred = model.predict(X_test)
+    with tf.device('/cpu:0'):
+        loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate).numpy()
+        # print(loss)
+        # val_loss.append(float(loss))
+        #
+        # firing_rate_preds.append(firing_rate_pred)
+        # firing_rates.append(firing_rate)
+    print('loss.shape ', loss.shape)
+    valsorted_idx = np.argsort(loss)
+
+    print('valsorted_idx.shape ', valsorted_idx.shape)
 
     t = np.linspace(0, firing_rate.size*dt, firing_rate.size )
 
