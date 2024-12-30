@@ -35,7 +35,7 @@ DURATION = 2000 # ms
 ######### fit models of populations ##########
 NEPOCHES = 1400
 TRAIN2TESTRATIO = 0.9
-VERBOSETRANINGPOPMODELS = 0
+VERBOSETRANINGPOPMODELS = 2
 BATCHSIZE = 200
 BATCH_LEN_PART = 1.0 # 0.25
 ########### Net creation ######################
