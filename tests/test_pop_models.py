@@ -108,7 +108,7 @@ def main():
     train2testratio = myconfig.TRAIN2TESTRATIO
     path2models = myconfig.PRETRANEDMODELS
     path2dsets = myconfig.DATASETS4POPULATIONMODELS
-    path2saving = '/media/sdisk/tests/'
+    path2saving = '/media/sdisk/Deep_CA1/tests/'
 
     populations = pd.read_excel(myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2",
                                      header=0)
