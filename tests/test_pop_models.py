@@ -1,5 +1,3 @@
-from statistics import median
-
 import numpy as np
 import matplotlib.pyplot as plt
 import h5py
@@ -9,8 +7,9 @@ from tensorflow.keras.saving import load_model
 import pandas as pd
 import sys
 sys.path.append('../')
-os.chdir('../')
 import myconfig
+os.chdir('../')
+
 
 dt = 0.1
 E_rest = -60.0
