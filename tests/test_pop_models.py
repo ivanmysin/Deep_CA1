@@ -17,7 +17,7 @@ E_rest = -60.0
 def validate_model(pop_type, path2models, path2dsets, path2saving, train2testratio):
     model = load_model(path2models + pop_type + '.keras')
 
-    path = path2dsets + pop_type
+    path = path2dsets + pop_type + '/'
     datafiles = sorted([file for file in os.listdir(path) if file[-5:] == ".hdf5"])
     Niter_train = int(train2testratio * len(datafiles))
     #Niter_test = int(len(datafiles) - Niter_train)
