@@ -97,7 +97,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
         ax.set_ylabel('Firing rate, spikes/sec')
         ax.set_xlim(0, t[-1])
 
-    figfile = path2saving + pop_type.repalce(" ", "_") + '.png'
+    figfile = path2saving + pop_type.replace(" ", "_") + '.png'
     fig.savefig(figfile)
     plt.close(fig)
 
