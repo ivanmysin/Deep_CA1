@@ -158,11 +158,11 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # create and fit the LSTM network
         model = Sequential()
         model.add( Input(shape=(None, 1)) )
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
+        model.add( GRU(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, dropout=0.1, \
                         kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
                         recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
+        model.add( GRU(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
                         stateful=False, recurrent_dropout=0.0, dropout=0.1, \
                         kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
                         recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
