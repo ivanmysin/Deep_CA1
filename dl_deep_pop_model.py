@@ -166,8 +166,8 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         #                 stateful=False, recurrent_dropout=0.0, dropout=0.1, \
         #                 kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
         #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
-        model.add(GRU(32, return_sequences=True))
-        model.add(GRU(32, return_sequences=True))
+        model.add(LSTM(32, return_sequences=True))
+        model.add(LSTM(32, return_sequences=True))
         model.add( Dense(16, activation='leaky_relu' ) )  #
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
@@ -178,7 +178,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0001), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0004), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
