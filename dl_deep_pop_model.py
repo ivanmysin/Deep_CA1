@@ -178,7 +178,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
         # model.add( Dense(1, activation='relu') ) #
 
-        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0004), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0002), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
         #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
@@ -208,9 +208,9 @@ def main():
         if not os.path.isdir(datapath):
             continue
 
-        pop_type = datapath.split("/")[-2]
-        if pop_type != 'CA1 Pyramidal':
-            continue
+        # pop_type = datapath.split("/")[-2]
+        # if pop_type != 'CA1 Pyramidal':
+        #     continue
 
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
         fit_dl_model_of_population(datapath, targetpath, logfilepath)
