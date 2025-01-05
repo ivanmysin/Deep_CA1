@@ -119,7 +119,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx] #* 0.01
+                    Y_tmp[batch_idx, : , 0] = 1000 - firing_rate[idx_b : e_idx] #* 0.01
 
                     batch_idx += 1
         except OSError:
@@ -172,7 +172,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         model.add( Dense(units = 1,
                          kernel_initializer = 'random_normal',
                          bias_initializer = 'zeros',
-                         activation = keras.ops.square ) ) #'exponential'
+                         activation = 'exponential') ) #  keras.ops.square
 
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
         # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
