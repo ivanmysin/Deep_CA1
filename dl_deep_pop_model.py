@@ -119,7 +119,7 @@ def get_dataset(path, train2testratio):
                     # X_tmp[batch_idx, : , 1] = ginh
 
 
-                    Y_tmp[batch_idx, : , 0] = 1000 - firing_rate[idx_b : e_idx] #* 0.01
+                    Y_tmp[batch_idx, : , 0] = 500 - firing_rate[idx_b : e_idx] #* 0.01
 
                     batch_idx += 1
         except OSError:
