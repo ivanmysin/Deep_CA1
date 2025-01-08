@@ -62,8 +62,8 @@ def get_dataset(path, train2testratio):
             with (h5py.File(filepath, mode='r') as h5file):
 
                 firing_rate = h5file["firing_rate"][:].ravel()
-                Erevsyn = h5file["Erevsyn"][idx_b: e_idx].ravel()
-                tau_syn = h5file["tau_syn"][idx_b: e_idx].ravel()
+                Erevsyn = h5file["Erevsyn"][:].ravel()
+                tau_syn = h5file["tau_syn"][:].ravel()
 
                 E_t = integrate_Erev(Erevsyn, tau_syn, Erest=-60.0, dt=myconfig.DT)
 
