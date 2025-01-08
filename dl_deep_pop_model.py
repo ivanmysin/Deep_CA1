@@ -12,6 +12,25 @@ import myconfig
 USE_SAVED_MODEL = False
 IS_FIT_MODEL = True
 
+
+def integrate_Erev(Erev, tau_syn, Erest=-60.0, dt=0.1):
+    ##E_rest = -60.0  ##!!!
+
+    E_t = np.zeros_like(Erev)
+    for idx, E in enumerate(E_t):
+        E_inf = Erev[idx]
+        if idx == 0:
+            E0 = Erest
+        else:
+            E0 = E_t[idx - 1]
+
+        E_t[idx] = E0 - (E0 - E_inf) * (1 - np.exp(-myconfig.DT / tau_syn[idx]))
+
+    E_t = 1 + E_t / 75.0
+
+    return E_t
+
+
 def get_dataset(path, train2testratio):
 
 
@@ -42,10 +61,13 @@ def get_dataset(path, train2testratio):
         try:
             with (h5py.File(filepath, mode='r') as h5file):
 
-                firing_rate = h5file["firing_rate"][:].ravel()  # / 100
+                firing_rate = h5file["firing_rate"][:].ravel()
+                Erevsyn = h5file["Erevsyn"][idx_b: e_idx].ravel()
+                tau_syn = h5file["tau_syn"][idx_b: e_idx].ravel()
 
-                # dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
-                # dfr = np.append(0.0, dfr)
+                E_t = integrate_Erev(Erevsyn, tau_syn, Erest=-60.0, dt=myconfig.DT)
+
+
 
                 if idx == 0:
                     N_in_time = h5file["firing_rate"].size # 20000
@@ -66,60 +88,12 @@ def get_dataset(path, train2testratio):
                     if idx <= Niter_train:
                         X_tmp = Xtrain
                         Y_tmp = Ytrain
-
-                        # # gexc = h5file["gexc"][idx_b : e_idx]
-                        # # ginh = h5file["ginh"][idx_b : e_idx]
-                        # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
-                        #
-                        # #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
-                        # Erevsyn = 1 + Erevsyn/75.0
-                        #
-                        # logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
-                        #
-                        # logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
-                        # # logtausyn = logtausyn / 10.0
-                        # #print(logtausyn.min(), logtausyn.max())
-                        #
-                        # Xtrain[batch_idx, : , 0] = Erevsyn
-                        # Xtrain[batch_idx, : , 1] = logtausyn
-                        # Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                     else:
                         X_tmp = Xtest
                         Y_tmp = Ytest
 
-                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
-
-                    E_rest = -60.0 ##!!!
-
-                    E_t = np.zeros_like(Erevsyn)
-                    for idx, E in enumerate(E_t):
-                        E_inf = Erevsyn[idx]
-                        if idx == 0:
-                            E0 = E_rest
-                        else:
-                            E0 = E_t[idx - 1]
-
-                        E_t[idx] = E0 - (E0 - E_inf) * (1 - np.exp(-myconfig.DT / tau_syn[idx]))
-
-
-                    E_t = 1 + E_t / 75.0
-
-
-
-                    #logtausyn = np.exp(-myconfig.DT / tau_syn)
-
-                    X_tmp[batch_idx, : , 0] = E_t
-                    #X_tmp[batch_idx, : , 1] = logtausyn
-
-                    # gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
-                    # ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
-
-                    # X_tmp[batch_idx, :, 0] = gexc
-                    # X_tmp[batch_idx, : , 1] = ginh
-
-
-                    Y_tmp[batch_idx, : , 0] = 500 - firing_rate[idx_b : e_idx] #* 0.01
+                    X_tmp[batch_idx, : , 0] = E_t[idx_b : e_idx]
+                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx]
 
                     batch_idx += 1
         except OSError:
@@ -166,20 +140,13 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         #                 stateful=False, recurrent_dropout=0.0, dropout=0.1, \
         #                 kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
         #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
-        model.add(LSTM(32, return_sequences=True))
-        model.add(LSTM(32, return_sequences=True))
-        model.add( Dense(16, activation='leaky_relu' ) )  #
-        model.add( Dense(units = 1,
-                         kernel_initializer = 'random_normal',
-                         bias_initializer = 'zeros',
-                         activation = 'exponential') ) #  keras.ops.square
-
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
-        # model.add( Dense(1, activation='relu') ) #
+        #model.add(LSTM(32, return_sequences=True))
+        model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        model.add( GRU(units=32, return_sequences=True) )
+        model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        model.add( Dense(units=1, activation=keras.ops.square) ) #  'exponential'
 
         model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0002), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
-        #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
 
     if IS_FIT_MODEL:
         hist = model.fit(Xtrain, Ytrain, epochs=myconfig.NEPOCHES, batch_size=myconfig.BATCHSIZE, verbose=myconfig.VERBOSETRANINGPOPMODELS, validation_data=(Xtest, Ytest))
