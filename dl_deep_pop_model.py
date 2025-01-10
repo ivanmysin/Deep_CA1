@@ -141,12 +141,12 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         #                 kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
         #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
         #model.add(LSTM(32, return_sequences=True))
-        model.add( Dense(units=16, activation='leaky_relu' ) )  #
-        model.add( GRU(units=32, return_sequences=True) )
-        model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        #model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        model.add( GRU(units=16, return_sequences=True) )
+        #model.add( Dense(units=16, activation='leaky_relu' ) )  #
         model.add( Dense(units=1, activation=keras.ops.square) ) #  'exponential'
 
-        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0002), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
 
     if IS_FIT_MODEL:
         hist = model.fit(Xtrain, Ytrain, epochs=myconfig.NEPOCHES, batch_size=myconfig.BATCHSIZE, verbose=myconfig.VERBOSETRANINGPOPMODELS, validation_data=(Xtest, Ytest))
