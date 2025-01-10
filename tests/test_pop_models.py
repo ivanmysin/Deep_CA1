@@ -58,7 +58,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     with tf.device('/cpu:0'):
         firing_rate_pred = model.predict(X_test)
 
-        firing_rate_pred = -firing_rate_pred + 500 ###!!!!
+        ## firing_rate_pred = -firing_rate_pred + 500 ###!!!!
 
         loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate).numpy()
         # print(loss)
@@ -100,6 +100,8 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
         ax.set_xlabel('Time, ms')
         ax.set_ylabel('Firing rate, spikes/sec')
         ax.set_xlim(0, t[-1])
+
+    fig.tight_layout()
 
     figfile = path2saving + pop_type.replace(" ", "_") + '.png'
     fig.savefig(figfile)
