@@ -64,7 +64,7 @@ def get_dataset(path, train2testratio):
                 firing_rate = h5file["firing_rate"][:].ravel()
 
                 ##!!
-                firing_rate = np.log(firing_rate + 1.0)
+                ##firing_rate = np.log(firing_rate + 1.0)
 
                 Erevsyn = h5file["Erevsyn"][:].ravel()
                 tau_syn = h5file["tau_syn"][:].ravel()
@@ -146,7 +146,7 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
         #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
         #model.add(LSTM(32, return_sequences=True))
         #model.add( Dense(units=16, activation='leaky_relu' ) )  #
-        model.add( GRU(units=16, return_sequences=True) )
+        model.add( GRU(units=8, return_sequences=True) )
         #model.add( Dense(units=16, activation='leaky_relu' ) )  #
         model.add( Dense(units=1, activation=keras.ops.square) ) #  'exponential'
 

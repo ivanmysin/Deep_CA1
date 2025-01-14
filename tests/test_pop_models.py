@@ -58,7 +58,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     with tf.device('/cpu:0'):
         firing_rate_pred = model.predict(X_test)
 
-        firing_rate_pred = np.exp(firing_rate_pred) - 1.0
+        #firing_rate_pred = np.exp(firing_rate_pred) - 1.0
 
         loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate).numpy()
         # print(loss)
