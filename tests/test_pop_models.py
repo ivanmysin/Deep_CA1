@@ -58,7 +58,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     with tf.device('/cpu:0'):
         firing_rate_pred = model.predict(X_test)
 
-        ## firing_rate_pred = -firing_rate_pred + 500 ###!!!!
+        firing_rate_pred = np.exp(firing_rate_pred) - 1.0
 
         loss = tf.keras.losses.logcosh(firing_rate_pred, firing_rate).numpy()
         # print(loss)
@@ -81,7 +81,7 @@ def validate_model(pop_type, path2models, path2dsets, path2saving, train2testrat
     fr_median = firing_rates[valsorted_idx[len(datafiles_test)//2], :]
     fr_poor = firing_rates[valsorted_idx[-1], :]
 
-    fig, axes = plt.subplots(nrows=3, figsize=(15, 5))
+    fig, axes = plt.subplots(nrows=3, figsize=(20, 5))
     fig.suptitle(pop_type, fontsize=14)
     axes[0].set_title('The best approximation')
     axes[0].plot(t, fr_best, color="red", linewidth=3, label="Target")
