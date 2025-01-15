@@ -9,7 +9,7 @@ dsf = sdt / tdt # downsampling factor
 NN = 4000
 duration = 2000
 
-source_path =  '/home/ivan/PycharmProjects/Deep_CA1/population_datasets/' # '/media/sdisk/Deep_CA1/population_datasets/'
+source_path =  '/media/sdisk/Deep_CA1/population_datasets/' # '/home/ivan/PycharmProjects/Deep_CA1/population_datasets/' #
 target_path = '/media/sdisk/Deep_CA1/new_population_datasets/'
 
 for dirpath, _, filenames in os.walk(source_path):
