@@ -22,8 +22,8 @@ for dirpath, _, filenames in os.walk(source_path):
         saving_path = target_path + pop_type + '/'
 
 
-        # if not os.path.isdir(saving_path):
-        #     os.mkdir(saving_path)
+        if not os.path.isdir(saving_path):
+            os.mkdir(saving_path)
     else:
         continue
 
