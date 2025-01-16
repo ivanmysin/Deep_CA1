@@ -68,7 +68,7 @@ for dirpath, _, filenames in os.walk(source_path):
 
         sh5file.close()
         th5file.close()
-        print(source_file)
-        print(target_file)
-        print('######################################')
+        # print(source_file)
+        # print(target_file)
+        # print('######################################')
 

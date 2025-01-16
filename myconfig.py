@@ -10,7 +10,7 @@ SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
 STRUCTURESOFNET = "./presimulation_files/"  # Path to files with parameters of full net
 
-DATASETS4POPULATIONMODELS = "/media/sdisk/Deep_CA1/population_datasets/"  # Path to files with datasets for traning models of populations
+DATASETS4POPULATIONMODELS = "/media/sdisk/Deep_CA1/new_population_datasets/"  # Path to files with datasets for traning models of populations
 if not os.path.isdir(DATASETS4POPULATIONMODELS):
     DATASETS4POPULATIONMODELS = "./population_datasets/"
 
@@ -25,7 +25,7 @@ FIRINGSNEURONPARAMS = "./parameters/neurons_parameters.xlsx"
 ####### global parameters for simulation #####
 NUMBERNEURONSINPOP = 4000
 NFILESDATASETS = 1000
-DT = 0.1 # time step, ms
+DT = 0.5 ##!! 0.1 # time step, ms
 
 IS_SAVE_V = False
 GREST = 0.0000000001
