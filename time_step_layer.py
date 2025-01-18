@@ -127,10 +127,10 @@ class TimeStepLayer(Layer):
         input_layer = Input(shape=(None, self.input_size), batch_size=1)
         synapses_layer = synapses_layer(input_layer)
 
-        base_model = tf.keras.models.clone_model(base_model)
+        base_model = tf.keras.models.clone_model(base_model, custom_objects={'square': tf.keras.ops.square})
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name="Population_with_synapses")
 
-        return tf.keras.models.clone_model(model, custom_objects={'square': tf.keras.ops.square})
+        return model
 
 
 
