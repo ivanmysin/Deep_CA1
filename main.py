@@ -138,7 +138,8 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
             LowFiringRateBound.append(pop["MinFiringRate"])
             HighFiringRateBound.append(pop["MaxFiringRate"])
         except KeyError:
-            print(pop['type'], "No MinFiringRate or MaxFiringRate")
+            if not 'generator' in pop['type']:
+                print(pop['type'], "No MinFiringRate or MaxFiringRate")
             continue
 
         if pop["type"] == "CA1 Pyramidal":
