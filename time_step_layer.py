@@ -84,8 +84,16 @@ class TimeStepLayer(Layer):
 
             pre_type = conn['pre_type']
 
-            if "_generator" in pre_type:
-                pre_type = pre_type.replace("_generator", "")
+            if pre_type == "CA3_generator":
+                pre_type = 'CA3 Pyramidal'
+
+            if pre_type == "MEC_generator":
+                pre_type = 'EC LIII Pyramidal'
+
+            if pre_type == "LEC_generator":
+                pre_type = 'EC LIII Pyramidal'
+
+                #pre_type = pre_type.replace("_generator", "")
 
 
             syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == pre_type) & (
