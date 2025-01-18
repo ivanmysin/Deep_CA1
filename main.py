@@ -269,10 +269,10 @@ def main():
     with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
             model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-    #
-    # # save_trained_to_pickle(model.trainable_variables, connections)
-    # model.save('big_model.keras')
-    #
+
+
+            model.save('big_model.keras')
+    save_trained_to_pickle(model.trainable_variables, connections)
     # firings_model = get_firings_model(model)
     #
     # duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
