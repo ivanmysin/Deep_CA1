@@ -8,6 +8,8 @@ from tensorflow.keras.saving import load_model
 import warnings
 import myconfig
 
+square = tf.keras.ops.square
+
 from synapses_layers import TsodycsMarkramSynapse
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
 
@@ -127,7 +129,7 @@ class TimeStepLayer(Layer):
         input_layer = Input(shape=(None, self.input_size), batch_size=1)
         synapses_layer = synapses_layer(input_layer)
 
-        base_model = tf.keras.models.clone_model(base_model, custom_objects={'square': tf.keras.ops.square})
+        base_model = tf.keras.models.clone_model(base_model)
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name="Population_with_synapses")
 
         return model
