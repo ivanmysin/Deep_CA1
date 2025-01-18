@@ -50,6 +50,6 @@ ThetaFreq = 8.0
 ######### fit whole model of CA1 net #########
 TRACK_LENGTH = 400 # cm
 ANIMAL_VELOCITY = 20 # cm/sec
-N_TIMESTEPS = 600
+N_TIMESTEPS = 240
 
 EPOCHES_ON_BATCH = 3
