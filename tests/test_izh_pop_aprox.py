@@ -102,64 +102,68 @@ def mf_izh_ode(y, t, constants):
     s = 0
 
     dr_dt = Delta_eta / np.pi + 2 * r * v_avg - (alpha + g_syn * s) * r
-    dv_avg_dt = v_avg ** 2 - alpha * v_avg - w_avg + bar_eta + I_ext + g_syn * s * (e_r - v_avg) - np.pi ** 2 * r ** 2
+    dv_avg_dt = v_avg ** 2 - alpha * v_avg - w_avg + bar_eta + I_ext + g_syn * s * (e_r - v_avg) - np.pi**2 * r**2
     dw_avg_dt = a * (b * v_avg - w_avg) + w_jump * r
     #ds_dt = -s / tau_s + s_jump * r
 
     return [dr_dt, dv_avg_dt, dw_avg_dt] # , ds_dt
 ##############################################################
-dim_izh_params = {
-    "V0" : -57.0,
-    "U0" : 0.0,
-
-    "Cm": 114, # * pF,  # /cm**2,
-    "k": 1.19, # * mS / mV,
-    "Vrest": -57.63, # * mV,
-    "Vth": -35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
-    "Vpeak": 21.72, # * mV,
-    "Vmin": -48.7, # * mV,
-    "a": 0.005, # * ms ** -1,
-    "b": 0.22, # * mS,
-    "d": 2, # * uA,
-
-    "Iext" : 280,
-}
+# dim_izh_params = {
+#     "V0" : -57.0,
+#     "U0" : 0.0,
+#
+#     "Cm": 114, # * pF,  # /cm**2,
+#     "k": 1.19, # * mS / mV,
+#     "Vrest": -57.63, # * mV,
+#     "Vth": -35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+#     "Vpeak": 21.72, # * mV,
+#     "Vmin": -48.7, # * mV,
+#     "a": 0.005, # * ms ** -1,
+#     "b": 0.22, # * mS,
+#     "d": 2, # * uA,
+#
+#     "Iext" : 280,
+# }
 
 
 # Словарь с константами
-koshi_dencity_params = {
+cauchy_dencity_params = {
     'Delta_eta': 0.02,
-    'bar_eta': 0.0,
+    'bar_eta':  0.191,
 }
 
-# izh_params = {
-#     'alpha': 0.6215,
-#     'I_ext': 0,
-#     'g_syn': 1.2308,
-#     'e_r': 1,
-#     'a': 0.0077,
-#     'b': -0.0062,
-#     'w_jump': 0.0189,
-#     'tau_s': 2.6,
-#     's_jump': 1.2308,
-# }
+izh_params = {
+    'alpha': 0.6215,
+    'I_ext': 0.2,
+    'g_syn': 1.2308,
+    'e_r': 1,
+    'a': 0.0077,
+    'b': -0.0062,
+    'w_jump':  0.0189,
+    'tau_s': 2.6,
+    's_jump': 1.2308,
+    'v_peak' : 200,
+    'v_reset' : -200,
+    'vk' : 0,
+    'wk' : 0,
+}
 
-izh_params = dimensional_to_dimensionless(dim_izh_params)
+#izh_params = dimensional_to_dimensionless(dim_izh_params)
 
-params = koshi_dencity_params | izh_params
+params = cauchy_dencity_params | izh_params
 
 # Начальные условия
 y0 = [0.0, izh_params['vk'], izh_params['wk']] # , 0
 
 # Временной интервал
-duration = 200
-dt = 0.1
+duration = 50
+dt = 0.001
 t = np.linspace(0, duration, int(duration/dt))
 
 # Решение системы ОДУ
 solution = odeint(mf_izh_ode, y0, t, args=(params,))
 
-direct_r = izhs_lib.izh_simulate(dim_izh_params, koshi_dencity_params, dt=dt, duration=duration)
+direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
 
 # Извлекаем результаты
 r = solution[:, 0]
@@ -168,10 +172,15 @@ w_avg = solution[:, 2]
 #s = solution[:, 3]
 
 fig, axes = plt.subplots(nrows=3)
-axes[0].plot(t, r)
 axes[0].plot(t, direct_r)
-axes[1].plot(t, v_avg)
-axes[2].plot(t, w_avg)
+axes[0].plot(t, r, linewidth=3)
+
+axes[1].plot(t, direct_v_avg)
+axes[1].plot(t, v_avg, linewidth=3)
+
+axes[2].plot(t, direct_u_avg)
+axes[2].plot(t, w_avg, linewidth=3)
+
 #axes[3].plot(t, s)
 
 plt.show()

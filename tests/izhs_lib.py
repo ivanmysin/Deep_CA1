@@ -41,3 +41,50 @@ def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
         firings[ts_idx] = np.mean(fired)
 
     return firings
+
+
+def izh_nondim_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
+
+    alpha = params['alpha']
+
+    a =  params['a']
+    b =  params['b']
+    Vpeak = params['v_peak']
+    Vreset = params['v_reset']
+    d =  params['w_jump']
+    Iext =  params['I_ext']
+
+    print(Vreset, Vpeak)
+
+    V = np.zeros(NN, dtype=float) + params['vk']
+    U = np.zeros(NN, dtype=float) + params['wk']
+
+    eta = eta_params['bar_eta'] + eta_params['Delta_eta'] * np.random.standard_cauchy(NN)  #np.tan(np.pi*(np.random.rand(NN) - 0.5) )
+    eta = np.sort(eta)
+    print(eta)
+
+    Nt = int(duration / dt)
+
+    firings = np.zeros(Nt, dtype=float)
+    v_avg = np.zeros(Nt, dtype=float)
+    u_avg = np.zeros(Nt, dtype=float)
+
+    for ts_idx in range(Nt):
+
+        dVdt = V * (V - alpha) - U + eta + Iext
+        dUdt = a * (b*V - U)
+
+        #print(dt * dVdt[-1])
+
+        V = V + dt * dVdt
+        U = U + dt * dUdt
+
+        fired = V > Vpeak
+        V[fired] = Vreset
+        U[fired] += d
+
+        firings[ts_idx] = np.mean(fired) / dt
+        v_avg[ts_idx] = np.mean(V)
+        u_avg[ts_idx] = np.mean(U)
+
+    return firings, v_avg, u_avg
