@@ -28,7 +28,7 @@ class TimeStepLayer(Layer):
 
         self.base_pop_models_files = base_pop_models
         for base_pop_model_name, base_pop_model_path in base_pop_models.items():
-            base_model =  load_model(base_pop_model_path)
+            base_model =  load_model(base_pop_model_path, custom_objects={'square':tf.keras.ops.square})
             base_pop_models[base_pop_model_name] = base_model
             for layer in base_model.layers:
                 layer.trainable = False

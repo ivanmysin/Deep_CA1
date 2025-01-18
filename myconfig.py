@@ -1,7 +1,7 @@
 import os
 
 
-RUNMODE = 'DEBUG' #'RELEASE' #
+RUNMODE = 'RELEASE' #'DEBUG' #
 DTYPE = "float32"
 
 N_THREDS = 8
@@ -50,6 +50,6 @@ ThetaFreq = 8.0
 ######### fit whole model of CA1 net #########
 TRACK_LENGTH = 400 # cm
 ANIMAL_VELOCITY = 20 # cm/sec
-N_TIMESTEPS = 10
+N_TIMESTEPS = 600
 
 EPOCHES_ON_BATCH = 3
