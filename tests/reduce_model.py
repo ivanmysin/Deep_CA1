@@ -43,9 +43,9 @@ for conn in connections:
 neurons_target_path = myconfig.STRUCTURESOFNET + 'neurons.pickle'
 conns_target_path = myconfig.STRUCTURESOFNET + 'connections.pickle'
 with open(neurons_source_path, 'wb') as file:
-    populations = pickle.load(file)
+    pickle.dump(new_pops, file)
 with open(conns_source_path, 'wb') as file:
-    connections = pickle.load(file)
+    pickle.dump(new_conns, file)
 
 uniq_types = set(n_types)
 
