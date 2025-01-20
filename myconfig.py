@@ -39,7 +39,7 @@ VERBOSETRANINGPOPMODELS = 0
 BATCHSIZE = 200
 BATCH_LEN_PART = 1
 ########### Net creation ######################
-PCONN_THRESHOLD = 0.01
+PCONN_THRESHOLD = 0.05
 
 
 
