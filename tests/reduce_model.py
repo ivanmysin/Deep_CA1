@@ -1,7 +1,11 @@
 import pickle
 import os
+import sys
+sys.path.append('../')
+
 os.chdir('../')
 import myconfig
+
 
 MAX_L = 500
 
