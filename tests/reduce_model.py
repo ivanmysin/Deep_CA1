@@ -39,9 +39,11 @@ uniq_types = set(n_types)
 
 for ut in uniq_types:
     utc = n_types.count(ut)
-
     print(ut, utc)
 
+
+print('##################################')
+print('Number of connections =', len(new_conns))
 
 neurons_target_path = myconfig.STRUCTURESOFNET + 'neurons.pickle'
 conns_target_path = myconfig.STRUCTURESOFNET + 'connections.pickle'
