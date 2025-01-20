@@ -1,9 +1,9 @@
-import pickle
-import os
 import sys
 sys.path.append('../')
-
+import pickle
+import os
 os.chdir('../')
+
 import myconfig
 
 
