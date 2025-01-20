@@ -1,8 +1,8 @@
 import sys
 sys.path.append('../')
 import pickle
-import os
-os.chdir('../')
+# import os
+# os.chdir('../')
 
 import myconfig
 
