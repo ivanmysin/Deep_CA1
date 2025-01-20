@@ -40,6 +40,13 @@ for conn in connections:
         conn['post_idx'] = old_new_idxs[conn['post_idx']]
         new_conns.append(conn)
 
+neurons_target_path = myconfig.STRUCTURESOFNET + 'neurons.pickle'
+conns_target_path = myconfig.STRUCTURESOFNET + 'connections.pickle'
+with open(neurons_source_path, 'wb') as file:
+    populations = pickle.load(file)
+with open(conns_source_path, 'wb') as file:
+    connections = pickle.load(file)
+
 uniq_types = set(n_types)
 
 for ut in uniq_types:
@@ -49,10 +56,3 @@ for ut in uniq_types:
 
 print('##################################')
 print('Number of connections =', len(new_conns))
-
-neurons_target_path = myconfig.STRUCTURESOFNET + 'neurons.pickle'
-conns_target_path = myconfig.STRUCTURESOFNET + 'connections.pickle'
-with open(neurons_source_path, 'rb') as file:
-    populations = pickle.load(file)
-with open(conns_source_path, 'rb') as file:
-    connections = pickle.load(file)
