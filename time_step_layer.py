@@ -158,7 +158,7 @@ class TimeStepLayer(Layer):
     def call(self, input, state):
 
 
-        input = K.concatenate([state[0], input], axis=-1)
+        input = K.concatenate([state, input], axis=-1)
         input = K.reshape(input, shape=(1, 1, -1))
 
         output = []
