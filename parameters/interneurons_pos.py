@@ -65,11 +65,17 @@ def main():
         for cell_idx in range(cells_pop["Npops"]):
             print(cells_pop["neurons"])
 
+            cell_pos_dv = selected[cell_idx, 1]
+
+            if cell_pos_dv < myconfig.DV_MIN or cell_pos_dv > myconfig.DV_MAX:
+                continue
+
+
             int_cell = {
                 "type": cells_pop["neurons"],
 
                 "x_anat": selected[cell_idx, 0],
-                "y_anat": selected[cell_idx, 1],
+                "y_anat": cell_pos_dv,
                 "z_anat": 0,
 
                 "ThetaFreq" : myconfig.ThetaFreq,

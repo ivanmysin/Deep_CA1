@@ -25,6 +25,8 @@ def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
     Nt = int(duration / dt)
 
     firings = np.zeros(Nt, dtype=float)
+    v_avg = np.zeros(Nt, dtype=float)
+    u_avg = np.zeros(Nt, dtype=float)
 
     for ts_idx in range(Nt):
 
@@ -39,6 +41,8 @@ def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
         U[fired] += d
 
         firings[ts_idx] = np.mean(fired)
+        v_avg[ts_idx] = np.mean(V)
+        u_avg[ts_idx] = np.mean(U)
 
     return firings
 

@@ -48,6 +48,10 @@ ThetaFreq = 8.0
 
 ##############################################
 ######### fit whole model of CA1 net #########
+DV_MIN = 0
+DV_MAX = 200
+
+
 TRACK_LENGTH = 400 # cm
 ANIMAL_VELOCITY = 20 # cm/sec
 N_TIMESTEPS = 240

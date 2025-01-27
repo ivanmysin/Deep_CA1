@@ -108,47 +108,50 @@ def mf_izh_ode(y, t, constants):
 
     return [dr_dt, dv_avg_dt, dw_avg_dt] # , ds_dt
 ##############################################################
-# dim_izh_params = {
-#     "V0" : -57.0,
-#     "U0" : 0.0,
-#
-#     "Cm": 114, # * pF,  # /cm**2,
-#     "k": 1.19, # * mS / mV,
-#     "Vrest": -57.63, # * mV,
-#     "Vth": -35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
-#     "Vpeak": 21.72, # * mV,
-#     "Vmin": -48.7, # * mV,
-#     "a": 0.005, # * ms ** -1,
-#     "b": 0.22, # * mS,
-#     "d": 2, # * uA,
-#
-#     "Iext" : 280,
-# }
+dim_izh_params = {
+    "V0" : -57.0,
+    "U0" : 0.0,
+
+    "Cm": 114, # * pF,  # /cm**2,
+    "k": 1.19, # * mS / mV,
+    "Vrest": -57.63, # * mV,
+    "Vth": -35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+    "Vpeak": 21.72, # * mV,
+    "Vmin": -48.7, # * mV,
+    "a": 0.005, # * ms ** -1,
+    "b": 0.22, # * mS,
+    "d": 2, # * uA,
+
+    "Iext" : 580,
+}
 
 
 # Словарь с константами
 cauchy_dencity_params = {
     'Delta_eta': 0.02,
-    'bar_eta':  0.191,
+    'bar_eta': 0.0, # 0.191,
 }
 
-izh_params = {
-    'alpha': 0.6215,
-    'I_ext': 0.2,
-    'g_syn': 1.2308,
-    'e_r': 1,
-    'a': 0.0077,
-    'b': -0.0062,
-    'w_jump':  0.0189,
-    'tau_s': 2.6,
-    's_jump': 1.2308,
-    'v_peak' : 200,
-    'v_reset' : -200,
-    'vk' : 0,
-    'wk' : 0,
-}
+# izh_params = {
+#     'alpha': 0.6215,
+#     'I_ext': 0.2,
+#     'g_syn': 1.2308,
+#     'e_r': 1,
+#     'a': 0.0077,
+#     'b': -0.0062,
+#     'w_jump':  0.0189,
+#     'tau_s': 2.6,
+#     's_jump': 1.2308,
+#     'v_peak' : 200,
+#     'v_reset' : -200,
+#     'vk' : 0,
+#     'wk' : 0,
+# }
 
-#izh_params = dimensional_to_dimensionless(dim_izh_params)
+izh_params = dimensional_to_dimensionless(dim_izh_params)
+#izh_params['v_peak'] = 200
+#izh_params['v_reset'] = -200
+
 
 params = cauchy_dencity_params | izh_params
 
@@ -164,6 +167,7 @@ t = np.linspace(0, duration, int(duration/dt))
 solution = odeint(mf_izh_ode, y0, t, args=(params,))
 
 direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
+#direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
 
 # Извлекаем результаты
 r = solution[:, 0]
