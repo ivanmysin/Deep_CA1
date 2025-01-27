@@ -167,7 +167,7 @@ class TimeStepLayer(Layer):
             output.append(out)
         output = K.concatenate(output, axis=-1)
 
-        return output, [output[0], ]
+        return output, [output, ]
 
     def get_config(self):
         config = super().get_config()
