@@ -131,7 +131,7 @@ class TimeStepLayer(Layer):
             warns_message = "No presynaptic population " + pop["type"] + " with index " + str(pop_idx)
             warnings.warn(warns_message)
 
-
+        print(len(conn_params))
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
