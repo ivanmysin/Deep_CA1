@@ -159,7 +159,7 @@ class TimeStepLayer(Layer):
 
         input = K.reshape(input, shape=(1, 1, -1))
         input = K.concatenate([state[0], input], axis=-1)
-
+        input = K.reshape(input, shape=(1, 1, -1))
 
         output = []
         for model in self.pop_models:
