@@ -20,7 +20,7 @@ class TimeStepLayer(Layer):
     def __init__(self, units, populations, connections, neurons_params, synapses_params, base_pop_models, dt=0.1,  **kwargs):
         super().__init__(**kwargs)
         self.units = units
-        self.state_size = units
+        self.state_size = [units, ]
         self.dt = dt
         self.input_size = len(populations)
 
@@ -146,7 +146,7 @@ class TimeStepLayer(Layer):
 
 
     def get_initial_state(self, batch_size=1):
-        state = K.zeros(shape=(batch_size, 1, self.state_size), dtype=tf.float32)
+        state = K.zeros(shape=(batch_size, 1, self.state_size[0]), dtype=tf.float32)
         return [state, ]
 
     def build(self, input_shape):
@@ -157,15 +157,17 @@ class TimeStepLayer(Layer):
 
     def call(self, input, state):
 
-        input = K.reshape(input, shape=(1, 1, -1))
-        input = K.concatenate([state[0], input], axis=-1)
-        input = K.reshape(input, shape=(1, 1, -1))
+        firings = state[0]
+
+        input = tf.reshape(input, shape=(1, 1, -1))
+        input = tf.concat([firings, input], axis=-1)
+        input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
         for model in self.pop_models:
             out = model(input)
             output.append(out)
-        output = K.concatenate(output, axis=-1)
+        output = tf.concat(output, axis=-1)
 
         return output, [output, ]
 
