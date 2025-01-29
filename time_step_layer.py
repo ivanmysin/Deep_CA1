@@ -157,17 +157,18 @@ class TimeStepLayer(Layer):
 
     def call(self, input, state):
 
-        #input = K.reshape(input, shape=(1, 1, -1))
-        tf.print(tf.shape(input))
-
-        input = K.concatenate([state[0], input], axis=-1)
         input = K.reshape(input, shape=(1, 1, -1))
+
+
+        input = tf.concat([state[0], input], axis=-1)
+        input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
         for model in self.pop_models:
             out = model(input)
             output.append(out)
-        output = K.concatenate(output, axis=-1)
+        output = tf.concat(output, axis=-1)
+        tf.print(tf.shape(output))
 
         return output, [output, ]
 
