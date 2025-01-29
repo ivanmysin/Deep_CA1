@@ -48,9 +48,14 @@ if True:
     print("###################################")
     print(model.summary())
 
-    X = np.random.rand(50).reshape(1, 10, 5)
+    X1 = np.random.rand(5).reshape(1, 1, 5)
+    X2 = np.random.rand(5).reshape(1, 1, 5)
     #!!! X = np.zeros_like(X)
 
-    Y = model.predict(X)
+    Y1 = model.predict(X1)
 
-    print(Y)
+    Y2 = model.predict(X2)
+
+    Y = tf.concat([Y1, Y2], axis=-1)
+
+    print(Y.shape)

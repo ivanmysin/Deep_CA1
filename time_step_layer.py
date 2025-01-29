@@ -157,10 +157,7 @@ class TimeStepLayer(Layer):
 
     def call(self, input, state):
 
-        #input = K.reshape(input, shape=(1, 1, -1))
-
-        tf.print(tf.shape(input))
-
+        input = K.reshape(input, shape=(1, 1, -1))
         input = K.concatenate([state[0], input], axis=-1)
         input = K.reshape(input, shape=(1, 1, -1))
 
