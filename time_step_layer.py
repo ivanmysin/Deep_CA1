@@ -164,11 +164,12 @@ class TimeStepLayer(Layer):
         input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
+        tf.print(tf.shape(input))
         for model in self.pop_models:
             out = model(input)
             output.append(out)
         output = tf.concat(output, axis=-1)
-        tf.print(tf.shape(output))
+
 
         return output, [output, ]
 
