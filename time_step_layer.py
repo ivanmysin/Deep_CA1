@@ -146,7 +146,7 @@ class TimeStepLayer(Layer):
         synapses_layer = synapses_layer(input_layer)
 
         base_model = tf.keras.models.clone_model(base_model)
-        model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name="Population_with_synapses")
+        model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name=f"Population_with_synapses_{pop_idx}")
 
         return model
 
@@ -171,7 +171,7 @@ class TimeStepLayer(Layer):
         #input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
-        tf.print(tf.shape(input))
+        ##tf.print(tf.shape(input))
         for model in self.pop_models:
             out = model(input)
             output.append(out)
