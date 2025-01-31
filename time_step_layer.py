@@ -132,6 +132,10 @@ class TimeStepLayer(Layer):
             warnings.warn(warns_message)
 
 
+        assert(np.sum(is_connected_mask) != len(conn_params['gsyn_max']))
+
+
+
         # print(np.sum(is_connected_mask))
         # print(len(conn_params['gsyn_max']))
         # print("################################")

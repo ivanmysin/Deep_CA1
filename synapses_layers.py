@@ -69,7 +69,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
 
-        print(self.mask.numpy())
+        #print(self.mask.numpy())
 
 
     def build(self, input_shape):
