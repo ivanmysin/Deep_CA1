@@ -12,7 +12,7 @@ class BaseSynapse(Layer):
     def __init__(self, params, dt=0.1, mask=None, **kwargs):
         super(BaseSynapse, self).__init__(**kwargs)
         self.dt = tf.convert_to_tensor(dt, dtype=myconfig.DTYPE)
-        self.pconn = tf.convert_to_tensor( params['pconn'], dtype=myconfig.DTYPE, shape=(1, -1) )
+        self.pconn = tf.convert_to_tensor( params['pconn'], dtype=myconfig.DTYPE )
         self.Erev = tf.convert_to_tensor( params['Erev'], dtype=myconfig.DTYPE )
         self.Cm = tf.convert_to_tensor( params['Cm'], dtype=myconfig.DTYPE )
         self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
