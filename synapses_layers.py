@@ -69,7 +69,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
 
-
+        print(self.mask.numpy())
 
 
     def build(self, input_shape):
@@ -130,7 +130,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
     def call(self, inputs, states):
-        FR = tf.boolean_mask(inputs, self.mask, axis=-1)
+        FR = tf.boolean_mask(inputs, self.mask, axis=1)
 
         R = states[0]
         U = states[1]

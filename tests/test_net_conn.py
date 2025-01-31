@@ -68,7 +68,7 @@ neurons = [
         "MaxFiringRate": 80.0,
     },
     {
-        "type": "CA3 Pyramidal_generator",
+        "type": "CA3_generator",
         "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14*0.5,  # DV
         "R": 0.3,
@@ -86,7 +86,7 @@ neurons = [
 
     },
     {
-        "type": "EC LIII Pyramidal_generator",
+        "type": "MEC_generator",
         "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14 * 0.5,  # DV
         "R": 0.3,

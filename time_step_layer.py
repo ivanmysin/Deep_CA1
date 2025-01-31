@@ -132,6 +132,9 @@ class TimeStepLayer(Layer):
             warnings.warn(warns_message)
 
 
+        # print(np.sum(is_connected_mask))
+        # print(len(conn_params['gsyn_max']))
+        # print("################################")
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
@@ -161,10 +164,10 @@ class TimeStepLayer(Layer):
 
 
         input = tf.concat([state[0], input], axis=-1)
-        input = tf.reshape(input, shape=(1, 1, -1))
+        #input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
-        tf.print(tf.shape(input))
+        #tf.print(tf.shape(input))
         for model in self.pop_models:
             out = model(input)
             output.append(out)

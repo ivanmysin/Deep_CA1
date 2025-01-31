@@ -105,11 +105,11 @@ def get_dataset(populations):
             'locking' : np.copy(phase_locking_without_phase),
         })
 
-        if batch_idx == 0:
-            print(pyr_targets.shape)
-            print(phase_locking_with_phase.shape)
-            print(robast_mean_firing_rate.shape)
-            print(phase_locking_without_phase.shape)
+        # if batch_idx == 0:
+        #     print(pyr_targets.shape)
+        #     print(phase_locking_with_phase.shape)
+        #     print(robast_mean_firing_rate.shape)
+        #     print(phase_locking_without_phase.shape)
 
 
 
