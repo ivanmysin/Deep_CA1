@@ -82,6 +82,12 @@ class TimeStepLayer(Layer):
         for conn in connections:
             if conn["post_idx"] != pop_idx: continue
 
+            if is_connected_mask[conn["pre_idx"]]:
+
+                print("Synapse already exist!!!")
+                continue
+
+
             pre_type = conn['pre_type']
 
             if pre_type == "CA3_generator":
@@ -132,13 +138,8 @@ class TimeStepLayer(Layer):
             warnings.warn(warns_message)
 
 
-        assert(np.sum(is_connected_mask) != len(conn_params['gsyn_max']))
+        assert( np.sum(is_connected_mask) == len(conn_params['pconn']) )
 
-
-
-        # print(np.sum(is_connected_mask))
-        # print(len(conn_params['gsyn_max']))
-        # print("################################")
         synapses = TsodycsMarkramSynapse(conn_params, dt=self.dt, mask=is_connected_mask)
         synapses_layer = RNN(synapses, return_sequences=True, stateful=True, name=f"Synapses_Layer_Pop_{pop_idx}")
 
@@ -171,7 +172,7 @@ class TimeStepLayer(Layer):
         #input = tf.reshape(input, shape=(1, 1, -1))
 
         output = []
-        ##tf.print(tf.shape(input))
+
         for model in self.pop_models:
             out = model(input)
             output.append(out)
