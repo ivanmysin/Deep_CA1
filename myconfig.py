@@ -4,7 +4,7 @@ import os
 RUNMODE = 'DEBUG' #'RELEASE' #
 DTYPE = "float32"
 
-N_THREDS = 8
+N_THREDS = 1
 ############## directorires  #################
 SCRIPTS4PARAMSGENERATION = "./parameters/"
 PRETRANEDMODELS = "./pretrained_models/" # Path to DL models of populations
