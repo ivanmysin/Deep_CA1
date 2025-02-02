@@ -6,9 +6,8 @@ from tensorflow.keras.saving import load_model
 
 
 model = Sequential()
-model.add(Input(shape=(None, 2)))
-model.add(GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform()))  # , stateful=True
-model.add(GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform()))  # , stateful=True
+model.add(Input(shape=(None, 1)))
+model.add(GRU(16, return_sequences=True))  # , stateful=True
 model.add(Dense(1, activation='relu'))  #
 
 model.compile(loss="mean_squared_logarithmic_error", optimizer=keras.optimizers.Adam(learning_rate=0.001),

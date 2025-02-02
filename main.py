@@ -249,6 +249,8 @@ def main():
 
         pop_type = population["neurons"]
         base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + pop_type + '.keras'
+        if myconfig.RUNMODE == 'DEBUG':
+            base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + 'NO_Trained.keras'
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
     print(model.summary())
