@@ -24,6 +24,7 @@ class BaseSynapse(Layer):
         except:
             self.pop_idx = 0
 
+
         self.units = tf.size(self.pconn)
 
         if mask is None:
@@ -68,7 +69,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
-
+        self.state_size = [self.units, self.units, self.units, 1]
+        assert(mask.sum() > 0)
 
 
 
@@ -76,13 +78,11 @@ class TsodycsMarkramSynapse(BaseSynapse):
         super(TsodycsMarkramSynapse, self).build(input_shape)
 
         self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-        self.state_size = [self.units, self.units, self.units, self.units]
+        #self.state_size = [self.units, self.units, self.units, 1]
 
         self.exp_tau_d = exp(-self.dt / self.tau_d)
         self.exp_tau_f = exp(-self.dt / self.tau_f)
         self.exp_tau_r = exp(-self.dt / self.tau_r)
-
-        #self.pconn = self.pconn
 
         self.built = True
 
@@ -130,18 +130,15 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
     def call(self, inputs, states):
-        FR = tf.boolean_mask(inputs, self.mask, axis=1)
 
-        # print(tf.shape(FR))
-        # print(tf.shape(inputs))
-        # print("######################")
+
+
+        FR = tf.boolean_mask(inputs, self.mask, axis=1)
 
         R = states[0]
         U = states[1]
         A = states[2]
         Vsyn = states[3]
-
-
 
         FRpre_normed =  FR * self.pconn * 0.001 * self.dt # to convert firings in Hz to probability
 
@@ -165,6 +162,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         output = (Vsyn - self.Erev_min) / (self.Erev_max - self.Erev_min)
         output = tf.reshape(output, shape=(1, 1))
 
+        #print(output.Vsyn())
+
         return output, [R, U, A, Vsyn]
 
     def get_initial_state(self, batch_size=1):
@@ -175,6 +174,9 @@ class TsodycsMarkramSynapse(BaseSynapse):
         A = tf.zeros( shape, dtype=myconfig.DTYPE)
 
         Vsyn = tf.zeros((batch_size, 1), dtype=myconfig.DTYPE) + self.Vrest
+
+
+
         initial_state = [R, U, A, Vsyn]
 
         return initial_state
@@ -195,7 +197,7 @@ if __name__ == "__main__":
         "tau_d" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
         'pconn' : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.0,
         'Erev' : np.zeros(Ns, dtype=myconfig.DTYPE),
-        'Vrest' : np.zeros(Ns, dtype=myconfig.DTYPE) - 65.0,
+        'Vrest' : np.zeros(1, dtype=myconfig.DTYPE) - 65.0,
         'Erev_min' : -75.0,
         'Erev_max' : 0.0,
         'Cm' : 0.114,

@@ -105,11 +105,11 @@ def get_dataset(populations):
             'locking' : np.copy(phase_locking_without_phase),
         })
 
-        if batch_idx == 0:
-            print(pyr_targets.shape)
-            print(phase_locking_with_phase.shape)
-            print(robast_mean_firing_rate.shape)
-            print(phase_locking_without_phase.shape)
+        # if batch_idx == 0:
+        #     print(pyr_targets.shape)
+        #     print(phase_locking_with_phase.shape)
+        #     print(robast_mean_firing_rate.shape)
+        #     print(phase_locking_without_phase.shape)
 
 
 
@@ -268,7 +268,7 @@ def main():
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
     # print(model.summary())
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
             #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
             y_tmp = model.predict(x_train)
