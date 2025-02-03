@@ -273,9 +273,9 @@ def main():
             #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
             y_tmp = model.predict(x_train)
 
-            for y_pred, y_train in zip(y_tmp, Ytrain):
+            for y_pred, y_tr in zip(y_tmp, y_train):
                 print(y_pred.shape)
-                print(y_train.shape)
+                print(y_tr.shape)
                 print('#############')
             break
             model.save('big_model.keras')
