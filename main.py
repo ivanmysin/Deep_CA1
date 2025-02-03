@@ -249,8 +249,8 @@ def main():
 
         pop_type = population["neurons"]
         base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + pop_type + '.keras'
-        if myconfig.RUNMODE == 'DEBUG':
-            base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + 'NO_Trained.keras'
+        # if myconfig.RUNMODE == 'DEBUG':
+        #     base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + 'NO_Trained.keras'
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
     print(model.summary())
@@ -270,10 +270,14 @@ def main():
     # print(model.summary())
     with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
-            model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-            #y_tmp = model.predict(x_train)
+            #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+            y_tmp = model.predict(x_train)
 
-
+            for y_pred, y_train in zip(y_tmp, Ytrain):
+                print(y_pred.shape)
+                print(y_train.shape)
+                print('#############')
+            break
             model.save('big_model.keras')
     save_trained_to_pickle(model.trainable_variables, connections)
     # firings_model = get_firings_model(model)
