@@ -268,10 +268,10 @@ def main():
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
 
-    # for x_train, y_train in zip(Xtrain, Ytrain):
-    #     for key, vals in y_train.items():
-    #         print(key, vals.shape)
-    #     break
+    for x_train, y_train in zip(Xtrain, Ytrain):
+        for key, vals in y_train.items():
+            print(key, vals.shape)
+        break
 
     with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
@@ -280,10 +280,8 @@ def main():
 
 
 
-            for key in y_train.keys():
-                print(key)
-                print("y_train ", y_train[key].shape)
-                print("y_pred ", y_tmp[key].shape)
+            for y in y_tmp:
+                print("y_pred ", y.shape)
 
                 print('#############')
             break
