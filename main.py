@@ -267,19 +267,31 @@ def main():
     #     'Decorrelator' : Decorrelator,
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
-    # print(model.summary())
+
+    # for x_train, y_train in zip(Xtrain, Ytrain):
+    #     for key, vals in y_train.items():
+    #         print(key, vals.shape)
+    #     break
+
     with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
             #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
             y_tmp = model.predict(x_train)
 
-            for y_pred, y_tr in zip(y_tmp, y_train):
-                print(y_pred.shape)
-                print(y_tr.shape)
+
+
+            for key in y_train.keys():
+                print(key)
+                print("y_train ", y_train[key].shape)
+                print("y_pred ", y_tmp[key].shape)
+
                 print('#############')
             break
-            model.save('big_model.keras')
-    save_trained_to_pickle(model.trainable_variables, connections)
+    #         model.save('big_model.keras')
+    # save_trained_to_pickle(model.trainable_variables, connections)
+
+
+
     # firings_model = get_firings_model(model)
     #
     # duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
