@@ -14,8 +14,8 @@ with open(cfile, mode="br") as file:
 types = [pop['type'] for pop in populations]
 uniq_types = set(types)
 
-# for pop_type in uniq_types:
-#     print(pop_type, types.count(pop_type))
+for pop_type in uniq_types:
+    print(pop_type, types.count(pop_type))
 
 print("Число популяций =", len(populations))
 
@@ -30,7 +30,7 @@ print("Число популяций =", len(populations))
 #     print(pop_idx, conns_counter, pop['type'])
 
 
-for conn in conns:
-    if conn["post_idx"] != 0: continue
-
-    print(conn["pre_idx"], conn["post_idx"])
+# for conn in conns:
+#     if conn["post_idx"] != 0: continue
+#
+#     print(conn["pre_idx"], conn["post_idx"])

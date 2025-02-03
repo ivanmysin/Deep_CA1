@@ -73,8 +73,8 @@ def get_dataset(populations):
 
     phase_locking_with_phase = np.asarray(phase_locking_with_phase)
 
-    im = phase_locking_with_phase[1, :] * np.sin(phase_locking_with_phase[0, :])
-    re = phase_locking_with_phase[1, :] * np.cos(phase_locking_with_phase[0, :])
+    im = phase_locking_with_phase[:, 1] * np.sin(phase_locking_with_phase[:, 0])
+    re = phase_locking_with_phase[:, 1] * np.cos(phase_locking_with_phase[:, 0])
 
     phase_locking_with_phase = np.stack([re, im], axis=1).reshape(1, 2, -1)
 
@@ -275,18 +275,10 @@ def main():
 
     with tf.device('/cpu:0'):
         for x_train, y_train in zip(Xtrain, Ytrain):
-            #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+            model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
             y_tmp = model.predict(x_train)
-
-
-
-            for y in y_tmp:
-                print("y_pred ", y.shape)
-
-                print('#############')
-            break
-    #         model.save('big_model.keras')
-    # save_trained_to_pickle(model.trainable_variables, connections)
+            model.save('big_model.keras')
+    #save_trained_to_pickle(model.trainable_variables, connections)
 
 
 
