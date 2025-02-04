@@ -273,7 +273,7 @@ def main():
             print(key, vals.shape)
         break
 
-    with tf.device('/cpu:0'):
+    with tf.device('/gpu:0'):
         counter = 1
         for x_train, y_train in zip(Xtrain, Ytrain):
             #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
