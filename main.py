@@ -268,10 +268,6 @@ def main():
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
 
-    for x_train, y_train in zip(Xtrain, Ytrain):
-        for key, vals in y_train.items():
-            print(key, vals.shape)
-        break
 
     with tf.device('/gpu:0'):
         counter = 1
