@@ -69,36 +69,36 @@ neurons = [
     },
     {
         "type": "CA3_generator",
-        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceFiringRate": 10,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14*0.5,  # DV
         "R": 0.3,
 
-        "InPlacePeakRate": 8.0,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 10,
-        "SigmaPlaceField": 30,
+        "InPlacePeakRate": 50,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 12000,
+        "SigmaPlaceField": 3000,
 
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
 
-        "ThetaFreq": 7.0,
+        "ThetaFreq": 8.0,
 
 
     },
     {
         "type": "MEC_generator",
-        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
-        "OutPlaceThetaPhase": 3.14 * 0.5,  # DV
+        "OutPlaceFiringRate": 10,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceThetaPhase": -3.14 * 0.5,  # DV
         "R": 0.3,
 
-        "InPlacePeakRate": 8.0,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 10,
-        "SigmaPlaceField": 30,
+        "InPlacePeakRate": 50.0,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 7000,
+        "SigmaPlaceField": 3000,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
 
-        "ThetaFreq": 7.0,
+        "ThetaFreq": 8.0,
     },
 ]
 
@@ -107,103 +107,100 @@ connections = [
         "pconn" : 1.0,
         "pre_idx" : 0,
         "post_idx" : 0,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 1,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 1,
         "post_idx": 1,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 1,
         "post_idx": 0,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
-
-
 
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 2,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 3,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 0,
         "post_idx": 4,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
 
-    ##########
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 0,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 1,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 10,
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 3,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
-   ##########
+
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 10,
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 1,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 2,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 3,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 4,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 0.0,
     },
 ]
 

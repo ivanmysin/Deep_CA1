@@ -269,26 +269,26 @@ def main():
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
 
 
-    with tf.device('/gpu:0'):
-        counter = 1
-        for x_train, y_train in zip(Xtrain, Ytrain):
-            #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-            model.train_on_batch(x_train, y_train)
-            #y_tmp = model.predict(x_train)
-            model.save('big_model.keras')
-            print(counter)
-            counter += 1
+    # with tf.device('/gpu:0'):
+    #     counter = 1
+    #     for x_train, y_train in zip(Xtrain, Ytrain):
+    #         #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+    #         model.train_on_batch(x_train, y_train)
+    #         #y_tmp = model.predict(x_train)
+    #         model.save('big_model.keras')
+    #         print(counter)
+    #         counter += 1
     #save_trained_to_pickle(model.trainable_variables, connections)
 
 
 
-    # firings_model = get_firings_model(model)
-    #
-    # duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
-    # t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
-    # firings = firings_model.predict(t)
-    # with h5py.File("firings.h5", mode='w') as h5file:
-    #     h5file.create_dataset('firings', data=firings)
+    firings_model = get_firings_model(model)
+
+    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
+    firings = firings_model.predict(t)
+    with h5py.File("firings.h5", mode='w') as h5file:
+        h5file.create_dataset('firings', data=firings)
 
 
 
