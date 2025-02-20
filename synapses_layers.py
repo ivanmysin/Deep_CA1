@@ -70,7 +70,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
         self.state_size = [self.units, self.units, self.units, 1]
-        assert(mask.sum() > 0)
+        #assert(mask.sum() > 0)
 
 
 
@@ -152,13 +152,12 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
         gsyn = tf.nn.relu(self.gsyn_max) * A
-        g_tot = tf.reduce_sum(gsyn, axis=-1) + 0.0000001
-        gE = gsyn * self.Erev + 0.0000001*self.Vrest
-        E_inf = tf.reduce_sum(gE, axis=-1) / g_tot
+        g_tot = tf.reduce_sum(gsyn, axis=-1) + 1
+        gE = gsyn * self.Erev
+        E_inf = (tf.reduce_sum(gE, axis=-1)  + 1*self.Vrest ) / g_tot  #
         tau = self.Cm / g_tot
 
-        #        tau = exp(-self.dt / tau)
-        Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt/ tau))
+        Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt / tau))
         output = (Vsyn - self.Erev_min) / (self.Erev_max - self.Erev_min)
         output = tf.reshape(output, shape=(1, 1))
 

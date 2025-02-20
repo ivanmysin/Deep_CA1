@@ -13,11 +13,11 @@ params = [
 
     {
         "R": 0.4,
-        "OutPlaceFiringRate": 30.0,
+        "OutPlaceFiringRate": 0.5,
         "OutPlaceThetaPhase": 1.57,
         "InPlacePeakRate": 30.0,
-        "CenterPlaceField": -5000.0,
-        "SigmaPlaceField": 50000000,
+        "CenterPlaceField": 2500.0,
+        "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0,  # np.deg2rad(10) * 10 * 0.001,
         "PrecessionOnset": -1.57,
         "ThetaFreq": 8.0,
@@ -37,17 +37,13 @@ params = [
 
 
 ]
-dt = 0.1
+dt = 0.5
 
-pyr = genloss.SpatialThetaGenerators(params, mask=[True,])
-pyr.precomute()
+generators = genloss.SpatialThetaGenerators(params)
 
 
-t = tf.range(0, 10000.0, dt, dtype=tf.float64)
-
-firings = pyr.get_firings( tf.reshape(t, shape=[-1, 1]) ) * 0.001 * dt
 ###############################################################
-pre_types = ["CA1 Pyramidal", "CA1 Basket"] #  "CA1 O-LM",
+pre_types = ["CA1 Pyramidal", "CA3 Pyramidal"] #  "CA1 O-LM",
 post_type = "CA1 Basket"
 synparams = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv")
 synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pconn"}, axis=1, inplace=True)
@@ -55,7 +51,7 @@ synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pcon
 synparams['Erev'] = np.zeros( len(synparams), dtype=np.float64)
 #print(synparams.keys())
 
-neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, usecols=["Neuron Type", "E/I", "Izh C"])
+neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, usecols=["Neuron Type", "E/I", "Izh C", "Izh Vr"])
 neurons_params.rename({"Neuron Type" : "Presynaptic Neuron Type"}, axis=1, inplace=True)
 #print(neurons_params.head(5))
 
@@ -64,62 +60,69 @@ selected_synparam =  synparams.loc[ (synparams["Presynaptic Neuron Type"].isin(p
 selected_synparam = selected_synparam.merge(neurons_params, how="left", on="Presynaptic Neuron Type", copy=True)
 
 
+
+
 for idx, row in selected_synparam.iterrows():
     if row["E/I"].strip() == "i":
         selected_synparam.at[idx, 'Erev'] = -75.0
+    else:
+        selected_synparam.at[idx, 'Erev'] = 0.0
 selected_synparam["pconn"] = 1.0
 
+keys_of_arrs = ['pconn', 'Erev', 'gsyn_max', 'tau_f', 'tau_d', 'tau_r', 'Uinc']
 synparam = {}
-for key in selected_synparam.keys():
+for key in keys_of_arrs:
     synparam[key] = np.asarray(selected_synparam[key])
 
 #print(neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"])
-synparam["Cm"] = float( 0.001 * neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"].values[0] )
+synparam["Cm"] = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"].values[0] )
 synparam["Erev_min"] = -75.0
 synparam["Erev_max"] = 0.0
-synparam["gsyn_max"][-1] *= 10.0
+synparam["Vrest"] = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vr"].values[0] )
+synparam["gsyn_max"][-2] *= 100.0
+synparam["gsyn_max"][-1] *= 400.0
 pprint(synparam)
 
 input_shape = [1, None, 2]
-synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
-population_model = load_model("../pretrained_models/CA1 Basket.keras")
+conn_mask = np.ones(2, dtype='bool')
+synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=dt, mask=conn_mask), return_sequences=True, stateful=True)
+population_model = load_model("../pretrained_models/CA1 Basket.keras", custom_objects={'square': tf.keras.ops.square})
 
 
 
 
-model = tf.keras.Sequential()
-model.add(Input(shape=(2, )))
-model.add(synapses_layer)
-model.add( tf.keras.models.clone_model(population_model.layers[0]) )
-model.add( tf.keras.models.clone_model(population_model.layers[1]) )
-#model.layers[0].trainable = True
-model.layers[1].trainable = False
-model.layers[2].trainable = False
+t = tf.range(0, 10000.0, dt, dtype=tf.float64)
+t = tf.reshape(t, shape=(1, -1, 1))
+firings = generators(t) #* 0.001 * dt
 
-model.build(input_shape=input_shape)
+Esynt = synapses_layer(firings)
 
-model.layers[1].set_weights(population_model.layers[0].get_weights())
-model.layers[2].set_weights(population_model.layers[1].get_weights())
+pop_firings = population_model(Esynt)
 
 
 
+# print(model.summary())
+# print(model.trainable_weights)
+#
+# #########################################
+# X = np.zeros([1, len(t), 2], dtype=np.float32)
+# X[0, :, :] = firings.numpy() # !!!!
+#
+#
+# Y = model.predict(X)
 
-#print( model.layers[0].get_weights() )
+firings = firings.numpy()
+firings = firings[0, :, :]
+t = t.numpy().ravel()
+Esynt = Esynt.numpy().ravel()
 
-print(model.summary())
-print(model.trainable_weights)
+Esynt = Esynt*75 - 75
+pop_firings = pop_firings.numpy().ravel()
 
-#########################################
-X = np.zeros([1, len(t), 2], dtype=np.float32)
-X[0, :, :] = firings.numpy() # !!!!
-
-
-Y = model.predict(X)
-
-fig, axes = plt.subplots(nrows=2, sharex=True)
+fig, axes = plt.subplots(nrows=3, sharex=True)
 axes[0].plot(t, firings)
-axes[1].plot(t, Y[0, :, 0])
-# axes[2].plot(t, Y[0, :, 1])
+axes[1].plot(t, Esynt)
+axes[2].plot(t, pop_firings)
 # axes[2].set_ylim(0, 80)
 
 plt.show()
