@@ -69,13 +69,13 @@ neurons = [
     },
     {
         "type": "CA3_generator",
-        "OutPlaceFiringRate": 10,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14*0.5,  # DV
-        "R": 0.3,
+        "R": 0.25,
 
-        "InPlacePeakRate": 50,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 12000,
-        "SigmaPlaceField": 3000,
+        "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 2500,
+        "SigmaPlaceField": 500,
 
 
         "SlopePhasePrecession": 0.0,  # DV
@@ -87,13 +87,13 @@ neurons = [
     },
     {
         "type": "MEC_generator",
-        "OutPlaceFiringRate": 10,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": -3.14 * 0.5,  # DV
-        "R": 0.3,
+        "R": 0.25,
 
         "InPlacePeakRate": 50.0,  # Хорошо бы сделать лог-нормальное распределение
         "CenterPlaceField": 7000,
-        "SigmaPlaceField": 3000,
+        "SigmaPlaceField": 500,
 
         "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
@@ -163,7 +163,7 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
-        "gsyn_max": 5000,
+        "gsyn_max": 3000,
     },
     {
         "pconn": 1.0,
@@ -176,7 +176,7 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
-        "gsyn_max": 5000,
+        "gsyn_max": 3000,
     },
     {
         "pconn": 1.0,

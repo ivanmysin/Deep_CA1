@@ -12,7 +12,7 @@ from tensorflow.keras.saving import load_model
 params = [
 
     {
-        "R": 0.4,
+        "R": 0.25,
         "OutPlaceFiringRate": 0.5,
         "OutPlaceThetaPhase": 1.57,
         "InPlacePeakRate": 30.0,
@@ -85,8 +85,8 @@ k = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type
 Vt = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vt"].values[0] )
 
 synparam["gl"] = k * (Vt - Vrest)
-synparam["gsyn_max"][-2] *= 3000.0
-synparam["gsyn_max"][-1] *= 15000.0
+synparam["gsyn_max"][-2] = 3000.0
+synparam["gsyn_max"][-1] = 15000.0
 pprint(synparam)
 
 input_shape = [1, None, 2]
