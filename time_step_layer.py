@@ -59,6 +59,10 @@ class TimeStepLayer(Layer):
 
             return None
 
+        Vrest = neurons_params[neurons_params["Neuron Type"] == pop_type]["Vrest"].values[0]
+        Vt = neurons_params[neurons_params["Neuron Type"] == pop_type]["Vth_mean"].values[0]
+        k = neurons_params[neurons_params["Neuron Type"] == pop_type]["k"].values[0]
+        gl = k * (Vt - Vrest)
         conn_params = {
             "gsyn_max": [],
             "Uinc": [],
@@ -69,6 +73,7 @@ class TimeStepLayer(Layer):
             'Erev': [],
             'Cm': neurons_params[neurons_params["Neuron Type"] == pop_type]["Cm"].values[0],
             'Vrest': neurons_params[neurons_params["Neuron Type"] == pop_type]["Vrest"].values[0],
+            'gl': gl,
             'Erev_min': -75.0,
             'Erev_max': 0.0,
             "pop_idx" : pop_idx,

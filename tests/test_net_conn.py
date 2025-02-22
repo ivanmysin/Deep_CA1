@@ -163,7 +163,7 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
-        "gsyn_max": 10,
+        "gsyn_max": 5000,
     },
     {
         "pconn": 1.0,
@@ -176,7 +176,7 @@ connections = [
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
-        "gsyn_max": 10,
+        "gsyn_max": 5000,
     },
     {
         "pconn": 1.0,

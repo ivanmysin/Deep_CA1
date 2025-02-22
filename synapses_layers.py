@@ -18,6 +18,7 @@ class BaseSynapse(Layer):
         self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
         self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=myconfig.DTYPE )
         self.Vrest = tf.convert_to_tensor( params['Vrest'], dtype=myconfig.DTYPE )
+        self.gl = tf.convert_to_tensor( params['gl'], dtype=myconfig.DTYPE )
 
         try:
             self.pop_idx = params['pop_idx']
@@ -99,6 +100,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
             "Erev_min": self.Erev_min,
             "Erev_max": self.Erev_max,
             "Vrest": self.Vrest,
+            "gl": self.gl,
             "Cm": self.Cm,
             "dt" : self.dt,
             "mask" : self.mask,
@@ -121,6 +123,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         params['Erev_min'] = config['Erev_min']['config']["value"]
         params['Erev_max'] = config['Erev_max']['config']["value"]
         params['Vrest'] = config['Vrest']['config']["value"]
+        params['gl'] = config['gl']['config']["value"]
         params['Cm'] = config['Cm']['config']["value"]
         params['pop_idx'] = config['pop_idx']
         dt = config['dt']['config']["value"]
@@ -152,9 +155,9 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
         gsyn = tf.nn.relu(self.gsyn_max) * A
-        g_tot = tf.reduce_sum(gsyn, axis=-1) + 1
+        g_tot = tf.reduce_sum(gsyn, axis=-1) + self.gl
         gE = gsyn * self.Erev
-        E_inf = (tf.reduce_sum(gE, axis=-1)  + 1*self.Vrest ) / g_tot  #
+        E_inf = (tf.reduce_sum(gE, axis=-1) + self.gl*self.Vrest ) / g_tot
         tau = self.Cm / g_tot
 
         Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt / tau))

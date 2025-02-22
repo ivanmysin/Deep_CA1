@@ -51,7 +51,7 @@ synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pcon
 synparams['Erev'] = np.zeros( len(synparams), dtype=np.float64)
 #print(synparams.keys())
 
-neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, usecols=["Neuron Type", "E/I", "Izh C", "Izh Vr"])
+neurons_params = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv", header=0, usecols=["Neuron Type", "E/I", "Izh C", "Izh Vr", "Izh k", "Izh Vt"])
 neurons_params.rename({"Neuron Type" : "Presynaptic Neuron Type"}, axis=1, inplace=True)
 #print(neurons_params.head(5))
 
@@ -79,8 +79,14 @@ synparam["Cm"] = float( neurons_params[neurons_params["Presynaptic Neuron Type"]
 synparam["Erev_min"] = -75.0
 synparam["Erev_max"] = 0.0
 synparam["Vrest"] = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vr"].values[0] )
-synparam["gsyn_max"][-2] *= 100.0
-synparam["gsyn_max"][-1] *= 400.0
+
+Vrest = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vr"].values[0] )
+k = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh k"].values[0] )
+Vt = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vt"].values[0] )
+
+synparam["gl"] = k * (Vt - Vrest)
+synparam["gsyn_max"][-2] *= 3000.0
+synparam["gsyn_max"][-1] *= 15000.0
 pprint(synparam)
 
 input_shape = [1, None, 2]
