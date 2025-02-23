@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, RNN, Input
-
+import h5py
 from synapses_layers import TsodycsMarkramSynapse
 import genloss
 import pandas as pd
@@ -11,27 +11,32 @@ from tensorflow.keras.saving import load_model
 
 params = [
 
-    {
-        "R": 0.25,
-        "OutPlaceFiringRate": 0.5,
-        "OutPlaceThetaPhase": 1.57,
-        "InPlacePeakRate": 30.0,
-        "CenterPlaceField": 2500.0,
-        "SigmaPlaceField": 500,
-        "SlopePhasePrecession": 0.0,  # np.deg2rad(10) * 10 * 0.001,
-        "PrecessionOnset": -1.57,
-        "ThetaFreq": 8.0,
-    },
+    # {
+    #     "R": 0.25,
+    #     "OutPlaceFiringRate": 0.5,
+    #     "OutPlaceThetaPhase": 1.57,
+    #     "InPlacePeakRate": 30.0,
+    #     "CenterPlaceField": 2500.0,
+    #     "SigmaPlaceField": 500,
+    #     "SlopePhasePrecession": 0.0,  # np.deg2rad(10) * 10 * 0.001,
+    #     "PrecessionOnset": -1.57,
+    #     "ThetaFreq": 8.0,
+    # },
 
     {
         "R": 0.25,
-        "OutPlaceFiringRate": 0.5,
-        "OutPlaceThetaPhase": 3.14,
-        "InPlacePeakRate": 8.0,
-        "CenterPlaceField": 5000.0,
+        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceThetaPhase": 3.14*0.5,  # DV
+        "R": 0.25,
+
+        "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 2500,
         "SigmaPlaceField": 500,
-        "SlopePhasePrecession": np.deg2rad(10) * 10 * 0.001,
-        "PrecessionOnset": -1.57,
+
+
+        "SlopePhasePrecession": 0.0,  # DV
+        "PrecessionOnset": 3.14,
+
         "ThetaFreq": 8.0,
     },
 
@@ -43,7 +48,7 @@ generators = genloss.SpatialThetaGenerators(params)
 
 
 ###############################################################
-pre_types = ["CA1 Pyramidal", "CA3 Pyramidal"] #  "CA1 O-LM",
+pre_types = ["CA3 Pyramidal"] #  "CA1 O-LM",
 post_type = "CA1 Basket"
 synparams = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv")
 synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pconn"}, axis=1, inplace=True)
@@ -85,19 +90,19 @@ k = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type
 Vt = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vt"].values[0] )
 
 synparam["gl"] = k * (Vt - Vrest)
-synparam["gsyn_max"][-2] = 3000.0
+#synparam["gsyn_max"][-2] = 3000.0
 synparam["gsyn_max"][-1] = 15000.0
 pprint(synparam)
 
 input_shape = [1, None, 2]
-conn_mask = np.ones(2, dtype='bool')
+conn_mask = np.ones(len(params), dtype='bool')
 synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=dt, mask=conn_mask), return_sequences=True, stateful=True)
-population_model = load_model("../pretrained_models/CA1 Basket.keras", custom_objects={'square': tf.keras.ops.square})
+population_model = load_model(f"../pretrained_models/{post_type}.keras", custom_objects={'square': tf.keras.ops.square})
 
 
 
 
-t = tf.range(0, 10000.0, dt, dtype=tf.float64)
+t = tf.range(0, 20000.0, dt, dtype=tf.float64)
 t = tf.reshape(t, shape=(1, -1, 1))
 firings = generators(t) #* 0.001 * dt
 
@@ -117,6 +122,11 @@ pop_firings = population_model(Esynt)
 #
 # Y = model.predict(X)
 
+with h5py.File("../firings.h5", mode='r') as h5file:
+    firings_main = h5file['firings'][0, :, 2]
+
+
+
 firings = firings.numpy()
 firings = firings[0, :, :]
 t = t.numpy().ravel()
@@ -125,10 +135,13 @@ Esynt = Esynt.numpy().ravel()
 Esynt = Esynt*75 - 75
 pop_firings = pop_firings.numpy().ravel()
 
+firings_main = firings_main / np.max(firings_main) * np.max(pop_firings)
+
 fig, axes = plt.subplots(nrows=3, sharex=True)
 axes[0].plot(t, firings)
 axes[1].plot(t, Esynt)
-axes[2].plot(t, pop_firings)
+axes[2].plot(t, pop_firings, color='red', linewidth=3)
+axes[2].plot(t, firings_main, color='blue', linewidth=1)
 # axes[2].set_ylim(0, 80)
 
 plt.show()

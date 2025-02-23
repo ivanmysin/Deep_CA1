@@ -160,7 +160,7 @@ class TimeStepLayer(Layer):
 
     def get_initial_state(self, batch_size=1):
         state = K.zeros(shape=(batch_size, 1, self.state_size), dtype=tf.float32)
-        return [state, ]
+        return (state, )
 
     def build(self, input_shape):
 
@@ -170,7 +170,7 @@ class TimeStepLayer(Layer):
 
     def call(self, input, state):
 
-        input = K.reshape(input, shape=(1, 1, -1))
+        input = tf.reshape(input, shape=(1, 1, -1))
 
 
         input = tf.concat([state[0], input], axis=-1)
@@ -184,7 +184,7 @@ class TimeStepLayer(Layer):
         output = tf.concat(output, axis=-1)
 
 
-        return output, [output, ]
+        return output, (output, )
 
     def get_config(self):
         config = super().get_config()

@@ -71,7 +71,10 @@ class TsodycsMarkramSynapse(BaseSynapse):
         self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
         self.state_size = [self.units, self.units, self.units, 1]
-        #assert(mask.sum() > 0)
+
+        #assert(self.mask.numpy().sum() > 0)
+        # print("dt =", self.dt.numpy())
+        # pprint(params)
 
 
 
@@ -183,8 +186,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         return initial_state
 
-    def add_regularization_penalties(self):
-        self.add_loss(self.gmax_regulizer(self.gsyn_max))
+    # def add_regularization_penalties(self):
+    #     self.add_loss(self.gmax_regulizer(self.gsyn_max))
 
 
 if __name__ == "__main__":
