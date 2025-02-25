@@ -284,7 +284,7 @@ def main():
 
     firings_model = get_firings_model(model)
 
-    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    duration_full_simulation = 5000 #!!1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
     t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
     firings = firings_model.predict(t)
     with h5py.File("firings.h5", mode='w') as h5file:

@@ -58,31 +58,20 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
                 continue
 
 
-    #input = Input(shape=(None, 1), batch_size=1)
+    input = Input(shape=(None, 1), batch_size=1)
     generators = SpatialThetaGenerators(spatial_gen_params) #(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    #time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+    time_step_layer_rnn = RNN(time_step_layer, return_sequences=True, stateful=True)
 
-    #time_step_layer = time_step_layer(generators)
+    time_step_layer_rnn = time_step_layer_rnn(generators(input))
 
-    #time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
-
-
-    #firings_model = Model(inputs=input, outputs=time_step_layer)
+    time_step_layer_rnn = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer_rnn)
 
 
-    # big_model.compile(
-    #     optimizer=tf.keras.optimizers.Adam(),
-    #     loss={
-    #         'pyramilad_mask': tf.keras.losses.logcosh,
-    #         'locking_with_phase': tf.keras.losses.MSE,
-    #         'robast_mean': tf.keras.losses.MSE,
-    #         'locking': tf.keras.losses.MSE,
-    #     }
-    # )
+    firings_model = Model(inputs=input, outputs=time_step_layer_rnn)
 
-    return time_step_layer, generators # big_model #,
+    return firings_model, time_step_layer, generators
 
 def main():
     # load data about network
@@ -121,45 +110,41 @@ def main():
         base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + pop_type + '.keras'
 
 
-    time_step_layer, generators = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
+    firings_model, time_step_layer, generators = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
 
-    duration_full_simulation = 5000 #1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+    duration_full_simulation = 5000 # 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
     t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
-    firings_generators = generators(t)
 
-    inputs = np.zeros(shape=(1, t.size, len(populations)), dtype=np.float32)
-    inputs[0, :, 5] =  firings_generators.numpy()[0, :, 0].ravel()
+
+    firings = firings_model.predict(t)
+    firings_generators = generators(t)
+    firings_generators = firings_generators.numpy()
+    firings = np.append(firings, firings_generators, axis=2)
+
 
     syn_pop_model = time_step_layer.pop_models[2]
-    firings = syn_pop_model.predict(inputs)
-    firings = firings.ravel()
+    external_inputs = np.zeros(shape=(1, t.size, len(populations)), dtype=np.float32)
+    external_inputs[0, :, 5:] = firings_generators[0, :, :]
+
+    pv_bas_firing = syn_pop_model.predict(external_inputs)
+
+    nsubplots = firings.shape[-1]
 
 
 
-
-    # firings = time_step_layer(firings_generators)
-    # firings = firings.numpy().reshape(1, t.size, -1)
-    # firings_generators = firings_generators.numpy()
-    #
-    # firings = np.append(firings, firings_generators, axis=2)
-    #
-    # nsubplots = firings.shape[-1]
-    #
-    t = t.ravel()
-    #
     # with h5py.File("firings.h5", mode='w') as h5file:
     #     h5file.create_dataset('firings', data=firings)
-    #
-    # fig, axes = plt.subplots(nrows=nsubplots, sharex=True, sharey=False)
-    #
-    # for f_idx in range(nsubplots):
-    #     axes[f_idx].set_title(populations[f_idx]['type'])
-    #     axes[f_idx].plot(t, firings[0, :, f_idx])
-    #
 
 
-    plt.plot(t, firings)
+    t = t.ravel()
+    fig, axes = plt.subplots(nrows=nsubplots, sharex=True, sharey=False)
+    for f_idx in range(nsubplots):
+        axes[f_idx].set_title(populations[f_idx]['type'])
+        axes[f_idx].plot(t, firings[0, :, f_idx])
+
+    axes[2].plot(t, pv_bas_firing[0, :, 0])
+
     plt.show()
 
 

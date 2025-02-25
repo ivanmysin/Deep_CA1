@@ -26,7 +26,7 @@ with h5py.File("./firings.h5", mode='r') as h5file:
 
 print(firings.shape)
 
-duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+duration_full_simulation = 5000 #1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
 t = np.arange(0, duration_full_simulation, myconfig.DT)
 
 genrators = SpatialThetaGenerators(populations[-2:])
@@ -44,6 +44,6 @@ fig, axes = plt.subplots(nrows=nsubplots, sharex=True, sharey=False)
 
 for f_idx in range(nsubplots):
     axes[f_idx].set_title(populations[f_idx]['type'])
-    axes[f_idx].plot(t, firings[0, :, 0, f_idx])
+    axes[f_idx].plot(t, firings[0, :, f_idx])
 
 plt.show()

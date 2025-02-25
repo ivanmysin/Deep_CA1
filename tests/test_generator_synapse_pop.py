@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Layer, RNN, Input
 import h5py
 from synapses_layers import TsodycsMarkramSynapse
@@ -101,8 +102,7 @@ population_model = load_model(f"../pretrained_models/{post_type}.keras", custom_
 
 
 
-
-t = tf.range(0, 20000.0, dt, dtype=tf.float64)
+t = tf.range(0, 5000.0, dt, dtype=tf.float64)
 t = tf.reshape(t, shape=(1, -1, 1))
 firings = generators(t) #* 0.001 * dt
 
@@ -111,6 +111,12 @@ Esynt = synapses_layer(firings)
 pop_firings = population_model(Esynt)
 
 
+
+input_layer = Input(shape=(None, 1), batch_size=1)
+synapses_layer = synapses_layer(input_layer)
+syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name=f"Population_with_synapses")
+
+firing_united_model = syn_pop_model(firings)
 
 # print(model.summary())
 # print(model.trainable_weights)
@@ -135,7 +141,7 @@ Esynt = Esynt.numpy().ravel()
 Esynt = Esynt*75 - 75
 pop_firings = pop_firings.numpy().ravel()
 
-firings_main = firings_main / np.max(firings_main) * np.max(pop_firings)
+#firings_main = firings_main / np.max(firings_main) * np.max(pop_firings)
 
 fig, axes = plt.subplots(nrows=3, sharex=True)
 axes[0].plot(t, firings)

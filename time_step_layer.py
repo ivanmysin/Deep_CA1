@@ -8,9 +8,6 @@ from tensorflow.keras.saving import load_model
 import warnings
 import myconfig
 
-tf.keras.utils.get_custom_objects().update({'square':tf.keras.ops.square})
-
-
 from synapses_layers import TsodycsMarkramSynapse
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, RobastMeanOutRanger, Decorrelator
 
@@ -30,19 +27,18 @@ class TimeStepLayer(Layer):
         self.synapses_params = synapses_params
 
         self.base_pop_models_files = base_pop_models
-        for base_pop_model_name, base_pop_model_path in base_pop_models.items():
-            base_model = load_model(base_pop_model_path, custom_objects={'square': tf.keras.ops.square})
-            base_pop_models[base_pop_model_name] = base_model
-            for layer in base_model.layers:
-                layer.trainable = False
+
 
         self.pop_models = []
         for pop_idx, pop in enumerate(populations):
             if "_generator" in pop["type"]:
                 continue
 
+            base_pop_model_path = self.base_pop_models_files[pop["type"]]
+            base_model = load_model(base_pop_model_path, custom_objects={'square': tf.keras.ops.square})
+            for layer in base_model.layers:
+                layer.trainable = False
 
-            base_model = base_pop_models[pop["type"]]
             pop_model = self.get_model(pop_idx, pop, connections, base_model, neurons_params, synapses_params)
             self.pop_models.append(pop_model)
 
@@ -151,7 +147,7 @@ class TimeStepLayer(Layer):
         input_layer = Input(shape=(None, self.input_size), batch_size=1)
         synapses_layer = synapses_layer(input_layer)
 
-        base_model = tf.keras.models.clone_model(base_model)
+        # base_model = tf.keras.models.clone_model(base_model)
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name=f"Population_with_synapses_{pop_idx}")
 
         return model
