@@ -43,6 +43,31 @@ class TimeStepLayer(Layer):
             self.pop_models.append(pop_model)
 
 
+    def copy_layers(self, old_base_model):
+
+        model = Sequential()
+        model.add(Input(shape=(None, 1), batch_size=1))
+
+        for layer in old_base_model.layers:
+            layer_type = layer.__class__.__name__
+
+            # print(layer_type)
+            # print(layer.units)
+
+            Layer_obj = getattr(tf.keras.layers, layer_type)
+
+            if (layer_type == 'GRU') or (layer_type == 'LSTM'):
+                model.add(Layer_obj(units=layer.units, return_sequences=True, stateful=True))
+            else:
+                model.add(Layer_obj(units=layer.units, activation=layer.activation))
+
+        model.build()
+
+        for newlayer, oldlayer in zip(model.layers, old_base_model.layers):
+            newlayer.set_weights(oldlayer.get_weights())
+            newlayer.trainable = False
+
+        return model
 
 
 
@@ -148,6 +173,9 @@ class TimeStepLayer(Layer):
         synapses_layer = synapses_layer(input_layer)
 
         # base_model = tf.keras.models.clone_model(base_model)
+
+        base_model = self.copy_layers(base_model)
+
         model = Model(inputs=input_layer, outputs=base_model(synapses_layer), name=f"Population_with_synapses_{pop_idx}")
 
         return model

@@ -127,16 +127,17 @@ def main():
     external_inputs = np.zeros(shape=(1, t.size, len(populations)), dtype=np.float32)
     external_inputs[0, :, 5:] = firings_generators[0, :, :]
 
-    pv_bas_firing = []
-    for t_idx in range(t.size):
-        external_inputs_tmp = external_inputs[:, t_idx, :]
-        external_inputs_tmp = external_inputs_tmp.reshape(1, 1, -1)
-        pv_bas_firing_tmp = syn_pop_model.predict(external_inputs_tmp)
-
-        pv_bas_firing.append(pv_bas_firing_tmp)
-
-    pv_bas_firing = np.stack(pv_bas_firing, axis=1)
-    print('pv_bas_firing.shape:', pv_bas_firing.shape)
+    pv_bas_firing = syn_pop_model.predict(external_inputs)
+    #pv_bas_firing = []
+    # for t_idx in range(t.size):
+    #     external_inputs_tmp = external_inputs[:, t_idx, :]
+    #     external_inputs_tmp = external_inputs_tmp.reshape(1, 1, -1)
+    #     pv_bas_firing_tmp = syn_pop_model.predict(external_inputs_tmp)
+    #
+    #     pv_bas_firing.append(pv_bas_firing_tmp)
+    #
+    # pv_bas_firing = np.stack(pv_bas_firing, axis=1)
+    # print('pv_bas_firing.shape:', pv_bas_firing.shape)
 
     nsubplots = firings.shape[-1]
 

@@ -28,7 +28,6 @@ params = [
         "R": 0.25,
         "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14*0.5,  # DV
-        "R": 0.25,
 
         "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
         "CenterPlaceField": 2500,
