@@ -22,10 +22,7 @@ def main():
     LenX = dx * 13
     LenY = dy * 13
 
-
-
-
-    interneurons_types = pd.read_excel( myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="Sheet2", header=0)
+    interneurons_types = pd.read_excel( myconfig.SCRIPTS4PARAMSGENERATION + "neurons_parameters.xlsx", sheet_name="local_model", header=0)
     interneurons = []
 
     for type_idx, cells_pop in interneurons_types.iterrows():

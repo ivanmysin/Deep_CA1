@@ -87,7 +87,7 @@ def make_ca1_pyrs_coords(X0, Y0, dx, dy, Npyrs_sim_x, Npyrs_sim_y, Nbottom_gens_
     return xv_sim, yv_sim, xv_gens, yv_gens
 
 
-def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPhase, preces_slope0, precess_onset0):
+def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPhase, preces_slope0, precess_onset0, is_gen=False):
 
     pyramidal_cells = []
 
@@ -124,8 +124,13 @@ def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPh
         elif INPLACE_FIRINGRATE_GEN == 'normal':
             inplacefiringrate = np.random.normal(loc=inplacefiringrate, scale=PEAKFIRING_STD)
 
+        if is_gen:
+            cell_type =  "CA1 Pyramidal_generator"
+        else:
+            cell_type = "CA1 Pyramidal"
+
         pyr_cell = {
-            "type": "CA1 Pyramidal",
+            "type": cell_type,
 
             "x_anat": pyrs_x,
             "y_anat": pyrs_y,
@@ -195,7 +200,12 @@ def main():
                 preces_slope0 = PHASEPREC_SLOPE_SUP_0
                 precess_onset0 = PHASEPREC_ONSET_SUP_0
 
-            pyramidal_cells_tmp = get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPhase, preces_slope0, precess_onset0)
+            if sim_type == 'sim':
+                is_gen = False
+            elif sim_type == 'gen':
+                is_gen = True
+
+            pyramidal_cells_tmp = get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPhase, preces_slope0, precess_onset0, is_gen=is_gen)
 
             if sim_type == 'sim':
                 pyramidal_cells.extend(pyramidal_cells_tmp)
