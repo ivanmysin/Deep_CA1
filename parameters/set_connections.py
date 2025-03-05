@@ -43,22 +43,28 @@ def set_connections(params):
     for pre_idx, presyn in enumerate(presyn_pops):
         for post_idx, postsyn in enumerate(all_neuron_populations):
 
-            if presyn["type"] == "CA1 Pyramidal" and postsyn["type"] == "CA1 Pyramidal":
+            if ( ( (presyn["type"] == "CA1 Pyramidal") or
+                   (presyn["type"] == "CA1 Pyramidal_generator"))
+                    and postsyn["type"] == "CA1 Pyramidal"):
                 ## set pyr to pyr connections
                 if presyn["z_anat"] * postsyn["z_anat"] < 0:
                     continue
+
+                pretype = "CA1 Pyramidal"
 
                 dist = np.sqrt(
                     (presyn["x_anat"] - postsyn["x_anat"]) ** 2 + (presyn["y_anat"] - postsyn["y_anat"]) ** 2)
                 pconn = AMPL_PYR2PYR_CONNECTIONS * np.exp(-0.5 * (dist / SIGMA_PYR2PYR_CONNECTIONS) ** 2)
 
-                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == presyn["type"]) & ( \
+                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == pretype) & ( \
                             CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
 
-            elif presyn["type"] == "CA1 Pyramidal" and postsyn["type"] in INTERNEURONS_TYPES:
+            elif  ( (presyn["type"] == "CA1 Pyramidal") or
+                    (presyn["type"] == "CA1 Pyramidal_generator")) and postsyn["type"] in INTERNEURONS_TYPES:
                 ## set pyr to int connctions
 
-                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == presyn["type"]) & ( \
+                pretype = "CA1 Pyramidal"
+                conn = CONN_TABLE[(CONN_TABLE["Presynaptic Neuron Type"] == pretype) & ( \
                             CONN_TABLE["Postsynaptic Neuron Type"] == postsyn["type"])]
 
                 if len(conn) == 0:
@@ -180,14 +186,16 @@ def main():
         INTERNEURONS_TYPES.append(pop["type"])
     INTERNEURONS_TYPES = set(INTERNEURONS_TYPES)
 
-    params_map = []
-    for i in range(myconfig.N_THREDS):
-        params_map.append([neuron_populations[i: -1: myconfig.N_THREDS], neuron_populations, CONN_TABLE, INTERNEURONS_TYPES])
+    if myconfig.N_THREDS > 1:
+        params_map = []
+        for i in range(myconfig.N_THREDS):
+            params_map.append([neuron_populations[i: -1: myconfig.N_THREDS], neuron_populations, CONN_TABLE, INTERNEURONS_TYPES])
 
-    with Pool(myconfig.N_THREDS) as parallel:
-        connections = parallel.map(set_connections, params_map)
-
-    connections = sum(connections, []) # flat list of connections
+        with Pool(myconfig.N_THREDS) as parallel:
+            connections = parallel.map(set_connections, params_map)
+            connections = sum(connections, [])  # flat list of connections
+    else:
+        connections = set_connections([neuron_populations, neuron_populations, CONN_TABLE, INTERNEURONS_TYPES])
 
     print("Number of connections", len(connections))
     with open( myconfig.STRUCTURESOFNET + "connections.pickle", mode="bw") as file:
