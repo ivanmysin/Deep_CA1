@@ -242,6 +242,8 @@ def main():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
+    synapses_params["gsyn_max"] *= 2000 # !!!!
+
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():
         if not population["is_include"]:
@@ -253,6 +255,7 @@ def main():
         #     base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + 'NO_Trained.keras'
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
+    firings_model = get_firings_model(model)
     print(model.summary())
 
     #model.save('big_model.keras')
@@ -268,27 +271,27 @@ def main():
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
 
+    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY  # ms
+    t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
-    # with tf.device('/gpu:0'):
-    #     counter = 1
-    #     for x_train, y_train in zip(Xtrain, Ytrain):
-    #         #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-    #         model.train_on_batch(x_train, y_train)
-    #         #y_tmp = model.predict(x_train)
-    #         model.save('big_model.keras')
-    #         print(counter)
-    #         counter += 1
-    #save_trained_to_pickle(model.trainable_variables, connections)
+    with tf.device('/gpu:0'):
+        for epoch_counter in range(myconfig.EPOCHES_FULL_T):
+            for x_train, y_train in zip(Xtrain, Ytrain):
+                #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+                model.train_on_batch(x_train, y_train)
+
+        model.save('big_model.keras')
+        save_trained_to_pickle(model.trainable_variables, connections)
+
+        firings = firings_model.predict(t_full)
+        with h5py.File("firings.h5", mode='w') as h5file:
+            h5file.create_dataset('firings', data=firings)
+
+        print("Full time epoches", epoch_counter + 1)
 
 
 
-    firings_model = get_firings_model(model)
 
-    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
-    t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
-    firings = firings_model.predict(t)
-    with h5py.File("firings.h5", mode='w') as h5file:
-        h5file.create_dataset('firings', data=firings)
 
 
 

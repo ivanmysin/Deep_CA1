@@ -1,3 +1,4 @@
+cd ./parameters/local_model
 python ca1_pyrs.py
 python ca1_interneurons.py
 python ca1_gens.py
@@ -10,4 +11,4 @@ cd ./local_model
 python remove_generators_without_postsynapses.py
 cd ../
 python set_connections.py
-echo "Params are ready"
+echo "Params for local model are ready!!!"

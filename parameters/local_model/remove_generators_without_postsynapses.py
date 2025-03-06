@@ -1,9 +1,10 @@
-import os
-os.chdir('../../')
+import sys
+sys.path.append('../../')
 import pickle
 import myconfig
 
-
+import os
+os.chdir('../../')
 
 
 def remove_generators_without_postsynapses():
