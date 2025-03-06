@@ -119,6 +119,9 @@ class TimeStepLayer(Layer):
             if pre_type == "CA3_generator":
                 pre_type = 'CA3 Pyramidal'
 
+            if pre_type == "CA1 Pyramidal_generator":
+                pre_type = 'CA1 Pyramidal'
+
             if pre_type == "MEC_generator":
                 pre_type = 'EC LIII Pyramidal'
 
