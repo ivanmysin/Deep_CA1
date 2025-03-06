@@ -149,7 +149,7 @@ cauchy_dencity_params = {
 # }
 
 izh_params = dimensional_to_dimensionless(dim_izh_params)
-#izh_params['v_peak'] = 200
+izh_params['v_peak'] = 200
 izh_params['v_reset'] = -200
 
 
