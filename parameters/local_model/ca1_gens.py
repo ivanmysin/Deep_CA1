@@ -10,7 +10,7 @@ os.chdir("../../")
 import myconfig
 
 def main():
-    TRACK_LENGTH = 400  # cm
+    TRACK_LENGTH = 250 # 400  # cm
     THETA_FREQ = myconfig.ThetaFreq # Hz
 
     generators = []

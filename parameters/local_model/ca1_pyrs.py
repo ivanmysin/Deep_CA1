@@ -13,7 +13,7 @@ OUTPLACE_FIRINGRATE_GEN = 'lognormal'  # 'normal' or 'constant'
 INPLACE_FIRINGRATE_GEN = 'lognormal'  # 'normal' or 'constant'
 PLACESIZE_GEN = 'lognormal'  # 'normal' or 'constant'
 
-TRACK_LENGTH = 400  # cm
+TRACK_LENGTH = 250 # 400  # cm
 PLACECELLSPROB = 0.5  # Вероятность пирамидного нейрона стать клеткой места в одном лабиринте
 PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
 PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.

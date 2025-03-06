@@ -2,7 +2,6 @@ import sys
 sys.path.append('../')
 import numpy as np
 import pandas as pd
-# import matplotlib.pyplot as plt
 import pickle
 import os
 
@@ -12,11 +11,11 @@ from pprint import pprint
 import myconfig
 from multiprocessing import Pool
 
-AMPL_PYR2PYR_CONNECTIONS = 0.1  # pconn between neubor cells
-SIGMA_PYR2PYR_CONNECTIONS = 50  # mkm
+AMPL_PYR2PYR_CONNECTIONS = 0.2 # 0.1  # pconn between neubor cells
+SIGMA_PYR2PYR_CONNECTIONS = 200 # 50  # mkm
 
 AMPL_PYR2INT_CONNECTIONS = 0.2
-SIGMA_PYR2INT_CONNECTIONS = 90  # mkm
+SIGMA_PYR2INT_CONNECTIONS = 300 # 90  # mkm
 
 INTsIN_POP = 10  # number cells in population
 
