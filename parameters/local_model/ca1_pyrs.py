@@ -149,11 +149,10 @@ def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPh
             "SlopePhasePrecession": phase_precession_slope,  # DV
             "PrecessionOnset": THETA_SLOPE_DV * pyrs_y + precess_onset0,
 
-            "MinFiringRate": 0.1,
-            "MaxFiringRate": 50.0,
-
         }
-
+        if not is_gen:
+            pyr_cell["MinFiringRate"] = 0.1
+            pyr_cell["MaxFiringRate"] = 50.0
         pyramidal_cells.append(pyr_cell)
 
     return pyramidal_cells
