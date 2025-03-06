@@ -110,7 +110,7 @@ def main():
                     "R": THETA_R_SLOPE_DV * cell_pos_dv + THETA_R_0,
 
                     "InPlacePeakRate": PEAKFIRING,  # Хорошо бы сделать лог-нормальное распределение
-                    "CenterPlaceField": center_place_field,
+                    "CenterPlaceField": float(center_place_field),
                     "SigmaPlaceField": np.random.normal(loc=place_size, scale=place_size_std),  # !!!!  Хорошо бы сделать лог-нормальное распределение
 
                     "SlopePhasePrecession": phase_precession_slope,  # DV

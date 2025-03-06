@@ -222,10 +222,10 @@ def main():
         connections_path = myconfig.STRUCTURESOFNET + "connections.pickle"
 
 
-    with open(neurons_path, "rb") as neurons_file: ##!!
+    with open(neurons_path, "rb") as neurons_file:
         populations = pickle.load(neurons_file)
 
-    with open(connections_path, "rb") as synapses_file: ##!!
+    with open(connections_path, "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
     Xtrain, Ytrain = get_dataset(populations)

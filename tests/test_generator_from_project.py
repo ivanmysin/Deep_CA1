@@ -2,9 +2,12 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
-
+import pickle
 os.chdir("../")
 from genloss import SpatialThetaGenerators
+
+neurons_path = './presimulation_files/neurons.pickle'
+
 
 params = [
     {
@@ -31,6 +34,17 @@ params = [
         "ThetaFreq": 18.0,
     },
 ]
+
+with open(neurons_path, "rb") as neurons_file:
+    populations = pickle.load(neurons_file)
+
+params = []
+for pop in populations:
+    if "_generator" in pop['type']:
+        params.append(pop)
+
+        print(pop['CenterPlaceField'])
+
 genrators = SpatialThetaGenerators(params)
 t = tf.range(0, 10000.0, 0.1, dtype=tf.float32)
 t = tf.reshape(t, shape=(1, -1, 1))
