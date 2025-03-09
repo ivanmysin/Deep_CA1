@@ -161,8 +161,8 @@ def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPh
 def main():
     X0 = 0 # proxomo-distal axis
     Y0 = 0 # dorsal axis
-    dx = 15
-    dy = 15
+    dx = 80
+    dy = 80
     Nbottom_gens_x = 13
     Nbottom_gens_y = 3
 

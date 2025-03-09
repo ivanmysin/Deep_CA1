@@ -11,10 +11,10 @@ from pprint import pprint
 import myconfig
 from multiprocessing import Pool
 
-AMPL_PYR2PYR_CONNECTIONS = 0.1  # pconn between neubor cells
+AMPL_PYR2PYR_CONNECTIONS = 0.5  #0.1 pconn between neubor cells
 SIGMA_PYR2PYR_CONNECTIONS = 50  # mkm
 
-AMPL_PYR2INT_CONNECTIONS = 0.2
+AMPL_PYR2INT_CONNECTIONS = 0.5 # 0.2
 SIGMA_PYR2INT_CONNECTIONS = 90  # mkm
 
 INTsIN_POP = 10  # number cells in population
