@@ -52,15 +52,17 @@ def make_ca1_pyrs_coords(X0, Y0, dx, dy, Npyrs_sim_x, Npyrs_sim_y, Nbottom_gens_
 
 X0 = 0
 Y0 = 0
-dx = 15
-dy = 15
-Nbottom_gens_x = 13
-Nbottom_gens_y = 3
+dx = 80
+dy = 80
 
-Npyrs_sim_x = 7
-Npyrs_sim_y = 7
+Npyrs_sim_x = 5
+Npyrs_sim_y = 5
 
-Nleft_gens_x = 3
+Nbottom_gens_y = 1
+Nbottom_gens_x = 2 * Nbottom_gens_y + Npyrs_sim_x
+
+
+Nleft_gens_x = 1
 Nleft_gens_y = Npyrs_sim_y
 
 xv_sim, yv_sim, xv_gens, yv_gens = make_ca1_pyrs_coords(X0, Y0, dx, dy, Npyrs_sim_x, Npyrs_sim_y, Nbottom_gens_x, Nbottom_gens_y, Nleft_gens_x, Nleft_gens_y)

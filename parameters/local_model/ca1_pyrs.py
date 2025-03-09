@@ -163,13 +163,13 @@ def main():
     Y0 = 0 # dorsal axis
     dx = 80
     dy = 80
-    Nbottom_gens_x = 13
-    Nbottom_gens_y = 3
+    Npyrs_sim_x = 4
+    Npyrs_sim_y = 4
 
-    Npyrs_sim_x = 7
-    Npyrs_sim_y = 7
+    Nbottom_gens_y = 1
+    Nbottom_gens_x = 2 * Nbottom_gens_y + Npyrs_sim_x
 
-    Nleft_gens_x = 3
+    Nleft_gens_x = 1
     Nleft_gens_y = Npyrs_sim_y
 
 
