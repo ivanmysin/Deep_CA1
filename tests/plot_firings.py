@@ -37,13 +37,13 @@ firings_generators = firings_generators.numpy()
 
 firings = np.append(firings, firings_generators, axis=2)
 
-nsubplots = firings.shape[-1]
+nsubplots = 10 #firings.shape[-1]
 
 
 fig, axes = plt.subplots(nrows=nsubplots, sharex=True, sharey=False)
 
 for f_idx in range(nsubplots):
-    axes[f_idx].set_title(populations[f_idx]['type'])
-    axes[f_idx].plot(t, firings[0, :, f_idx])
+    axes[f_idx].set_title(populations[f_idx+42]['type'])
+    axes[f_idx].plot(t, firings[0, :, f_idx+42])
 
 plt.show()
