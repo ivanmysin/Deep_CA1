@@ -15,8 +15,12 @@ if not os.path.isdir(DATASETS4POPULATIONMODELS):
     DATASETS4POPULATIONMODELS = "./population_datasets/"
 
 OUTPUTSPATH = "/media/sdisk/Deep_CA1/outputs/"  # Path to files with datasets for traning models of populations
-if not os.path.isdir(DATASETS4POPULATIONMODELS):
-    DATASETS4POPULATIONMODELS = "./outputs/"
+if not os.path.isdir(OUTPUTSPATH):
+    OUTPUTSPATH = "./outputs/"
+
+OUTPUTSPATH_FIRINGS = OUTPUTSPATH + 'firings/'
+OUTPUTSPATH_MODELS = OUTPUTSPATH + 'big_models/'
+OUTPUTSPATH_PLOTS = OUTPUTSPATH + 'plots/'
 
 IZHIKEVICNNEURONSPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv'
 TSODYCSMARKRAMPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv'

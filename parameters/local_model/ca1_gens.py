@@ -10,8 +10,11 @@ os.chdir("../../")
 import myconfig
 
 def main():
-    TRACK_LENGTH = 250 # 400  # cm
+    TRACK_LENGTH = myconfig.TRACK_LENGTH  # 250 400  # cm
     THETA_FREQ = myconfig.ThetaFreq # Hz
+
+    place_size_cm2ms = 1000 / myconfig.ANIMAL_VELOCITY
+    duration_full_simulation = place_size_cm2ms * TRACK_LENGTH # ms
 
     generators = []
     for INPUT_TYPE in ["MEC", "LEC", "CA3"]:
@@ -91,7 +94,7 @@ def main():
             place_size = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_MEAN) / 6
             place_size_std = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_STD) / 6
 
-            center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1).ravel()
+            center_place_field = np.random.uniform(low=0.0, high=duration_full_simulation, size=1).ravel()
             if PHASEPRECPROB < np.random.uniform():
                 phase_precession_slope = PHASEPREC_SLOPE + cell_pos_dv*PHASEPREC_SLOPE_DECREASE_DV
             else:
@@ -111,7 +114,7 @@ def main():
 
                     "InPlacePeakRate": PEAKFIRING,  # Хорошо бы сделать лог-нормальное распределение
                     "CenterPlaceField": float(center_place_field.tolist()[0]),
-                    "SigmaPlaceField": np.random.normal(loc=place_size, scale=place_size_std),  # !!!!  Хорошо бы сделать лог-нормальное распределение
+                    "SigmaPlaceField": place_size_cm2ms * np.random.normal(loc=place_size, scale=place_size_std),  # !!!!  Хорошо бы сделать лог-нормальное распределение
 
                     "SlopePhasePrecession": phase_precession_slope,  # DV
                     "PrecessionOnset": THETA_SLOPE_DV * cell_pos_dv + PHASEPREC_ONSET,

@@ -13,7 +13,7 @@ OUTPLACE_FIRINGRATE_GEN = 'lognormal'  # 'normal' or 'constant'
 INPLACE_FIRINGRATE_GEN = 'lognormal'  # 'normal' or 'constant'
 PLACESIZE_GEN = 'lognormal'  # 'normal' or 'constant'
 
-TRACK_LENGTH = 250 # 400  # cm
+TRACK_LENGTH = myconfig.TRACK_LENGTH # 250 # 400  # cm
 PLACECELLSPROB = 0.5  # Вероятность пирамидного нейрона стать клеткой места в одном лабиринте
 PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
 PLACESIZE_MEAN = 20  # см, Средний размер поля места в дорсальном гиппокампе.
@@ -90,11 +90,15 @@ def make_ca1_pyrs_coords(X0, Y0, dx, dy, Npyrs_sim_x, Npyrs_sim_y, Nbottom_gens_
 def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPhase, preces_slope0, precess_onset0, is_gen=False):
 
     pyramidal_cells = []
+    place_size_cm2ms = 1000 / myconfig.ANIMAL_VELOCITY
+    duration_full_simulation = place_size_cm2ms * myconfig.TRACK_LENGTH # ms
+
+
 
     for pyrs_x, pyrs_y, pyrs_z in zip(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z):
 
         if PLACECELLSPROB < np.random.rand():
-            center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1)[0]
+            center_place_field = np.random.uniform(low=0.0, high=duration_full_simulation, size=1)[0]
         else:
             center_place_field = -1000000
 
@@ -144,7 +148,7 @@ def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPh
 
             "InPlacePeakRate": inplacefiringrate,
             "CenterPlaceField": float(center_place_field),
-            "SigmaPlaceField": place_size,
+            "SigmaPlaceField": place_size_cm2ms * place_size,
 
             "SlopePhasePrecession": phase_precession_slope,  # DV
             "PrecessionOnset": THETA_SLOPE_DV * pyrs_y + precess_onset0,

@@ -21,29 +21,51 @@ with open(neurons_path, "rb") as neurons_file: ##!!
 with open(connections_path, "rb") as synapses_file: ##!!
     connections = pickle.load(synapses_file)
 
-with h5py.File("./firings.h5", mode='r') as h5file:
+
+with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "firings.h5", mode='r') as h5file:
     firings = h5file['firings'][:]
+
+params4targets_pyrs = []
+for pop in populations:
+    if pop['type'] == 'CA1 Pyramidal':
+        params4targets_pyrs.append(pop)
+
+
+params4generators = []
+for pop in populations:
+    if '_generator' in pop['type']:
+        params4generators.append(pop)
 
 print(firings.shape)
 
 duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
 t = np.arange(0, duration_full_simulation, myconfig.DT)
 
-genrators = SpatialThetaGenerators(populations[-2:])
-firings_generators = genrators(t.reshape(1, -1, 1))
-firings_generators = firings_generators.numpy()
+print(t.shape)
+
+genrators_targents_pyrs = SpatialThetaGenerators(params4targets_pyrs)
+targents_pyrs = genrators_targents_pyrs(t.reshape(1, -1, 1))
+targents_pyrs = targents_pyrs.numpy()
+
+genrators = SpatialThetaGenerators(params4generators)
+generators_firings = genrators(t.reshape(1, -1, 1))
+generators_firings = generators_firings.numpy()
+
+firings = np.append(firings, generators_firings, axis=2)
+
+for f_idx in range(firings.shape[-1]):
+
+    fig, axes = plt.subplots(nrows=2, sharex=True, sharey=False)
 
 
-
-firings = np.append(firings, firings_generators, axis=2)
-
-nsubplots = 10 #firings.shape[-1]
+    axes[0].set_title(populations[f_idx]['type'])
+    axes[0].plot(t, firings[0, :, f_idx], color='blue')
 
 
-fig, axes = plt.subplots(nrows=nsubplots, sharex=True, sharey=False)
+    if f_idx < targents_pyrs.shape[-1]:
+        axes[1].plot(t, targents_pyrs[0, :, f_idx], color='red')
 
-for f_idx in range(nsubplots):
-    axes[f_idx].set_title(populations[f_idx+42]['type'])
-    axes[f_idx].plot(t, firings[0, :, f_idx+42])
+    fig.savefig(myconfig.OUTPUTSPATH_PLOTS + f'{f_idx}.png')
 
-plt.show()
+    plt.close(fig)
+# plt.show()

@@ -275,19 +275,20 @@ def main():
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
     with tf.device('/gpu:0'):
-        for epoch_counter in range(myconfig.EPOCHES_FULL_T):
+        for epoch_idx in range(myconfig.EPOCHES_FULL_T):
             for x_train, y_train in zip(Xtrain, Ytrain):
                 #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
                 model.train_on_batch(x_train, y_train)
 
-            model.save('big_model.keras')
+            epoch_counter = epoch_idx + 1
+            model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
             save_trained_to_pickle(model.trainable_variables, connections)
 
             firings = firings_model.predict(t_full)
-            with h5py.File("firings.h5", mode='w') as h5file:
+            with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'{epoch_counter}_firings.h5', mode='w') as h5file:
                 h5file.create_dataset('firings', data=firings)
 
-            print("Full time epoches", epoch_counter + 1)
+            print("Full time epoches", epoch_counter)
 
 
 
