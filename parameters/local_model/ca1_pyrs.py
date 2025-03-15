@@ -104,6 +104,7 @@ def get_cells_list(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, ThetaPh
 
         if PHASEPRECPROB < np.random.rand() and center_place_field > 0:
             phase_precession_slope = PHASEPREC_SLOPE_DECREASE_DV * pyrs_y + preces_slope0
+            phase_precession_slope = np.deg2rad(phase_precession_slope) / place_size_cm2ms
         else:
             phase_precession_slope = 0.0
 

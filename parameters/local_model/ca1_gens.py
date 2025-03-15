@@ -37,7 +37,7 @@ def main():
             THETA_PHASE_0 = -0.52
             DV_LENGTH = 2000 # mkm
 
-            PHASEPREC_SLOPE = 2
+            PHASEPREC_SLOPE = 2 # grad/cm
             PHASEPREC_SLOPE_DECREASE_DV = -2.82e-05  # rad / mkm (по оси DV)
             PHASEPREC_ONSET = THETA_PHASE_0 - 0.5
             PHASEPRECPROB = 0.5  # Вероятность обнаружить фазовую прецессию у клетки места
@@ -97,6 +97,9 @@ def main():
             center_place_field = np.random.uniform(low=0.0, high=duration_full_simulation, size=1).ravel()
             if PHASEPRECPROB < np.random.uniform():
                 phase_precession_slope = PHASEPREC_SLOPE + cell_pos_dv*PHASEPREC_SLOPE_DECREASE_DV
+
+                phase_precession_slope = np.deg2rad(phase_precession_slope) / place_size_cm2ms
+
             else:
                 phase_precession_slope = 0.0
 
