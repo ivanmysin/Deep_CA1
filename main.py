@@ -169,7 +169,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     time_step_layer = time_step_layer(generators)
 
-    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1), name="firings_outputs")(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
@@ -275,10 +275,14 @@ def main():
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
     with tf.device('/gpu:0'):
+        loss_hist = []
         for epoch_idx in range(myconfig.EPOCHES_FULL_T):
-            for x_train, y_train in zip(Xtrain, Ytrain):
+            loss_hist.append(0)
+
+            for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
                 #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-                model.train_on_batch(x_train, y_train)
+                loss = model.train_on_batch(x_train, y_train)
+                loss_hist[-1] += loss
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
@@ -287,6 +291,7 @@ def main():
             firings = firings_model.predict(t_full)
             with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'{epoch_counter}_firings.h5', mode='w') as h5file:
                 h5file.create_dataset('firings', data=firings)
+                h5file.create_dataset('loss_hist', data=np.asarray(loss_hist))
 
             print("Full time epoches", epoch_counter)
 
