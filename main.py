@@ -282,7 +282,8 @@ def main():
             for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
                 #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
                 loss = model.train_on_batch(x_train, y_train)
-                loss_hist[-1] += loss
+                pprint(loss)
+                loss_hist[-1] += loss[-1]
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
