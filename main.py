@@ -277,13 +277,16 @@ def main():
     with tf.device('/gpu:0'):
         loss_hist = []
         for epoch_idx in range(myconfig.EPOCHES_FULL_T):
-            loss_hist.append(0)
+
 
             for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
                 #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
                 loss = model.train_on_batch(x_train, y_train)
-                pprint(loss)
-                loss_hist[-1] += loss[-1]
+
+                if train_idx == 0:
+                    loss_hist.append(loss)
+                else:
+                    loss_hist[-1] += loss
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
