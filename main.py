@@ -280,13 +280,13 @@ def main():
 
 
             for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
-                #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-                loss = model.train_on_batch(x_train, y_train)
+                loss = model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+                #loss = model.train_on_batch(x_train, y_train)
 
                 if train_idx == 0:
-                    loss_hist.append(loss)
+                    loss_hist.append( np.sum(loss) )
                 else:
-                    loss_hist[-1] += loss
+                    loss_hist[-1] += np.sum(loss)
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
