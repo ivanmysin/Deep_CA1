@@ -280,7 +280,8 @@ def main():
 
 
             for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
-                loss = model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+                history = model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+                loss = history['loss'][-1]
                 #loss = model.train_on_batch(x_train, y_train)
 
                 if train_idx == 0:
