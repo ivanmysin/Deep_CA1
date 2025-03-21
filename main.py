@@ -245,7 +245,7 @@ def main():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    synapses_params["gsyn_max"] *= 2000 # !!!!
+    synapses_params["gsyn_max"] *= 20000 # !!!!
 
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():
