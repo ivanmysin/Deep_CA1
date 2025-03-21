@@ -228,6 +228,9 @@ def main():
     with open(connections_path, "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
+        for conn in connections:
+            conn['pconn'] *= 100
+
     Xtrain, Ytrain = get_dataset(populations)
 
 
