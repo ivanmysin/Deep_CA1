@@ -164,8 +164,8 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True,
-                          activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
+    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+                         #!!!! activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
@@ -229,8 +229,8 @@ def main():
     with open(connections_path, "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
-        for conn in connections:
-            conn['pconn'] *= 100
+        # for conn in connections:
+        #     conn['pconn'] *= 100
 
     Xtrain, Ytrain = get_dataset(populations)
 
