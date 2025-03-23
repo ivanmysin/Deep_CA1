@@ -164,12 +164,13 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True,
-                          activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
+    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
+                         #!!!! activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
-    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1), name="firings_outputs")(time_step_layer)
+    ###time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
@@ -228,6 +229,9 @@ def main():
     with open(connections_path, "rb") as synapses_file:
         connections = pickle.load(synapses_file)
 
+        # for conn in connections:
+        #     conn['pconn'] *= 100
+
     Xtrain, Ytrain = get_dataset(populations)
 
 
@@ -242,7 +246,7 @@ def main():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    synapses_params["gsyn_max"] *= 2000 # !!!!
+    synapses_params["gsyn_max"] *= 20000 # !!!!
 
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():
@@ -275,10 +279,19 @@ def main():
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
     with tf.device('/gpu:0'):
+        loss_hist = []
         for epoch_idx in range(myconfig.EPOCHES_FULL_T):
-            for x_train, y_train in zip(Xtrain, Ytrain):
-                #model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-                model.train_on_batch(x_train, y_train)
+
+
+            for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
+                history = model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
+                loss = history.history['loss'][-1]
+                #loss = model.train_on_batch(x_train, y_train)
+
+                if train_idx == 0:
+                    loss_hist.append( np.sum(loss) )
+                else:
+                    loss_hist[-1] += np.sum(loss)
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
@@ -287,8 +300,10 @@ def main():
             firings = firings_model.predict(t_full)
             with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'{epoch_counter}_firings.h5', mode='w') as h5file:
                 h5file.create_dataset('firings', data=firings)
+                h5file.create_dataset('loss_hist', data=np.asarray(loss_hist))
 
             print("Full time epoches", epoch_counter)
+            print("Loss over epoche", loss_hist[-1])
 
 
 
