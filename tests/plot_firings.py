@@ -22,7 +22,7 @@ with open(connections_path, "rb") as synapses_file: ##!!
     connections = pickle.load(synapses_file)
 
 
-with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "5_firings.h5", mode='r') as h5file:
+with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "26_firings.h5", mode='r') as h5file:
     firings = h5file['firings'][:]
 
 params4targets_pyrs = []
