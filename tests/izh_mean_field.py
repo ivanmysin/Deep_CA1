@@ -77,8 +77,8 @@ U = np.zeros_like(A)
 
 
 rates = []
-
-for t in np.arange(0, duration, dt_dim):
+t = np.arange(0, duration, dt_dim)
+for ts in t:
     g_syn = gsyn_max * A
 
     g_syn_tot = np.sum(g_syn, axis=0)
@@ -104,7 +104,6 @@ for t in np.arange(0, duration, dt_dim):
     rates.append( np.copy(rate) )
 
 rates = np.stack(rates)
-t = np.arange(0, duration, dt_dim)
 plt.plot(t, rates)
 plt.show()
 
