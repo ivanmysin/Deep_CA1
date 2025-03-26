@@ -157,7 +157,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         R = r_ - U * r_ * FRpre_normed
 
 
-        gsyn = tf.nn.relu(self.gsyn_max) * A
+        gsyn = A * tf.nn.relu(self.gsyn_max)
         g_tot = tf.reduce_sum(gsyn, axis=-1) + self.gl
         gE = gsyn * self.Erev
         E_inf = (tf.reduce_sum(gE, axis=-1) + self.gl*self.Vrest ) / g_tot

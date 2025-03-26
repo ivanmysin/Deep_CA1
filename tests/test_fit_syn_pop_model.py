@@ -15,24 +15,39 @@ params = [
     {
         "R": 0.25,
         "OutPlaceFiringRate": 0.5,
-        "OutPlaceThetaPhase": 1.57,
+        "OutPlaceThetaPhase": 3.14,
         "InPlacePeakRate": 30.0,
-        "CenterPlaceField": 500.0,
+        "CenterPlaceField": -500000.0,
         "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0,  # np.deg2rad(10) * 10 * 0.001,
         "PrecessionOnset": -1.57,
         "ThetaFreq": 8.0,
     },
 
+    # {
+    #     "R": 0.25,
+    #     "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
+    #     "OutPlaceThetaPhase": 3.14,  # DV
+    #
+    #     "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
+    #     "CenterPlaceField": -10000,
+    #     "SigmaPlaceField": 500,
+    #
+    #
+    #     "SlopePhasePrecession": 0.0,  # DV
+    #     "PrecessionOnset": 3.14,
+    #
+    #     "ThetaFreq": 8.0,
+    # },
+
     {
         "R": 0.25,
-        "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
-        "OutPlaceThetaPhase": 3.14*0.5,  # DV
+        "OutPlaceFiringRate": 40,  # Хорошо бы сделать лог-нормальное распределение
+        "OutPlaceThetaPhase": 3.14 ,  # DV
 
         "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 700,
+        "CenterPlaceField": -10000,
         "SigmaPlaceField": 500,
-
 
         "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
@@ -48,7 +63,7 @@ generators = genloss.SpatialThetaGenerators(params)
 
 
 ###############################################################
-pre_types = ["CA3 Pyramidal", "CA1 Pyramidal"] #  "CA1 O-LM",
+pre_types = ["CA1 Pyramidal", "CA1 O-LM"] # "CA3 Pyramidal",  "
 post_type = "CA1 Basket"
 synparams = pd.read_csv("../parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv")
 synparams.rename({"g" : "gsyn_max", "u" : "Uinc", "Connection Probability":"pconn"}, axis=1, inplace=True)
@@ -91,8 +106,10 @@ Vt = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_typ
 
 synparam["gl"] = k * (Vt - Vrest)
 #synparam["gsyn_max"][-2] = 3000.0
-synparam["gsyn_max"][-1] = 1500.0
-#pprint(synparam)
+synparam["gsyn_max"][0] = 1500.0
+synparam["gsyn_max"][1] = 1500.0
+synparam["pconn"][:] = 1.0
+pprint(synparam)
 
 #input_shape = [1, None, len(params)]
 conn_mask = np.ones(len(params), dtype='bool')
@@ -102,10 +119,10 @@ for layer in population_model.layers:
     layer.trainable = False
 
 
-t = tf.range(0, 5000.0, dt, dtype=tf.float64)
+t = tf.range(0, 5000.0, dt, dtype=tf.float32)
 t = tf.reshape(t, shape=(1, -1, 1))
 generators_firings = generators(t) #* 0.001 * dt
-
+generators_firings = generators_firings.numpy()
 # Esynt = synapses_layer(generators_firings)
 # pop_firings = population_model(Esynt)
 #
@@ -117,11 +134,12 @@ generators_firings = generators(t) #* 0.001 * dt
 
 input_layer = Input(shape=(None, len(params)), batch_size=1)
 synapses_layer = synapses_layer(input_layer)
-syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name=f"Population_with_synapses")
+#syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name=f"Population_with_synapses")
+syn_pop_model = Model(inputs=input_layer, outputs=synapses_layer, name=f"Population_with_synapses")
 
 syn_pop_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-7),
-    loss=tf.keras.losses.LogCosh(),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss=tf.keras.losses.LogCosh(), # MeanSquaredError()
     metrics=[tf.keras.metrics.MeanSquaredError(), ],
 )
 
@@ -130,45 +148,52 @@ syn_pop_model.compile(
 print(syn_pop_model.summary())
 #print(syn_pop_model.metrics)
 
-target_pop_firings = syn_pop_model.predict(generators_firings, batch_size=1)
-target_pop_firings = target_pop_firings * 0.01
+origin_sim_results = syn_pop_model.predict(generators_firings, batch_size=1)
+target_pop_firings = origin_sim_results - 0.1
 
-generators_firings = generators_firings.numpy()
-generators_firings = generators_firings.reshape(10, -1, 2)
+
+generators_firings = generators_firings.reshape(10, -1, len(params))
 target_pop_firings = target_pop_firings.reshape(10, -1, 1)
 
 
 
-print(generators_firings.shape)
-print(target_pop_firings.shape)
-
+# print(generators_firings.shape)
+# print(target_pop_firings.shape)
+#
 hist = syn_pop_model.fit(
     x=generators_firings,
     y=target_pop_firings,
-    epochs=100,
+    epochs=5,
     batch_size=1,
     verbose=2,
 )
 
 
+generators_firings = generators_firings.reshape(1, -1, len(params))
 
+Esynt = syn_pop_model.predict(generators_firings)
 
-# firing_united_model = syn_pop_model(generators_firings)
-#
 # generators_firings = generators_firings.numpy()
 # generators_firings = generators_firings[0, :, :]
-# t = t.numpy().ravel()
-#Esynt = Esynt.numpy().ravel()
+t = t.numpy().ravel()
+Esynt = Esynt.ravel()
 
-# Esynt = Esynt*75 - 75
+#Esynt = Esynt*75 - 75
 # pop_firings = pop_firings.numpy().ravel()
 
+origin_sim_results = origin_sim_results.ravel()
 
+generators_firings = generators_firings.reshape(-1, len(params))
+target_pop_firings = target_pop_firings.ravel()
+#origin_sim_results = origin_sim_results*75 - 75
 
-# fig, axes = plt.subplots(nrows=3, sharex=True)
-# axes[0].plot(t, generators_firings)
-# #axes[1].plot(t, Esynt)
-# axes[2].plot(t, pop_firings, color='red', linewidth=3)
-# # axes[2].set_ylim(0, 80)
-#
-# plt.show()
+fig, axes = plt.subplots(nrows=2, sharex=True)
+axes[0].plot(t, generators_firings)
+axes[1].plot(t, Esynt, label="optimized", linewidth=5)
+axes[1].plot(t, target_pop_firings, label="target", linewidth=1)
+axes[1].plot(t, origin_sim_results, label="origin", linewidth=1)
+#axes[2].plot(t, pop_firings, color='red', linewidth=3)
+#axes[1].set_ylim(-75, 0)
+axes[1].legend(loc='upper right')
+
+plt.show()
