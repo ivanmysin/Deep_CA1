@@ -138,7 +138,7 @@ synapses_layer = synapses_layer(input_layer)
 syn_pop_model = Model(inputs=input_layer, outputs=synapses_layer, name=f"Population_with_synapses")
 
 syn_pop_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e2),
     loss=tf.keras.losses.LogCosh(), # MeanSquaredError()
     metrics=[tf.keras.metrics.MeanSquaredError(), ],
 )
@@ -163,10 +163,23 @@ target_pop_firings = target_pop_firings.reshape(10, -1, 1)
 hist = syn_pop_model.fit(
     x=generators_firings,
     y=target_pop_firings,
-    epochs=5,
+    epochs=50,
     batch_size=1,
     verbose=2,
 )
+
+# with tf.GradientTape() as tape:
+#     y_pred = syn_pop_model(generators_firings)
+#     loss_value = tf.keras.losses.MSE(target_pop_firings, y_pred) #(y_true, y_pred)
+#
+#     # Проверяем значения градиента
+#     gradients = tape.gradient(loss_value, syn_pop_model.trainable_variables)
+#     for grad in gradients:
+#         if tf.math.is_nan(grad).numpy().any():
+#             print("Found NaN gradient")
+#
+#         print( grad.numpy() )
+
 
 
 generators_firings = generators_firings.reshape(1, -1, len(params))
