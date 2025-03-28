@@ -134,11 +134,11 @@ generators_firings = generators_firings.numpy()
 
 input_layer = Input(shape=(None, len(params)), batch_size=1)
 synapses_layer = synapses_layer(input_layer)
-#syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name=f"Population_with_synapses")
-syn_pop_model = Model(inputs=input_layer, outputs=synapses_layer, name=f"Population_with_synapses")
+syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_layer), name=f"Population_with_synapses")
+# syn_pop_model = Model(inputs=input_layer, outputs=synapses_layer, name=f"Population_with_synapses")
 
 syn_pop_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e2),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e1),
     loss=tf.keras.losses.LogCosh(), # MeanSquaredError()
     metrics=[tf.keras.metrics.MeanSquaredError(), ],
 )
@@ -149,7 +149,7 @@ print(syn_pop_model.summary())
 #print(syn_pop_model.metrics)
 
 origin_sim_results = syn_pop_model.predict(generators_firings, batch_size=1)
-target_pop_firings = origin_sim_results - 0.1
+target_pop_firings = origin_sim_results * 0.2
 
 
 generators_firings = generators_firings.reshape(10, -1, len(params))
