@@ -164,13 +164,12 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True)
-                         #!!!! activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
+    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True, activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
-    ###time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
-    time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
+    # time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
