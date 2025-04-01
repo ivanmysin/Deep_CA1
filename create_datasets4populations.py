@@ -260,15 +260,15 @@ def create_all_types_dataset(all_params, NN):
 def main():
     NN = myconfig.NUMBERNEURONSINPOP
     default_params = {
-        "Cm": 114, # * uF,  # /cm**2,
-        "k": 1.19, # * mS / mV,
+        "Cm": 114, # * pF,
+        "k": 1.19, # * nS / mV,
         "Vrest": -57.63, # * mV,
-        "Vth_mean": 35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+        "Vth_mean": 35.53, #*mV,
         "Vpeak": 21.72, # * mV,
         "Vmin": -48.7, # * mV,
         "a": 0.005, # * ms ** -1,
-        "b": 0.22, # * mS,
-        "d": 2, # * uA,
+        "b": 0.22, # * nS,
+        "d": 2, # * pA,
 
         "Eexc": 0 * mV,
         "Einh": -75 * mV,
