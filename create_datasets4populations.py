@@ -211,7 +211,8 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     file.create_dataset('ginh', data=ginh)
 
     if myconfig.IS_SAVE_V:
-        file.create_dataset('V', data=np.asarray(M_full_V.V / mV))
+        file.create_dataset('V', data = np.asarray(M_full_V.V / mV))
+        file.create_dataset('U', data=np.asarray(M_full_V.U / pA))
 
     file.close()
 
