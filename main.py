@@ -81,7 +81,12 @@ def get_dataset(populations):
     generators = SpatialThetaGenerators(pyramidal_targets)
 
     Xtrain = []
-    Ytrain = []
+    Ytrain = {
+        'pyramilad_mask': [],
+        'locking_with_phase': [],
+        'robast_mean': [],
+        'locking': [],
+    }
 
     t0 = 0.0
     for batch_idx in range(n_times_batches):
@@ -98,19 +103,15 @@ def get_dataset(populations):
         # print(robast_mean_firing_rate.shape)
         # print(phase_locking_without_phase.shape)
 
-        Ytrain.append({
-            'pyramilad_mask': pyr_targets,
-            'locking_with_phase': np.copy(phase_locking_with_phase),
-            'robast_mean': np.copy(robast_mean_firing_rate),
-            'locking' : np.copy(phase_locking_without_phase),
-        })
+        Ytrain['pyramilad_mask'].append(pyr_targets)
+        Ytrain['locking_with_phase'].append( np.copy(phase_locking_with_phase) )
+        Ytrain['robast_mean'].append( np.copy(robast_mean_firing_rate) )
+        Ytrain['locking'].append( np.copy(phase_locking_without_phase) )
 
-        # if batch_idx == 0:
-        #     print(pyr_targets.shape)
-        #     print(phase_locking_with_phase.shape)
-        #     print(robast_mean_firing_rate.shape)
-        #     print(phase_locking_without_phase.shape)
 
+    Xtrain = np.concatenate(Xtrain, axis=0)
+    for key, val in Ytrain.items():
+        Ytrain[key] = np.concatenate(val, axis=0)
 
 
     return Xtrain, Ytrain
@@ -281,16 +282,10 @@ def main():
         loss_hist = []
         for epoch_idx in range(myconfig.EPOCHES_FULL_T):
 
+            history = model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2, batch_size=1)
+            loss = history.history['loss']
+            #loss = model.train_on_batch(x_train, y_train)
 
-            for train_idx, (x_train, y_train) in enumerate(zip(Xtrain, Ytrain)):
-                history = model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-                loss = history.history['loss'][-1]
-                #loss = model.train_on_batch(x_train, y_train)
-
-                if train_idx == 0:
-                    loss_hist.append( np.sum(loss) )
-                else:
-                    loss_hist[-1] += np.sum(loss)
 
             epoch_counter = epoch_idx + 1
             model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
@@ -299,7 +294,7 @@ def main():
             firings = firings_model.predict(t_full)
             with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'{epoch_counter}_firings.h5', mode='w') as h5file:
                 h5file.create_dataset('firings', data=firings)
-                h5file.create_dataset('loss_hist', data=np.asarray(loss_hist))
+                h5file.create_dataset('loss_hist', data=np.asarray(loss))
 
             print("Full time epoches", epoch_counter)
             print("Loss over epoche", loss_hist[-1])
