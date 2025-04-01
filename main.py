@@ -195,7 +195,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     # big_model.build(input_shape = (None, 1))
 
     big_model.compile(
-        optimizer = tf.keras.optimizers.Adam(learning_rate=1e1),
+        optimizer = tf.keras.optimizers.Adam(learning_rate=1e2),
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.MSE,
