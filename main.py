@@ -297,7 +297,7 @@ def main():
                 h5file.create_dataset('loss_hist', data=np.asarray(loss))
 
             print("Full time epoches", epoch_counter)
-            print("Loss over epoche", loss_hist[-1])
+            #print("Loss over epoche", loss_hist[-1])
 
 
 
