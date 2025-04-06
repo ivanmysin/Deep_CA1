@@ -18,9 +18,18 @@ OUTPUTSPATH = "/media/sdisk/Deep_CA1/outputs/"  # Path to files with datasets fo
 if not os.path.isdir(OUTPUTSPATH):
     OUTPUTSPATH = "./outputs/"
 
+if not os.path.isdir(OUTPUTSPATH):
+    os.mkdir(OUTPUTSPATH)
+
 OUTPUTSPATH_FIRINGS = OUTPUTSPATH + 'firings/'
+if not os.path.isdir(OUTPUTSPATH_FIRINGS):
+    os.mkdir(OUTPUTSPATH_FIRINGS)
 OUTPUTSPATH_MODELS = OUTPUTSPATH + 'big_models/'
+if not os.path.isdir(OUTPUTSPATH_MODELS):
+    os.mkdir(OUTPUTSPATH_MODELS)
 OUTPUTSPATH_PLOTS = OUTPUTSPATH + 'plots/'
+if not os.path.isdir(OUTPUTSPATH_PLOTS):
+    os.mkdir(OUTPUTSPATH_PLOTS)
 
 IZHIKEVICNNEURONSPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv'
 TSODYCSMARKRAMPARAMS = './parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv'
