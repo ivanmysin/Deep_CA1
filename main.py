@@ -246,7 +246,7 @@ def main():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    synapses_params["gsyn_max"] *= 20000 # !!!!
+    synapses_params["gsyn_max"] *= 100 # !!!!
 
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():
@@ -279,7 +279,7 @@ def main():
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
     with tf.device('/gpu:0'):
-        loss_hist = []
+        #loss_hist = []
         for epoch_idx in range(myconfig.EPOCHES_FULL_T):
 
             history = model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2, batch_size=1)
