@@ -1,10 +1,17 @@
 import tensorflow as tf
 import myconfig
 from tensorflow.keras.layers import Layer, RNN
+from tensorflow.keras.constraints import Constraint
 
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 from pprint import pprint
+
+class ZeroOnesWeights(Constraint):
+    """Ограничивает веса модели значениями между 0 и 1."""
+
+    def __call__(self, w):
+        return tf.clip_by_value(w, clip_value_min=0, clip_value_max=1)
 
 
 class BaseSynapse(Layer):
@@ -54,6 +61,10 @@ class TsodycsMarkramSynapse(BaseSynapse):
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
         self.gmax_regulizer = tf.keras.regularizers.L2(l2=1e-11)
         gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
+        tau_f = tf.convert_to_tensor(params['tau_f'])
+        tau_d = tf.convert_to_tensor(params['tau_d'])
+        tau_r = tf.convert_to_tensor(params['tau_r'])
+        Uinc = tf.convert_to_tensor(params['Uinc'])
 
         self.gsyn_max = self.add_weight(shape = tf.keras.ops.shape(gsyn_max),
                                         initializer = tf.keras.initializers.Constant(gsyn_max),
@@ -65,18 +76,40 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE)
-        self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
-        self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
-        self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
-        self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
+        # self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
+        # self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
+        # self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
+        # self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
+
+        self.tau_f = self.add_weight(shape = tf.keras.ops.shape(tau_f),
+                                     initializer=tf.keras.initializers.Constant(tau_f),
+                                     trainable=False,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_f_{self.pop_idx}")
+
+        self.tau_d = self.add_weight(shape = tf.keras.ops.shape(tau_d),
+                                     initializer=tf.keras.initializers.Constant(tau_d),
+                                     trainable=False,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_d_{self.pop_idx}")
+
+        self.tau_r = self.add_weight(shape = tf.keras.ops.shape(tau_r),
+                                     initializer=tf.keras.initializers.Constant(tau_r),
+                                     trainable=False,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_r_{self.pop_idx}")
+
+        self.Uinc = self.add_weight(shape = tf.keras.ops.shape(Uinc),
+                                     initializer=tf.keras.initializers.Constant(Uinc),
+                                     trainable=False,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=ZeroOnesWeights(),
+                                     name=f"Uinc_{self.pop_idx}")
 
         self.state_size = [self.units, self.units, self.units, 1]
-
-        #assert(self.mask.numpy().sum() > 0)
-        # print("dt =", self.dt.numpy())
-        # pprint(params)
-
-
 
     def build(self, input_shape):
         super(TsodycsMarkramSynapse, self).build(input_shape)
