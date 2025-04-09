@@ -169,8 +169,8 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
 
     time_step_layer = time_step_layer(generators)
 
-    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
-    # time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
+    #!!! time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
@@ -195,7 +195,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     # big_model.build(input_shape = (None, 1))
 
     big_model.compile(
-        optimizer = tf.keras.optimizers.Adam(learning_rate=5e2),
+        optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE),
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.MSE,
