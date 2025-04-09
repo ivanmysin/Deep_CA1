@@ -4,23 +4,23 @@ import izhs_lib
 
 NN = 2
 dt_dim = 0.1 # ms
-duration = 500
+duration = 1000
 
 dim_izh_params = {
     "V0" : -57.0,
     "U0" : 0.0,
 
-    "Cm": 114, # * pF,  # /cm**2,
-    "k": 1.19, # * mS / mV,
+    "Cm": 114, # * pF,
+    "k": 1.19, # * mS
     "Vrest": -57.63, # * mV,
     "Vth": -35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
     "Vpeak": 21.72, # * mV,
     "Vmin": -48.7, # * mV,
     "a": 0.005, # * ms ** -1,
     "b": 0.22, # * mS,
-    "d": 2, # * uA,
+    "d": 2, # * pA,
 
-    "Iext" : 580,
+    "Iext" : 700, # pA
 }
 
 # Словарь с константами
@@ -66,8 +66,8 @@ else:
     tau1r = 1e-13
 
 gsyn_max = np.zeros(shape=(NN, NN), dtype=np.float64)
-gsyn_max[0, 1] = 10
-gsyn_max[1, 0] = 10
+gsyn_max[0, 1] = 20
+gsyn_max[1, 0] = 20
 
 Erev = np.zeros(shape=(NN, NN), dtype=np.float64) - 75
 e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
