@@ -165,7 +165,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True, activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
+    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True) #, activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
@@ -246,7 +246,7 @@ def main():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    synapses_params["gsyn_max"] *= 100 # !!!!
+    synapses_params["gsyn_max"] *= 10 # !!!!
 
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():
