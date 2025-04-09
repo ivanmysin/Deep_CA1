@@ -3,8 +3,6 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 import izhs_lib
 
-
-
 def mf_izh_ode(y, t, constants):
     """
     Функция, возвращающая правые части системы дифференциальных уравнений.
@@ -55,16 +53,15 @@ dim_izh_params = {
 
 # Словарь с константами
 cauchy_dencity_params = {
-    'Delta_eta': 0.02,
+    'Delta_eta': 80, # 0.02,
     'bar_eta': 0.0, # 0.191,
 }
+
+dim_izh_params = dim_izh_params | cauchy_dencity_params
 
 izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
 izh_params['v_peak'] = 200
 izh_params['v_reset'] = -200
-
-
-params = cauchy_dencity_params | izh_params
 
 # Начальные условия
 y0 = [0.0, izh_params['vk'], izh_params['wk']] # , 0
@@ -75,9 +72,9 @@ dt = 0.001
 t = np.linspace(0, duration, int(duration/dt))
 
 # Решение системы ОДУ
-solution = odeint(mf_izh_ode, y0, t, args=(params,))
+solution = odeint(mf_izh_ode, y0, t, args=(izh_params,))
 
-direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
+direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, izh_params, dt=dt, duration=duration, NN=10000)
 #direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
 
 # Извлекаем результаты

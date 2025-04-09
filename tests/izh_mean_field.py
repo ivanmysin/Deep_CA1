@@ -25,9 +25,11 @@ dim_izh_params = {
 
 # Словарь с константами
 cauchy_dencity_params = {
-    'Delta_eta': 0.02,
+    'Delta_eta': 80,  #0.02,
     'bar_eta': 0.0, # 0.191,
 }
+
+dim_izh_params = dim_izh_params | cauchy_dencity_params
 
 izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
 izh_params['v_peak'] = 200
@@ -103,7 +105,9 @@ for ts in t:
 
     rates.append( np.copy(rate) )
 
-rates = np.stack(rates)
+rates = np.stack(rates) * dt_non_dim / dt_dim * 1000
+
+
 plt.plot(t, rates)
 plt.show()
 
