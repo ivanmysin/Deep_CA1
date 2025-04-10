@@ -83,28 +83,28 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         self.tau_f = self.add_weight(shape = tf.keras.ops.shape(tau_f),
                                      initializer=tf.keras.initializers.Constant(tau_f),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=tf.keras.constraints.NonNeg(),
                                      name=f"tau_f_{self.pop_idx}")
 
         self.tau_d = self.add_weight(shape = tf.keras.ops.shape(tau_d),
                                      initializer=tf.keras.initializers.Constant(tau_d),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=tf.keras.constraints.NonNeg(),
                                      name=f"tau_d_{self.pop_idx}")
 
         self.tau_r = self.add_weight(shape = tf.keras.ops.shape(tau_r),
                                      initializer=tf.keras.initializers.Constant(tau_r),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=tf.keras.constraints.NonNeg(),
                                      name=f"tau_r_{self.pop_idx}")
 
         self.Uinc = self.add_weight(shape = tf.keras.ops.shape(Uinc),
                                      initializer=tf.keras.initializers.Constant(Uinc),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=ZeroOnesWeights(),
                                      name=f"Uinc_{self.pop_idx}")
