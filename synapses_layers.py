@@ -114,13 +114,6 @@ class TsodycsMarkramSynapse(BaseSynapse):
     def build(self, input_shape):
         super(TsodycsMarkramSynapse, self).build(input_shape)
 
-        self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-        #self.state_size = [self.units, self.units, self.units, 1]
-
-        self.exp_tau_d = exp(-self.dt / self.tau_d)
-        self.exp_tau_f = exp(-self.dt / self.tau_f)
-        self.exp_tau_r = exp(-self.dt / self.tau_r)
-
         self.built = True
 
     def get_config(self):
@@ -170,7 +163,12 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
     def call(self, inputs, states):
 
+        tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
+        #self.state_size = [self.units, self.units, self.units, 1]
 
+        exp_tau_d = exp(-self.dt / self.tau_d)
+        exp_tau_f = exp(-self.dt / self.tau_f)
+        exp_tau_r = exp(-self.dt / self.tau_r)
 
         FR = tf.boolean_mask(inputs, self.mask, axis=1)
 
@@ -181,9 +179,9 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
         FRpre_normed =  FR * self.pconn * 0.001 * self.dt # to convert firings in Hz to probability
 
-        a_ = A * self.exp_tau_d
-        r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
-        u_ = U * self.exp_tau_f
+        a_ = A * exp_tau_d
+        r_ = 1 + (R - 1 + tau1r * A) * exp_tau_r  - tau1r * A
+        u_ = U * exp_tau_f
 
         U = u_ + self.Uinc * (1 - u_) * FRpre_normed
         A = a_ + U * r_ * FRpre_normed
