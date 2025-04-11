@@ -243,10 +243,13 @@ def main():
     neurons_params.rename(
         {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
          'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
+
+    neurons_params['Cm'] *= 0.001 # recalculate pF to nF
+
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    synapses_params["gsyn_max"] *= 10 # !!!!
+    synapses_params["gsyn_max"] *= 0.1 # !!!!
 
     base_pop_models = {}
     for pop_idx, population in pop_types_params.iterrows():

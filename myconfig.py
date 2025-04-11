@@ -63,7 +63,7 @@ ThetaFreq = 8.0
 
 ##############################################
 ######### fit whole model of CA1 net #########
-LEARNING_RATE = 5e1
+LEARNING_RATE = 0.01 #5e1
 
 DV_MIN = 0
 DV_MAX = 200
