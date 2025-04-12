@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Input, RNN, Reshape
 from tensorflow.keras.saving import load_model
 from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 from time_step_layer import TimeStepLayer
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 def save_trained_to_pickle(trainable_variables, connections):
@@ -195,7 +196,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     # big_model.build(input_shape = (None, 1))
 
     big_model.compile(
-        optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE),
+        optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.MSE,
@@ -245,6 +246,7 @@ def main():
          'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
 
     neurons_params['Cm'] *= 0.001 # recalculate pF to nF
+    neurons_params['k'] *= 0.001 # recalculate nS to pS
 
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
@@ -280,6 +282,12 @@ def main():
 
     duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY  # ms
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
+
+    # fname = "weights-{epoch:03d}-{loss:.4f}.hdf5"
+    # checkpoint = ModelCheckpoint(fname, monitor="loss", mode="min",
+    #                              period=10, verbose=1)
+    # callbacks = [checkpoint, ]
+
 
     with tf.device('/gpu:0'):
         #loss_hist = []

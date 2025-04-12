@@ -104,10 +104,11 @@ Vrest = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_
 k = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh k"].values[0] )
 Vt = float( neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh Vt"].values[0] )
 
-synparam["gl"] = k * (Vt - Vrest)
+synparam["gl"] = k * (Vt - Vrest) * 0.001
 #synparam["gsyn_max"][-2] = 3000.0
-synparam["gsyn_max"][0] = 1500.0
-synparam["gsyn_max"][1] = 1500.0
+synparam["Cm"] *= 0.001
+synparam["gsyn_max"][0] = 1.5
+synparam["gsyn_max"][1] = 1.5
 synparam["pconn"][:] = 1.0
 pprint(synparam)
 
@@ -138,7 +139,7 @@ syn_pop_model = Model(inputs=input_layer, outputs=population_model(synapses_laye
 # syn_pop_model = Model(inputs=input_layer, outputs=synapses_layer, name=f"Population_with_synapses")
 
 syn_pop_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e1),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.01, clipvalue=0.1),
     loss=tf.keras.losses.LogCosh(), # MeanSquaredError()
     metrics=[tf.keras.metrics.MeanSquaredError(), ],
 )
@@ -149,7 +150,7 @@ print(syn_pop_model.summary())
 #print(syn_pop_model.metrics)
 
 origin_sim_results = syn_pop_model.predict(generators_firings, batch_size=1)
-target_pop_firings = origin_sim_results * 0.2
+target_pop_firings = origin_sim_results * 1.8
 
 
 generators_firings = generators_firings.reshape(10, -1, len(params))
@@ -163,18 +164,19 @@ target_pop_firings = target_pop_firings.reshape(10, -1, 1)
 hist = syn_pop_model.fit(
     x=generators_firings,
     y=target_pop_firings,
-    epochs=50,
+    epochs=5,
     batch_size=1,
     verbose=2,
 )
 
 # with tf.GradientTape() as tape:
 #     y_pred = syn_pop_model(generators_firings)
-#     loss_value = tf.keras.losses.MSE(target_pop_firings, y_pred) #(y_true, y_pred)
+#     loss_value = tf.keras.losses.logcosh(target_pop_firings, y_pred) #(y_true, y_pred)
 #
 #     # Проверяем значения градиента
 #     gradients = tape.gradient(loss_value, syn_pop_model.trainable_variables)
-#     for grad in gradients:
+#     for grad, var in zip(gradients,  syn_pop_model.trainable_variables):
+#         print(var.name)
 #         if tf.math.is_nan(grad).numpy().any():
 #             print("Found NaN gradient")
 #
@@ -199,6 +201,9 @@ origin_sim_results = origin_sim_results.ravel()
 generators_firings = generators_firings.reshape(-1, len(params))
 target_pop_firings = target_pop_firings.ravel()
 #origin_sim_results = origin_sim_results*75 - 75
+
+
+
 
 fig, axes = plt.subplots(nrows=2, sharex=True)
 axes[0].plot(t, generators_firings)
