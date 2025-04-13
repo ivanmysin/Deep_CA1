@@ -1,5 +1,6 @@
-#import numpy as np
+import numpy as np
 import tensorflow as tf
+from keras.src.ops import dtype
 from tensorflow.keras.layers import Layer, RNN
 from tensorflow.keras.constraints import Constraint
 import izhs_lib
@@ -22,7 +23,7 @@ class ZeroOnesWeights(Constraint):
 
 class MeanFieldNetwork(Layer):
 
-    def __init__(self, params, dt_dim, **kwargs):
+    def __init__(self, params, dt_dim=0.5, **kwargs):
         super().__init__(**kwargs)
 
         self.dt_dim = dt_dim
@@ -34,7 +35,7 @@ class MeanFieldNetwork(Layer):
         self.w_jump = tf.convert_to_tensor( params['w_jump'] )
         self.dts_non_dim = tf.convert_to_tensor( params['dts_non_dim'] )
         self.Delta_eta = tf.convert_to_tensor( params['Delta_eta'])
-        # bar_eta = params['bar_eta']
+
         I_ext = tf.convert_to_tensor( params['I_ext'] )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
@@ -73,14 +74,14 @@ class MeanFieldNetwork(Layer):
                                      trainable=False,
                                      dtype=myconfig.DTYPE,
                                      constraint=tf.keras.constraints.NonNeg(),
-                                     name=f"tau_d_{self.pop_idx}")
+                                     name=f"tau_d")
 
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),
                                      initializer=tf.keras.initializers.Constant(tau_r),
                                      trainable=False,
                                      dtype=myconfig.DTYPE,
                                      constraint=tf.keras.constraints.NonNeg(),
-                                     name=f"tau_r_{self.pop_idx}")
+                                     name=f"tau_r")
 
         self.Uinc = self.add_weight(shape=tf.keras.ops.shape(Uinc),
                                     initializer=tf.keras.initializers.Constant(Uinc),
@@ -89,7 +90,6 @@ class MeanFieldNetwork(Layer):
                                     constraint=ZeroOnesWeights(),
                                     name=f"Uinc")
 
-        #### !!!!!!!!!!!!!
         self.state_size = [self.units, self.units, self.units, (self.units, self.units), (self.units, self.units), (self.units, self.units)]
 
     def build(self, input_shape):
@@ -100,7 +100,7 @@ class MeanFieldNetwork(Layer):
         shape = [self.units, self.units]
 
         r = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
-        v = tf.ones( [1, self.units], dtype=myconfig.DTYPE)
+        v = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
         w = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
 
         R = tf.ones( shape, dtype=myconfig.DTYPE)
@@ -126,12 +126,12 @@ class MeanFieldNetwork(Layer):
         Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
         rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        v_avg = v_avg + self.dts_non_dim * (
-                    v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        w_avg = w_avg + self.dts_non_dim  * (a * (b * v_avg - w_avg) + self.w_jump * rates)
+        v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
 
-        FRpre_normed = self.pconn * self.dts_non_dim * rates
-        FRpre_normed = tf.reshape(FRpre_normed, shape=(-1, 1))
+        rates_reshaped = tf.transpose(rates) #tf.reshape(rates, shape=(-1, 1))
+        FRpre_normed = self.pconn * self.dts_non_dim * rates_reshaped
+        #FRpre_normed = tf.reshape(FRpre_normed, shape=(-1, 1))
 
         tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
 
@@ -151,10 +151,83 @@ class MeanFieldNetwork(Layer):
 
 
         output = rates
+        #output = v_avg
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
-
+######################################################################
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    NN = 2
+    dt_dim = 0.1  # ms
+    duration = 1000.0
 
-    pass
+    dim_izh_params = {
+        "V0": -57.63,
+        "U0": 0.0,
+
+        "Cm": 114,  # * pF,
+        "k": 1.19,  # * mS
+        "Vrest": -57.63,  # * mV,
+        "Vth": -35.53,  # *mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+        "Vpeak": 21.72,  # * mV,
+        "Vmin": -48.7,  # * mV,
+        "a": 0.005,  # * ms ** -1,
+        "b": 0.22,  # * mS,
+        "d": 2,  # * pA,
+
+        "Iext": 700,  # pA
+    }
+
+    # Словарь с константами
+    cauchy_dencity_params = {
+        'Delta_eta': 80,  # 0.02,
+        'bar_eta': 0.0,  # 0.191,
+    }
+
+    dim_izh_params = dim_izh_params | cauchy_dencity_params
+    izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
+    izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+
+    for key, val in izh_params.items():
+        izh_params[key] = np.zeros(NN, dtype=np.float32) + val
+
+    ## synaptic static variables
+    tau_d = 6.02  # ms
+    tau_r = 359.8  # ms
+    tau_f = 21.0  # ms
+    Uinc = 0.25
+
+    gsyn_max = np.zeros(shape=(NN, NN), dtype=np.float32)
+    gsyn_max[0, 1] = 20
+    gsyn_max[1, 0] = 15
+
+    pconn = np.zeros(shape=(NN, NN), dtype=np.float32)
+    pconn[0, 1] = 1
+    pconn[1, 0] = 1
+
+    Erev = np.zeros(shape=(NN, NN), dtype=np.float32) - 75
+    e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
+
+    izh_params['gsyn_max'] = gsyn_max
+    izh_params['pconn'] = pconn
+    izh_params['e_r'] = np.zeros_like(gsyn_max) + e_r
+    izh_params['tau_d'] = np.zeros_like(gsyn_max) + tau_d
+    izh_params['tau_r'] = np.zeros_like(gsyn_max) + tau_r
+    izh_params['tau_f'] = np.zeros_like(gsyn_max) + tau_f
+    izh_params['Uinc'] = np.zeros_like(gsyn_max) + Uinc
+
+
+    t = tf.range(0, duration, dt_dim, dtype=tf.float32)
+    t = tf.reshape(t, shape=(1, -1, 1))
+
+    meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim)
+    meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)
+
+    rates = meanfieldlayer_rnn(t)
+
+    rates = rates.numpy().reshape(-1, 2)
+    t = t.numpy().ravel()
+
+    plt.plot(t, rates)
+    plt.show()

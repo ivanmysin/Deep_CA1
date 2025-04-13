@@ -7,7 +7,7 @@ dt_dim = 0.1 # ms
 duration = 1000
 
 dim_izh_params = {
-    "V0" : -57.0,
+    "V0" : -57.63,
     "U0" : 0.0,
 
     "Cm": 114, # * pF,
@@ -50,7 +50,7 @@ b = params['b']
 ## population dynamic variables
 rate = np.zeros(NN, dtype=np.float64)
 v_avg = np.zeros_like(rate) + izh_params['vk']
-v_avg[0] = -0.05
+#v_avg[0] = -0.05
 
 w_avg = np.zeros_like(rate) + izh_params['wk']
 
@@ -66,8 +66,8 @@ else:
     tau1r = 1e-13
 
 gsyn_max = np.zeros(shape=(NN, NN), dtype=np.float64)
-gsyn_max[0, 1] = 20
-gsyn_max[1, 0] = 20
+# gsyn_max[0, 1] = 20
+# gsyn_max[1, 0] = 15
 
 Erev = np.zeros(shape=(NN, NN), dtype=np.float64) - 75
 e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
@@ -80,6 +80,12 @@ U = np.zeros_like(A)
 
 rates = []
 t = np.arange(0, duration, dt_dim)
+
+print('alpha', alpha)
+print('Delta_eta', Delta_eta)
+print('dt_non_dim', dt_non_dim)
+print('v_avg', v_avg)
+
 for ts in t:
     g_syn = gsyn_max * A
 
@@ -88,7 +94,8 @@ for ts in t:
     Isyn = np.sum( g_syn * (e_r - v_avg.reshape(1, -1)), axis=0 )
 
     rate = rate + dt_non_dim * (Delta_eta / np.pi + 2 * rate * v_avg - (alpha + g_syn_tot) * rate)
-    v_avg = v_avg + dt_non_dim * (v_avg ** 2 - alpha * v_avg - w_avg + bar_eta + I_ext + Isyn - np.pi**2 * rate**2)
+
+    v_avg = v_avg + dt_non_dim * (v_avg ** 2 - alpha * v_avg - w_avg + bar_eta + I_ext + Isyn - (np.pi * rate)**2)
     w_avg =  w_avg + dt_non_dim * (a * (b * v_avg - w_avg) + w_jump * rate)
 
     firing_prob = dt_non_dim * rate
