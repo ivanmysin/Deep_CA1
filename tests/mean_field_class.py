@@ -158,7 +158,7 @@ class MeanFieldNetwork(Layer):
         R = r_ - U * r_ * FRpre_normed
 
 
-        output = rates
+        output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
         #output = v_avg
 
         return output, [rates, v_avg, w_avg, R, U, A]
