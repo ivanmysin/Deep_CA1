@@ -23,10 +23,11 @@ class ZeroOnesWeights(Constraint):
 
 class MeanFieldNetwork(Layer):
 
-    def __init__(self, params, dt_dim=0.5, **kwargs):
+    def __init__(self, params, dt_dim=0.5, use_input=False, **kwargs):
         super().__init__(**kwargs)
 
         self.dt_dim = dt_dim
+        self.use_input = use_input
 
         self.units = len(params['alpha'])
         self.alpha = tf.convert_to_tensor( params['alpha'] )
@@ -90,22 +91,26 @@ class MeanFieldNetwork(Layer):
                                     constraint=ZeroOnesWeights(),
                                     name=f"Uinc")
 
-        self.state_size = [self.units, self.units, self.units, (self.units, self.units), (self.units, self.units), (self.units, self.units)]
+        synaptic_matrix_shapes = tf.shape(self.gsyn_max)
+
+        self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
 
     def build(self, input_shape):
         super().build(input_shape)
         self.built = True
 
     def get_initial_state(self, batch_size=1):
-        shape = [self.units, self.units]
+        shape = [self.units+3, self.units]
 
         r = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
         v = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
         w = tf.zeros( [1, self.units], dtype=myconfig.DTYPE)
 
-        R = tf.ones( shape, dtype=myconfig.DTYPE)
-        U = tf.zeros( shape, dtype=myconfig.DTYPE)
-        A = tf.zeros( shape, dtype=myconfig.DTYPE)
+        synaptic_matrix_shapes = tf.shape(self.gsyn_max)
+
+        R = tf.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        U = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        A = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
         initial_state = [r, v, w, R, U, A]
 
@@ -129,12 +134,15 @@ class MeanFieldNetwork(Layer):
         v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
 
-        rates_reshaped = tf.transpose(rates) #tf.reshape(rates, shape=(-1, 1))
-        FRpre_normed = self.pconn * self.dts_non_dim * rates_reshaped
-        #FRpre_normed = tf.reshape(FRpre_normed, shape=(-1, 1))
+        firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
+
+        if self.use_input:
+            inputs = tf.transpose(inputs)
+            firing_probs = tf.concat( [firing_probs, inputs], axis=0)
+
+        FRpre_normed = self.pconn *  firing_probs
 
         tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-
 
         exp_tau_d = exp(-self.dt_dim / self.tau_d)
         exp_tau_f = exp(-self.dt_dim / self.tau_f)
@@ -159,6 +167,7 @@ class MeanFieldNetwork(Layer):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     NN = 2
+    Ninps = 3
     dt_dim = 0.1  # ms
     duration = 1000.0
 
@@ -198,15 +207,15 @@ if __name__ == '__main__':
     tau_f = 21.0  # ms
     Uinc = 0.25
 
-    gsyn_max = np.zeros(shape=(NN, NN), dtype=np.float32)
+    gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
     gsyn_max[0, 1] = 20
     gsyn_max[1, 0] = 15
 
-    pconn = np.zeros(shape=(NN, NN), dtype=np.float32)
+    pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
     pconn[0, 1] = 1
     pconn[1, 0] = 1
 
-    Erev = np.zeros(shape=(NN, NN), dtype=np.float32) - 75
+    Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) - 75
     e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
 
     izh_params['gsyn_max'] = gsyn_max
@@ -221,12 +230,15 @@ if __name__ == '__main__':
     t = tf.range(0, duration, dt_dim, dtype=tf.float32)
     t = tf.reshape(t, shape=(1, -1, 1))
 
-    meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim)
+    firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
+
+
+    meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim, use_input=True)
     meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)
 
-    rates = meanfieldlayer_rnn(t)
+    rates = meanfieldlayer_rnn(firings_inputs)
 
-    rates = rates.numpy().reshape(-1, 2)
+    rates = rates.numpy().reshape(-1, NN)
     t = t.numpy().ravel()
 
     plt.plot(t, rates)
