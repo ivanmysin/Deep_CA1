@@ -1,9 +1,12 @@
 import numpy as np
 import tensorflow as tf
+from keras.src.backend import shape
 from keras.src.ops import dtype
-from tensorflow.keras.layers import Layer, RNN
+from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer
+from tensorflow.keras.models import Model
+from tensorflow.keras.saving import load_model
 import izhs_lib
 
 import sys
@@ -213,6 +216,58 @@ class MeanFieldNetwork(Layer):
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "dt_dim": self.dt_dim,
+            "use_input": self.use_input,
+
+            "gsyn_max": self.gsyn_max,
+            "tau_f": self.tau_f,
+            "tau_d": self.tau_d,
+            "tau_r": self.tau_r,
+            "Uinc": self.Uinc,
+            "pconn": self.pconn,
+            "e_r": self.e_r,
+
+            "alpha": self.alpha,
+            "a": self.a,
+            "b": self.b,
+            "w_jump": self.w_jump,
+            "dts_non_dim": self.dts_non_dim,
+            "Delta_eta": self.Delta_eta,
+            "I_ext": self.I_ext,
+        })
+
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        ##pprint(config)
+        params = {}
+
+        params['gsyn_max'] = config['gsyn_max']['config']["value"]
+        params['tau_f'] = config['tau_f']['config']["value"]
+        params['tau_d'] = config['tau_d']['config']["value"]
+        params['tau_r'] = config['tau_r']['config']["value"]
+        params['Uinc'] = config['Uinc']['config']["value"]
+        params['pconn'] = config['pconn']['config']["value"]
+        params['e_r'] = config['e_r']['config']["value"]
+
+        params['alpha'] = config['alpha']['config']["value"]
+        params['a'] = config['a']['config']["value"]
+        params['b'] = config['b']['config']["value"]
+        params['w_jump'] = config['w_jump']['config']["value"]
+        params['dts_non_dim'] = config['dts_non_dim']['config']["value"]
+        params['Delta_eta'] = config['Delta_eta']['config']["value"]
+        params['I_ext'] = config['I_ext']['config']["value"]
+
+        dt_dim = config['dt_dim']
+        use_input = config['use_input']
+
+
+        return cls(params, dt_dim=dt_dim, use_input=use_input)
+
 ######################################################################
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -282,13 +337,21 @@ if __name__ == '__main__':
 
     firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
 
-
     meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim, use_input=True)
     meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)
 
-    rates = meanfieldlayer_rnn(firings_inputs)
+    input_layer = Input(shape=(None, Ninps), batch_size=1)
+    output = meanfieldlayer_rnn(input_layer)
 
-    rates = rates.numpy().reshape(-1, NN)
+    model = Model(inputs=input_layer, outputs=output)
+
+    # model.save(f'test_model.keras')
+    # model = load_model('test_model.keras', custom_objects={'MeanFieldNetwork':MeanFieldNetwork, })
+
+
+    rates = model.predict(firings_inputs)
+
+    rates = rates.reshape(-1, NN)
     t = t.numpy().ravel()
 
     plt.plot(t, rates)
