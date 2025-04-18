@@ -79,6 +79,80 @@ def dimensional_to_dimensionless(dimensional_vars):
 
     return dimensionless_vars
 
+
+def dimensional_to_dimensionless_all(dimensional_vars):
+    k = dimensional_vars['k']
+    Cm  = dimensional_vars['Cm']
+    Vrest = dimensional_vars['Vrest']
+
+
+    dimensionless_vars = {}
+
+    # Преобразования
+    try:
+        dimensionless_vars['v_peak'] = transform_v_peak(dimensional_vars['Vpeak'], Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['v_reset'] = transform_v_reset(dimensional_vars['Vmin'], Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['alpha'] = transform_alpha(dimensional_vars['Vth_mean'], Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['gsyn_max'] = transform_g_syn(dimensional_vars['gsyn_max'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['a'] = transform_a(1/dimensional_vars['a'], k, Vrest, Cm)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['b'] = transform_b(dimensional_vars['b'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['w_jump'] = transform_w_jump(dimensional_vars['d'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['e_r'] = transform_e_r(dimensional_vars['Erev'], Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['I_ext'] = transform_I(dimensional_vars['Iext'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['Delta_eta'] = transform_I(dimensional_vars['Delta_eta'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['bar_eta'] = transform_I(dimensional_vars['bar_eta'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['dts_non_dim'] = transform_T(dimensional_vars['dt_dim'], Cm, k, Vrest)
+    except KeyError:
+        pass
+
+    return dimensionless_vars
+
+
+
 def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
     k = params['k']
     Vrest =  params['Vrest']
