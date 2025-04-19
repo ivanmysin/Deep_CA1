@@ -190,7 +190,7 @@ class MeanFieldNetwork(Layer):
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
         if self.use_input:
-            inputs = tf.transpose(inputs)
+            inputs = tf.transpose(inputs) * 0.001 * self.dt_dim
             firing_probs = tf.concat( [firing_probs, inputs], axis=0)
 
         FRpre_normed = self.pconn *  firing_probs
