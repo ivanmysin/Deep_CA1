@@ -9,6 +9,7 @@ from pprint import pprint
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Reshape
+from mean_field_class import MeanFieldNetwork
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint
 
@@ -20,10 +21,12 @@ import myconfig
 
 def get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta):
 
+    params = {}
     dimpopparams = {
         'dt_dim' : dt_dim,
         'Delta_eta' : Delta_eta,
     }
+
     generators_params = []
 
     for pop in populations:
@@ -50,17 +53,74 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     for key, val in dimpopparams.items():
         dimpopparams[key] = np.asarray(val)
 
-    params = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
+
+    NN = len(populations) - len(generators_params)
+    Ninps = len(generators_params)
+    gsyn_max = np.zeros(shape=(NN + Ninps, NN), dtype=np.float32)
+
+    dimpopparams['gsyn_max'] = gsyn_max
+    dimpopparams["Erev"] = np.zeros_like(gsyn_max)
+
+    params['pconn'] = np.zeros_like(gsyn_max)
+    params['tau_d'] = np.zeros_like(gsyn_max) #+ tau_d
+    params['tau_r'] = np.zeros_like(gsyn_max) #+ tau_r
+    params['tau_f'] = np.zeros_like(gsyn_max) #+ tau_f
+    params['Uinc'] = np.zeros_like(gsyn_max) #+ Uinc
 
     for conn in connections:
         pre_idx = conn['pre_idx']
         post_idx = conn['post_idx']
 
-        print(conn.keys())
+        params['pconn'][pre_idx, post_idx] = conn['pconn']
 
-        break
+        pre_type = conn['pre_type']
+
+        if pre_type == "CA3_generator":
+            pre_type = 'CA3 Pyramidal'
+
+        if pre_type == "CA1 Pyramidal_generator":
+            pre_type = 'CA1 Pyramidal'
+
+        if pre_type == "MEC_generator":
+            pre_type = 'EC LIII Pyramidal'
+
+        if pre_type == "LEC_generator":
+            pre_type = 'EC LIII Pyramidal'
+
+            # pre_type = pre_type.replace("_generator", "")
+
+        syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == pre_type) & (
+                synapses_params['Postsynaptic Neuron Type'] == conn['post_type'])]
+
+        if len(syn) == 0:
+            print("Connection from ", conn["pre_type"], "to", conn["post_type"], "not finded!")
+            continue
+
+        Uinc = syn['Uinc'].values[0]
+        tau_r = syn['tau_r'].values[0]
+        tau_f = syn['tau_f'].values[0]
+        tau_d = syn['tau_d'].values[0]
+
+        if neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "e":
+            Erev = 0
+        elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
+            Erev = -75.0
+
+        params['Uinc'][pre_idx, post_idx] = Uinc
+        params['tau_r'][pre_idx, post_idx] = tau_r
+        params['tau_f'][pre_idx, post_idx] = tau_f
+        params['tau_d'][pre_idx, post_idx] = tau_d
+        dimpopparams['Erev'][pre_idx, post_idx] = Erev
+
+    params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
+
+
+    params = params | params_dimless
+    params['I_ext'] = np.zeros(NN, dtype=np.float32)
     print(params.keys())
+
+    return params
 
 
 
@@ -95,3 +155,5 @@ synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": 
 
 
 params = get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
+
+net_layer = RNN( MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True), return_sequences=True, stateful=True)
