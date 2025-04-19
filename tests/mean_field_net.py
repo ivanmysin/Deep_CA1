@@ -25,6 +25,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     dimpopparams = {
         'dt_dim' : dt_dim,
         'Delta_eta' : Delta_eta,
+        'I_ext' : [],
     }
 
     generators_params = []
@@ -117,7 +118,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
 
     params = params | params_dimless
-    params['I_ext'] = np.zeros(NN, dtype=np.float32)
+
     print(params.keys())
 
     return params
