@@ -80,27 +80,27 @@ class MeanFieldNetwork(Layer):
         self.use_input = use_input
 
         self.units = len(params['alpha'])
-        self.alpha = tf.convert_to_tensor( params['alpha'] )
-        self.a = tf.convert_to_tensor( params['a'] )
-        self.b = tf.convert_to_tensor( params['b'] )
-        self.w_jump = tf.convert_to_tensor( params['w_jump'] )
-        self.dts_non_dim = tf.convert_to_tensor( params['dts_non_dim'] )
-        self.Delta_eta = tf.convert_to_tensor( params['Delta_eta'])
+        self.alpha = tf.convert_to_tensor( params['alpha'], dtype=myconfig.DTYPE )
+        self.a = tf.convert_to_tensor( params['a'], dtype=myconfig.DTYPE )
+        self.b = tf.convert_to_tensor( params['b'], dtype=myconfig.DTYPE )
+        self.w_jump = tf.convert_to_tensor( params['w_jump'], dtype=myconfig.DTYPE )
+        self.dts_non_dim = tf.convert_to_tensor( params['dts_non_dim'], dtype=myconfig.DTYPE )
+        self.Delta_eta = tf.convert_to_tensor( params['Delta_eta'], dtype=myconfig.DTYPE)
 
-        I_ext = tf.convert_to_tensor( params['I_ext'] )
+        I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=False,
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
-        gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
-        tau_f = tf.convert_to_tensor(params['tau_f'])
-        tau_d = tf.convert_to_tensor(params['tau_d'])
-        tau_r = tf.convert_to_tensor(params['tau_r'])
-        Uinc = tf.convert_to_tensor(params['Uinc'])
+        gsyn_max = tf.convert_to_tensor(params['gsyn_max'], dtype=myconfig.DTYPE)
+        tau_f = tf.convert_to_tensor(params['tau_f'], dtype=myconfig.DTYPE)
+        tau_d = tf.convert_to_tensor(params['tau_d'], dtype=myconfig.DTYPE)
+        tau_r = tf.convert_to_tensor(params['tau_r'], dtype=myconfig.DTYPE)
+        Uinc = tf.convert_to_tensor(params['Uinc'], dtype=myconfig.DTYPE)
 
-        self.e_r = tf.convert_to_tensor(params['e_r'])
+        self.e_r = tf.convert_to_tensor(params['e_r'], dtype=myconfig.DTYPE)
         self.pconn = tf.convert_to_tensor(params['pconn'])
 
 

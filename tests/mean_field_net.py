@@ -8,20 +8,29 @@ from pprint import pprint
 
 
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, RNN, Reshape
+from tensorflow.keras.layers import Input, RNN, Layer
 from mean_field_class import MeanFieldNetwork
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint
 
 import os
 os.chdir('../')
-#from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 import myconfig
 
 
 def get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta):
 
     params = {}
+
+    NN = 0
+    Ninps =  0
+    for pop_idx, pop in enumerate(populations):
+        if pop["type"].find("generator") == -1:
+            NN += 1
+        else:
+            Ninps += 1
+
     dimpopparams = {
         'dt_dim' : dt_dim,
         'Delta_eta' : Delta_eta,
@@ -30,14 +39,45 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
     generators_params = []
 
-    for pop in populations:
+    # !!!!!!!!!!!!!!!!!!!!!!!!
+    simple_out_mask = np.zeros(NN, dtype='bool')
+    frequecy_filter_out_mask = np.zeros(NN, dtype='bool')
+    phase_locking_out_mask = np.zeros(NN, dtype='bool')
+    LowFiringRateBound = []
+    HighFiringRateBound = []
+
+    for pop_idx, pop in enumerate(populations):
         pop_type = pop['type']
+
+        try:
+            LowFiringRateBound.append(pop["MinFiringRate"])
+            HighFiringRateBound.append(pop["MaxFiringRate"])
+        except KeyError:
+            pass
+
+        if pop["type"] == "CA1 Pyramidal":
+            simple_out_mask[pop_idx] = True
+
+        else:
+            try:
+                if np.isnan(pop["ThetaPhase"]) or (pop["ThetaPhase"] is None):
+                    phase_locking_out_mask[pop_idx] = True
+                else:
+                    frequecy_filter_out_mask[pop_idx] = True
+            except KeyError:
+                continue
 
         if 'generator' in pop_type:
             generators_params.append(pop)
             continue
 
         p = neurons_params[neurons_params["Neuron Type"] == pop_type]
+
+        try:
+            dimpopparams['I_ext'].append(pop['I_ext'])
+        except KeyError:
+            dimpopparams['I_ext'].append(0.0)
+
 
         for key in p:
             val = p[key].values[0]
@@ -56,18 +96,17 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
 
 
-    NN = len(populations) - len(generators_params)
-    Ninps = len(generators_params)
+
     gsyn_max = np.zeros(shape=(NN + Ninps, NN), dtype=np.float32)
 
     dimpopparams['gsyn_max'] = gsyn_max
     dimpopparams["Erev"] = np.zeros_like(gsyn_max)
 
     params['pconn'] = np.zeros_like(gsyn_max)
-    params['tau_d'] = np.zeros_like(gsyn_max) #+ tau_d
-    params['tau_r'] = np.zeros_like(gsyn_max) #+ tau_r
-    params['tau_f'] = np.zeros_like(gsyn_max) #+ tau_f
-    params['Uinc'] = np.zeros_like(gsyn_max) #+ Uinc
+    params['tau_d'] = np.zeros_like(gsyn_max) + 10 #+ tau_d
+    params['tau_r'] = np.zeros_like(gsyn_max) + 10 #+ tau_r
+    params['tau_f'] = np.zeros_like(gsyn_max) + 10 #+ tau_f
+    params['Uinc'] = np.zeros_like(gsyn_max) + 0.5 #+ Uinc
 
     for conn in connections:
         pre_idx = conn['pre_idx']
@@ -119,9 +158,9 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
     params = params | params_dimless
 
-    print(params.keys())
+    #print(params.keys())
 
-    return params
+    return params, generators_params
 
 
 
@@ -129,7 +168,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 ##################################################################
 dt_dim = 0.5
 Delta_eta = 80
-
+duration = 100
 
 
 # load data about network
@@ -155,6 +194,36 @@ synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
 synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
 
-params = get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
+params, generator_params = get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
 
-net_layer = RNN( MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True), return_sequences=True, stateful=True)
+input = Input(shape=(None, 1), batch_size=1)
+generators = SpatialThetaGenerators(generator_params)(input)
+net_layer = RNN( MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True),
+                 return_sequences=True, stateful=True,
+                 activity_regularizer=Decorrelator(strength=0.001),
+                 name="firings_outputs")(generators)
+
+net_layer = Layer(activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))(net_layer)
+
+
+outputs = net_layer
+big_model = Model(inputs=input, outputs=outputs)
+
+big_model.compile(
+    optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
+    loss = tf.keras.losses.logcosh
+    # loss={
+    #     'pyramilad_mask': tf.keras.losses.logcosh,
+    #     'locking_with_phase': tf.keras.losses.MSE,
+    #     'robast_mean': tf.keras.losses.MSE,
+    #     'locking': tf.keras.losses.MSE,
+    # }
+)
+
+t = tf.range(0, duration, dt_dim, dtype=tf.float32)
+t = tf.reshape(t, shape=(1, -1, 1))
+
+y = big_model.predict(t)
+print(y.shape)
+
+

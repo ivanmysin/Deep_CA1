@@ -130,7 +130,7 @@ def dimensional_to_dimensionless_all(dimensional_vars):
         pass
 
     try:
-        dimensionless_vars['I_ext'] = transform_I(dimensional_vars['Iext'], k, Vrest)
+        dimensionless_vars['I_ext'] = transform_I(dimensional_vars['I_ext'], k, Vrest)
     except KeyError:
         pass
 
