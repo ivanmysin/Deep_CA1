@@ -81,9 +81,9 @@ def dimensional_to_dimensionless(dimensional_vars):
 
 
 def dimensional_to_dimensionless_all(dimensional_vars):
-    k = dimensional_vars['k']
-    Cm  = dimensional_vars['Cm']
-    Vrest = dimensional_vars['Vrest']
+    k = dimensional_vars['k'] #.reshape(-1, 1)
+    Cm  = dimensional_vars['Cm'] #.reshape(-1, 1)
+    Vrest = dimensional_vars['Vrest'] #.reshape(-1, 1)
 
 
     dimensionless_vars = {}

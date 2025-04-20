@@ -39,7 +39,6 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
     generators_params = []
 
-    # !!!!!!!!!!!!!!!!!!!!!!!!
     simple_out_mask = np.zeros(NN, dtype='bool')
     frequecy_filter_out_mask = np.zeros(NN, dtype='bool')
     phase_locking_out_mask = np.zeros(NN, dtype='bool')
@@ -49,15 +48,20 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     for pop_idx, pop in enumerate(populations):
         pop_type = pop['type']
 
+
+        if 'generator' in pop_type:
+            generators_params.append(pop)
+            continue
+
         try:
             LowFiringRateBound.append(pop["MinFiringRate"])
             HighFiringRateBound.append(pop["MaxFiringRate"])
         except KeyError:
             pass
 
-        if pop["type"] == "CA1 Pyramidal":
-            simple_out_mask[pop_idx] = True
 
+        if pop_type == "CA1 Pyramidal":
+            simple_out_mask[pop_idx] = True
         else:
             try:
                 if np.isnan(pop["ThetaPhase"]) or (pop["ThetaPhase"] is None):
@@ -67,9 +71,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
             except KeyError:
                 continue
 
-        if 'generator' in pop_type:
-            generators_params.append(pop)
-            continue
+
 
         p = neurons_params[neurons_params["Neuron Type"] == pop_type]
 
@@ -147,10 +149,10 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
             Erev = -75.0
 
-        params['Uinc'][pre_idx, post_idx] = Uinc
-        params['tau_r'][pre_idx, post_idx] = tau_r
+        params['Uinc'][pre_idx, post_idx]  = Uinc
+        params['tau_r'][pre_idx, post_idx]  = tau_r
         params['tau_f'][pre_idx, post_idx] = tau_f
-        params['tau_d'][pre_idx, post_idx] = tau_d
+        params['tau_d'][pre_idx, post_idx]  = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
@@ -158,15 +160,15 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
     params = params | params_dimless
 
-    #print(params.keys())
-
-    return params, generators_params
+    LowFiringRateBound = np.asarray(LowFiringRateBound)
+    HighFiringRateBound = np.asarray(HighFiringRateBound)
+    return params, generators_params, LowFiringRateBound, HighFiringRateBound, simple_out_mask, frequecy_filter_out_mask, phase_locking_out_mask
 
 
 
 
 ##################################################################
-dt_dim = 0.5
+dt_dim = myconfig.DT
 Delta_eta = 80
 duration = 100
 
@@ -194,36 +196,62 @@ synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
 synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
 
-params, generator_params = get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
+params, generators_params, LowFiringRateBound, HighFiringRateBound, simple_out_mask, frequecy_filter_out_mask, phase_locking_out_mask = get_params_from_pop_conns(populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
+
+print(np.sum(simple_out_mask))
+print(np.sum(frequecy_filter_out_mask))
+print(np.sum(phase_locking_out_mask))
+
 
 input = Input(shape=(None, 1), batch_size=1)
-generators = SpatialThetaGenerators(generator_params)(input)
+generators = SpatialThetaGenerators(generators_params)(input)
 net_layer = RNN( MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True),
                  return_sequences=True, stateful=True,
                  activity_regularizer=Decorrelator(strength=0.001),
                  name="firings_outputs")(generators)
 
-net_layer = Layer(activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))(net_layer)
+output_layers = []
+
+simple_selector = CommonOutProcessing(simple_out_mask, name='pyramilad_mask')
+output_layers.append(simple_selector(net_layer))
+
+theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask, \
+                                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
+                                                                 name='locking_with_phase')
+output_layers.append(theta_phase_locking_with_phase(net_layer))
+
+robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
+output_layers.append(robast_mean_out(net_layer))
+
+phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
+                                                ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
+output_layers.append(phase_locking_selector(net_layer))
 
 
-outputs = net_layer
+
+#net_layer = Layer(activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))(net_layer)
+
+
+outputs = output_layers #net_layer # generators #
 big_model = Model(inputs=input, outputs=outputs)
 
 big_model.compile(
     optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
-    loss = tf.keras.losses.logcosh
-    # loss={
-    #     'pyramilad_mask': tf.keras.losses.logcosh,
-    #     'locking_with_phase': tf.keras.losses.MSE,
-    #     'robast_mean': tf.keras.losses.MSE,
-    #     'locking': tf.keras.losses.MSE,
-    # }
+    # loss = tf.keras.losses.logcosh
+    loss={
+        'pyramilad_mask': tf.keras.losses.logcosh,
+        'locking_with_phase': tf.keras.losses.MSE,
+        'robast_mean': tf.keras.losses.MSE,
+        'locking': tf.keras.losses.MSE,
+    }
 )
 
 t = tf.range(0, duration, dt_dim, dtype=tf.float32)
 t = tf.reshape(t, shape=(1, -1, 1))
 
 y = big_model.predict(t)
-print(y.shape)
+
+for yo in y:
+    print(yo.shape)
 
 

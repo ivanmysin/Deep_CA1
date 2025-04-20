@@ -315,6 +315,8 @@ if __name__ == '__main__':
     gsyn_max[0, 1] = 20
     gsyn_max[1, 0] = 15
 
+
+
     pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
     pconn[0, 1] = 1
     pconn[1, 0] = 1
@@ -335,6 +337,11 @@ if __name__ == '__main__':
     t = tf.reshape(t, shape=(1, -1, 1))
 
     firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
+
+
+    print("gsyn_max", izh_params["gsyn_max"].shape)
+    print("alpha", izh_params["alpha"].shape)
+    print("e_r", izh_params["e_r"].shape)
 
     meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim, use_input=True)
     meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)
