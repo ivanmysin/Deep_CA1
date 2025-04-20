@@ -1,7 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from keras.src.backend import shape
-from keras.src.ops import dtype
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer
