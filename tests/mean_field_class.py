@@ -40,7 +40,8 @@ class ZeroWallReg(Regularizer):
 
 class ZeroOneWallReg(ZeroWallReg):
     def __call__(self, x):
-        return tf.reduce_sum(-self.lw * tf.math.log( (1.0 - x) * self.close_coeff))
+        res = -self.lw * (tf.reduce_sum( tf.math.log(x * self.close_coeff)) + tf.reduce_sum( tf.math.log( (1.0 - x) * self.close_coeff)))
+        return res
 
 
 
