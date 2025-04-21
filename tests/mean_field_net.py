@@ -154,6 +154,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         params['tau_f'][pre_idx, post_idx] = tau_f
         params['tau_d'][pre_idx, post_idx]  = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
+        dimpopparams['gsyn_max'][pre_idx, post_idx] = conn['gsyn_max']
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
@@ -170,7 +171,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 ##################################################################
 dt_dim = myconfig.DT
 Delta_eta = 80
-duration = 100
+duration = 1000
 
 
 # load data about network
@@ -202,6 +203,9 @@ print(np.sum(simple_out_mask))
 print(np.sum(frequecy_filter_out_mask))
 print(np.sum(phase_locking_out_mask))
 
+
+print(params['pconn'])
+print(params['gsyn_max'])
 
 input = Input(shape=(None, 1), batch_size=1)
 generators = SpatialThetaGenerators(generators_params)(input)
@@ -249,9 +253,14 @@ big_model.compile(
 t = tf.range(0, duration, dt_dim, dtype=tf.float32)
 t = tf.reshape(t, shape=(1, -1, 1))
 
-y = big_model.predict(t)
+#y = big_model.predict(t)
 
-for yo in y:
-    print(yo.shape)
+firings_outputs_layer = big_model.get_layer('firings_outputs').output
+firings_model = Model(inputs=big_model.input, outputs=firings_outputs_layer)
+
+firings = firings_model.predict(t)
+with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'test_firings.h5', mode='w') as h5file:
+    h5file.create_dataset('firings', data=firings)
+
 
 

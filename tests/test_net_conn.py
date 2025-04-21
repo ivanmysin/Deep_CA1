@@ -12,13 +12,14 @@ neurons = [
         "CenterPlaceField": 10,
         "SigmaPlaceField": 30,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0, #10,  # DV
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
         "MinFiringRate" : 0.1,
         "MaxFiringRate" : 50.0,
 
+        "I_ext" : 500,
     },
     {
         "type": "CA1 Pyramidal",
@@ -30,12 +31,13 @@ neurons = [
         "CenterPlaceField": 10,
         "SigmaPlaceField": 30,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0, # 10,  # DV
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
         "MinFiringRate": 0.1,
         "MaxFiringRate": 50.0,
+        "I_ext": 0,
     },
     {
         "type": "CA1 Basket",
@@ -46,6 +48,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 0,
     },
     {
         "type": "CA1 Basket CCK+",
@@ -56,6 +59,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 20.0,
     },
     {
         "type": "CA1 Oriens-Alveus",
@@ -66,6 +70,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 50.0,
     },
     {
         "type": "CA3_generator",
@@ -103,105 +108,105 @@ neurons = [
 ]
 
 connections = [
-    {
-        "pconn" : 0.0,
-        "pre_idx" : 0,
-        "post_idx" : 0,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 0,
-        "post_idx": 1,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 1,
-        "post_idx": 1,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 1,
-        "post_idx": 0,
-        "gsyn_max": 0.0,
-    },
-
-    {
-        "pconn": 0.0,
-        "pre_idx": 0,
-        "post_idx": 2,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 0,
-        "post_idx": 3,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 0,
-        "post_idx": 4,
-        "gsyn_max": 0.0,
-    },
-
-    {
-        "pconn": 0.0,
-        "pre_idx": 5,
-        "post_idx": 0,
-        "gsyn_max": 0.0,
-    },
-    {
-        "pconn": 0.0,
-        "pre_idx": 5,
-        "post_idx": 1,
-        "gsyn_max": 0.0,
-    },
+    # {
+    #     "pconn" : 0.0,
+    #     "pre_idx" : 0,
+    #     "post_idx" : 0,
+    #     "gsyn_max": 0.0,
+    # },
     {
         "pconn": 1.0,
-        "pre_idx": 5,
-        "post_idx": 2,
-        "gsyn_max": 15000,
+        "pre_idx": 0,
+        "post_idx": 1,
+        "gsyn_max": 500.0,
     },
-    {
-        "pconn": 0.0,
-        "pre_idx": 5,
-        "post_idx": 3,
-        "gsyn_max": 0.0,
-    },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 1,
+    #     "post_idx": 1,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 1,
+    #     "post_idx": 0,
+    #     "gsyn_max": 0.0,
+    # },
+    #
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 2,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 1.0,
+    #     "pre_idx": 2,
+    #     "post_idx": 3,
+    #     "gsyn_max": 1.0,
+    # },
 
-    {
-        "pconn": 1.0,
-        "pre_idx": 6,
-        "post_idx": 0,
-        "gsyn_max": 3000,
-    },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 5,
+    #     "post_idx": 0,
+    #     "gsyn_max": 0.0,
+    # },
     {
         "pconn": 0.0,
-        "pre_idx": 6,
+        "pre_idx": 5,
         "post_idx": 1,
         "gsyn_max": 0.0,
     },
     {
         "pconn": 0.0,
-        "pre_idx": 6,
+        "pre_idx": 5,
         "post_idx": 2,
         "gsyn_max": 0.0,
     },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 5,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
+
     {
         "pconn": 0.0,
         "pre_idx": 6,
-        "post_idx": 3,
+        "post_idx": 0,
         "gsyn_max": 0.0,
     },
-    {
-        "pconn": 0.0,
-        "pre_idx": 6,
-        "post_idx": 4,
-        "gsyn_max": 0.0,
-    },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 1,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 2,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 4,
+    #     "gsyn_max": 0.0,
+    # },
 ]
 
 
