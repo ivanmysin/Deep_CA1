@@ -3,9 +3,11 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer
+from tensorflow.keras.callbacks import Callback, TerminateOnNaN, ModelCheckpoint
 from tensorflow.keras.models import Model
 from tensorflow.keras.saving import load_model
 import izhs_lib
+import h5py
 
 import sys
 sys.path.append('../')
@@ -16,6 +18,25 @@ import myconfig
 PI = 3.141592653589793
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
+
+
+class SaveFirings(Callback):
+    def __init__(self, firing_model, t_full, path, filename_template, **kwargs):
+        super().__init__(**kwargs)
+
+        self.firing_model = firing_model
+        self.t_full = t_full
+        self.path = path
+        self.filename_template = filename_template
+
+    def on_epoch_end(self, epoch, logs=None):
+
+        filepath = self.path + self.filename_template.format(epoch=epoch)
+        firings = self.firings_model.predict(self.t_full)
+
+        with h5py.File(filepath, mode='w') as h5file:
+            h5file.create_dataset('firings', data=firings)
+
 
 class ZeroWallReg(Regularizer):
 

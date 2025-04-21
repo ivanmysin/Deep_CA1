@@ -19,7 +19,7 @@ neurons = [
         "MinFiringRate" : 0.1,
         "MaxFiringRate" : 50.0,
 
-        "I_ext" : 500,
+        "I_ext" : 0,
     },
     {
         "type": "CA1 Pyramidal",
@@ -59,7 +59,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
-        "I_ext": 20.0,
+        "I_ext": 200.0,
     },
     {
         "type": "CA1 Oriens-Alveus",
@@ -70,7 +70,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
-        "I_ext": 50.0,
+        "I_ext": 100.0,
     },
     {
         "type": "CA3_generator",
@@ -114,12 +114,12 @@ connections = [
     #     "post_idx" : 0,
     #     "gsyn_max": 0.0,
     # },
-    {
-        "pconn": 1.0,
-        "pre_idx": 0,
-        "post_idx": 1,
-        "gsyn_max": 500.0,
-    },
+    # {
+    #     "pconn": 1.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 1,
+    #     "gsyn_max": 500.0,
+    # },
     # {
     #     "pconn": 0.0,
     #     "pre_idx": 1,
@@ -145,12 +145,12 @@ connections = [
     #     "post_idx": 3,
     #     "gsyn_max": 0.0,
     # },
-    # {
-    #     "pconn": 1.0,
-    #     "pre_idx": 2,
-    #     "post_idx": 3,
-    #     "gsyn_max": 1.0,
-    # },
+    {
+        "pconn": 1.0,
+        "pre_idx": 2,
+        "post_idx": 3,
+        "gsyn_max": 1000.0,
+    },
 
     # {
     #     "pconn": 0.0,
@@ -159,16 +159,16 @@ connections = [
     #     "gsyn_max": 0.0,
     # },
     {
-        "pconn": 0.0,
+        "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 1,
-        "gsyn_max": 0.0,
+        "gsyn_max": 500.0,
     },
     {
-        "pconn": 0.0,
+        "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
-        "gsyn_max": 0.0,
+        "gsyn_max": 500.0,
     },
     # {
     #     "pconn": 0.0,
@@ -178,10 +178,10 @@ connections = [
     # },
 
     {
-        "pconn": 0.0,
+        "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
-        "gsyn_max": 0.0,
+        "gsyn_max": 50000.0,
     },
     # {
     #     "pconn": 0.0,
