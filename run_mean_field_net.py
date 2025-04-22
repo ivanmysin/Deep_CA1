@@ -278,7 +278,7 @@ if __name__ == '__main__':
     #Ys = big_model.predict(Xtrain, batch_size=1)
 
     for y_idx, (key, y) in enumerate(Ytrain.items()):
-        print( y.shape )
+        print( key, y.shape )
         print('##############################')
     #
     #
