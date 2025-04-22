@@ -194,6 +194,7 @@ def get_model():
         populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
 
     input = Input(shape=(None, 1), batch_size=1)
+
     generators = SpatialThetaGenerators(generators_params)(input)
     net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True),
                     return_sequences=True, stateful=True,
@@ -250,28 +251,40 @@ if __name__ == '__main__':
 
     checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
     filename_template = 'firings_{epoch:02d}.h5'
+
+    Nepoches4modelsaving = 2 * len(Ytrain) + 1
+
     callbacks = [
-        #TerminateOnNaN(),
+        TerminateOnNaN(),
         ModelCheckpoint(filepath=checkpoint_filepath,
             save_weights_only=False,
             monitor='loss',
-            mode='max',
+            mode='auto',
             save_best_only=False,
-            save_freq = 4),
+            save_freq = 'epoch'),
+
+
         SaveFirings( firing_model=firings_model,
                      t_full=t_full,
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
-                     save_freq = 4),
+                     save_freq = 2),
     ]
 
-    #big_model.fit(Xtrain, Ytrain, epochs=5, verbose=2, batch_size=1, callbacks=callbacks)
+    big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    Ys = big_model.predict(Xtrain)
+    #Ys = big_model.predict(Xtrain, batch_size=1)
 
-    for y in Ys:
-        print(y)
-        print('##############################')
+    # for y_idx, y in enumerate(Ys):
+    #     print(np.sum(np.isnan(y) ) )
+    #     print('##############################')
+    #
+    #
+    #     if y_idx == 0:
+    #         import matplotlib.pyplot as plt
+    #         #y = y.reshape()
+    #         plt.plot(y[0] )
+    #         plt.show()
 
 
 

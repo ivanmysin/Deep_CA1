@@ -31,7 +31,7 @@ class SaveFirings(Callback):
         self.save_freq = save_freq
 
     def on_epoch_end(self, epoch, logs=None):
-        if epoch % self.save_freq == 0:
+        if ( (epoch+1) % self.save_freq) != 0:
             return
 
         filepath = self.path + self.filename_template.format(epoch=epoch)
