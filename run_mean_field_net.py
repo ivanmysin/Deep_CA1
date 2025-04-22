@@ -216,8 +216,6 @@ def get_model():
     robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
     output_layers.append(robast_mean_out(net_layer))
 
-    print('phase_locking_out_mask', np.sum(phase_locking_out_mask), len(populations))
-
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
     output_layers.append(phase_locking_selector(net_layer))
@@ -279,9 +277,9 @@ if __name__ == '__main__':
 
     # big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    #Ys = big_model.predict(Xtrain, batch_size=1)
+    Ys = big_model.predict(Xtrain, batch_size=1)
 
-    for y_idx, (key, y) in enumerate(Ytrain.items()):
+    for y_idx, (key, y) in enumerate(Ys.items()):
         print( key, y.shape )
         print('##############################')
     #
