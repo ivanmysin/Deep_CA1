@@ -148,18 +148,25 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
             Erev = 0
         elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
             Erev = -75.0
+        if not conn['gsyn_max'] is None:
+            gsyn_max = conn['gsyn_max']
+        else:
+            gsyn_max = syn['gsyn_max'].values[0]
 
         params['Uinc'][pre_idx, post_idx]  = Uinc
-        params['tau_r'][pre_idx, post_idx]  = tau_r
+        params['tau_r'][pre_idx, post_idx] = tau_r
         params['tau_f'][pre_idx, post_idx] = tau_f
-        params['tau_d'][pre_idx, post_idx]  = tau_d
+        params['tau_d'][pre_idx, post_idx] = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
-        dimpopparams['gsyn_max'][pre_idx, post_idx] = conn['gsyn_max']
+        dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
 
     params = params | params_dimless
+
+
+
 
     LowFiringRateBound = np.asarray(LowFiringRateBound)
     HighFiringRateBound = np.asarray(HighFiringRateBound)
@@ -266,29 +273,29 @@ if __name__ == '__main__':
             save_freq = 'epoch'),
 
 
-        # SaveFirings( firing_model=firings_model,
-        #              t_full=t_full,
-        #              path=myconfig.OUTPUTSPATH_FIRINGS,
-        #              filename_template=filename_template,
-        #              save_freq = 2),
+        SaveFirings( firing_model=firings_model,
+                     t_full=t_full,
+                     path=myconfig.OUTPUTSPATH_FIRINGS,
+                     filename_template=filename_template,
+                     save_freq = 2),
     ]
 
 
 
-    big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    ##history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    # Ys = big_model.predict(Xtrain, batch_size=1)
+    Ys = big_model.predict(Xtrain, batch_size=1)
+
+    for y_idx, y in enumerate(Ys):
+        print( np.sum(np.isnan(y)) )
+        print('##############################')
+
     #
-    # for y_idx, y in enumerate(Ys):
-    #     print( y.shape )
-    #     print('##############################')
-    #
-    #
-    #     if y_idx == 0:
-    #         import matplotlib.pyplot as plt
-    #         #y = y.reshape()
-    #         plt.plot(y[0] )
-    #         plt.show()
+    #     # if y_idx == 0:
+    #     #     import matplotlib.pyplot as plt
+    #     #     #y = y.reshape()
+    #     #     plt.plot(y[0] )
+    #     #     plt.show()
 
 
 
