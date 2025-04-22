@@ -190,6 +190,8 @@ def get_model():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
+    Xtrain, Ytrain = get_dataset(populations)
+
     params, generators_params, LowFiringRateBound, HighFiringRateBound, simple_out_mask, frequecy_filter_out_mask, phase_locking_out_mask = get_params_from_pop_conns(
         populations, connections, neurons_params, synapses_params, dt_dim, Delta_eta)
 
@@ -214,6 +216,8 @@ def get_model():
     robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
     output_layers.append(robast_mean_out(net_layer))
 
+    print('phase_locking_out_mask', np.sum(phase_locking_out_mask), len(populations))
+
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
     output_layers.append(phase_locking_selector(net_layer))
@@ -234,7 +238,7 @@ def get_model():
         }
     )
 
-    Xtrain, Ytrain = get_dataset(populations)
+
 
     return big_model, Xtrain, Ytrain
 ##################################################################
@@ -252,7 +256,7 @@ if __name__ == '__main__':
     checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
     filename_template = 'firings_{epoch:02d}.h5'
 
-    Nepoches4modelsaving = 2 * len(Ytrain) + 1
+    Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
     callbacks = [
         TerminateOnNaN(),
