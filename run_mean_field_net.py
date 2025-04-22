@@ -275,13 +275,13 @@ if __name__ == '__main__':
 
 
 
-    # big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    Ys = big_model.predict(Xtrain, batch_size=1)
-
-    for y_idx, y in enumerate(Ys):
-        print( y.shape )
-        print('##############################')
+    # Ys = big_model.predict(Xtrain, batch_size=1)
+    #
+    # for y_idx, y in enumerate(Ys):
+    #     print( y.shape )
+    #     print('##############################')
     #
     #
     #     if y_idx == 0:
