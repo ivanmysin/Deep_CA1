@@ -266,11 +266,11 @@ if __name__ == '__main__':
             save_freq = 'epoch'),
 
 
-        SaveFirings( firing_model=firings_model,
-                     t_full=t_full,
-                     path=myconfig.OUTPUTSPATH_FIRINGS,
-                     filename_template=filename_template,
-                     save_freq = 2),
+        # SaveFirings( firing_model=firings_model,
+        #              t_full=t_full,
+        #              path=myconfig.OUTPUTSPATH_FIRINGS,
+        #              filename_template=filename_template,
+        #              save_freq = 2),
     ]
 
 
