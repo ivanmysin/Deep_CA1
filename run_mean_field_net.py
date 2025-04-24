@@ -102,7 +102,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     gsyn_max = np.zeros(shape=(NN + Ninps, NN), dtype=np.float32)
 
     dimpopparams['gsyn_max'] = gsyn_max
-    dimpopparams["Erev"] = np.zeros_like(gsyn_max)
+    dimpopparams["Erev"] = np.zeros_like(gsyn_max) - 75.0
 
     params['pconn'] = np.zeros_like(gsyn_max)
     params['tau_d'] = np.zeros_like(gsyn_max) + 100 #+ tau_d
@@ -114,7 +114,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         pre_idx = conn['pre_idx']
         post_idx = conn['post_idx']
 
-        params['pconn'][pre_idx, post_idx] = conn['pconn']
+        #!!!!!  params['pconn'][pre_idx, post_idx] = conn['pconn']
 
         pre_type = conn['pre_type']
 
@@ -158,13 +158,22 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         params['tau_f'][pre_idx, post_idx] = tau_f
         params['tau_d'][pre_idx, post_idx] = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
-        dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
+        #!!!!!!  dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
 
     params = params | params_dimless
 
+
+    params['alpha'][:] = 0.38348082
+    params['a'][:] = 0.0083115
+    params['b'][:] = 0.00320795
+    params['w_jump'][:] = 0.00050604
+    params['Delta_eta'][:] = 0.02024164
+    params['dts_non_dim'][:] = 0.06015763
+    for key, val in params.items():
+        print(key, "\n", val)
 
 
 
@@ -290,12 +299,16 @@ if __name__ == '__main__':
         print( np.sum(np.isnan(y)) )
         print('##############################')
 
-    #
-    #     # if y_idx == 0:
-    #     #     import matplotlib.pyplot as plt
-    #     #     #y = y.reshape()
-    #     #     plt.plot(y[0] )
-    #     #     plt.show()
+
+        if y_idx == 0:
+            with h5py.File('./outputs/firings/pyr_firings.h5', 'w') as h5file:
+                h5file.create_dataset('firings', data=y)
+
+
+            import matplotlib.pyplot as plt
+            #y = y.reshape()
+            plt.plot(y[0, :, 0] )
+            plt.show()
 
 
 

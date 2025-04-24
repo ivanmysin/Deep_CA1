@@ -269,12 +269,12 @@ if __name__ == '__main__':
         "b": 0.22,  # * nS,
         "d": 2,  # * pA,
 
-        "Iext": 250,  # * pA,
+        "Iext": 0,  # * pA,
     }
 
     # Словарь с константами
     cauchy_dencity_params = {
-        'Delta_eta': 50, #79.04496222, # 0.02,
+        'Delta_eta': 10, #79.04496222, # 0.02,
         'bar_eta': 0.0,  # 0.191,
     }
     dim_izh_params = dim_izh_params | cauchy_dencity_params
@@ -285,7 +285,7 @@ if __name__ == '__main__':
 
     firings_dim, v_avg_dim, u_avg_dim = izh_simulate(dim_izh_params, cauchy_dencity_params, dt=dt_dim, duration=duration, NN=NN)
 
-    #firings_dim = savgol_filter(firings_dim, 33, 3)
+    firings_dim_smooth = savgol_filter(firings_dim, 33, 3)
 
     firings_nondim, v_avg_nondim, u_avg_nondim = izh_nondim_simulate(non_dim_izh_params, non_dim_izh_params, dt=dt_non_dim, duration=duration_non_dim, NN=NN)
     #firings_nondim = savgol_filter(firings_nondim, 33, 3)
@@ -299,7 +299,8 @@ if __name__ == '__main__':
 
     fig, axes = plt.subplots()
     axes.plot(t, firings_dim, label='dimention simulation')
-    axes.plot(t, firings_nondim, label='dimentionless simulation')
+    axes.plot(t, firings_dim_smooth, label='dimention simulation smooth', linewidth=5)
+    #axes.plot(t, firings_nondim, label='dimentionless simulation')
 
     # axes.plot(t, v_avg_dim, label='dimention simulation', linewidth=5)
     # axes.plot(t, v_avg_nondim, label='dimentionless simulation', linewidth=2)

@@ -313,7 +313,7 @@ if __name__ == '__main__':
         "b": 0.22,  # * mS,
         "d": 2,  # * pA,
 
-        "Iext": 700,  # pA
+        "Iext": 0,  # pA
     }
 
     # Словарь с константами
@@ -336,14 +336,14 @@ if __name__ == '__main__':
     Uinc = 0.25
 
     gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-    gsyn_max[0, 1] = 20
-    gsyn_max[1, 0] = 15
+    # gsyn_max[0, 1] = 20
+    # gsyn_max[1, 0] = 15
 
 
 
     pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-    pconn[0, 1] = 1
-    pconn[1, 0] = 1
+    # pconn[0, 1] = 1
+    # pconn[1, 0] = 1
 
     Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) - 75
     e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
@@ -362,10 +362,10 @@ if __name__ == '__main__':
 
     firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
 
+    for key, val in izh_params.items():
+        print(key, "\n", val)
 
-    print("gsyn_max", izh_params["gsyn_max"].shape)
-    print("alpha", izh_params["alpha"].shape)
-    print("e_r", izh_params["e_r"].shape)
+
 
     meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim, use_input=True)
     meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)
