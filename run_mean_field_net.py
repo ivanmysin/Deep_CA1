@@ -114,7 +114,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         pre_idx = conn['pre_idx']
         post_idx = conn['post_idx']
 
-        #!!!!!  params['pconn'][pre_idx, post_idx] = conn['pconn']
+        params['pconn'][pre_idx, post_idx] = conn['pconn']
 
         pre_type = conn['pre_type']
 
@@ -158,7 +158,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         params['tau_f'][pre_idx, post_idx] = tau_f
         params['tau_d'][pre_idx, post_idx] = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
-        #!!!!!!  dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
+        dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
@@ -183,7 +183,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
 
 def get_model():
-    Delta_eta = 80
+    Delta_eta = 15
     # load data about network
     if myconfig.RUNMODE == 'DEBUG':
         neurons_path = myconfig.STRUCTURESOFNET + "test_neurons.pickle"
