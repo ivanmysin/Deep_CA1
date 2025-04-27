@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import izhs_lib
 
 NN = 2
-dt_dim = 0.1 # ms
+dt_dim = 0.5 # ms
 duration = 1000
 
 dim_izh_params = {
@@ -81,10 +81,14 @@ U = np.zeros_like(A)
 rates = []
 t = np.arange(0, duration, dt_dim)
 
-print('alpha', alpha)
-print('Delta_eta', Delta_eta)
-print('dt_non_dim', dt_non_dim)
-print('v_avg', v_avg)
+print('alpha =', alpha)
+print('a =', a)
+print('b =', b)
+print('Delta_eta =', Delta_eta)
+print('dt_non_dim =', dt_non_dim)
+print('w_jump =', w_jump)
+print('I_ext =', I_ext)
+
 
 for ts in t:
     g_syn = gsyn_max * A

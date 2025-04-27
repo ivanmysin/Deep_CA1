@@ -182,8 +182,23 @@ class MeanFieldNetwork(Layer):
 
         Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
-        rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        #rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+
+        k1 = self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+        # k2 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+0.5*k1) * v_avg - (self.alpha + g_syn_tot) * (rates+0.5*k1))
+        # k3 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+0.5*k2) * v_avg - (self.alpha + g_syn_tot) * (rates+0.5*k2))
+        # k4 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+k3) * v_avg - (self.alpha + g_syn_tot) * (rates+k3))
+
+        rates = rates + k1 #(k1 + 2*k2 + 2*k3 + k4) / 6
+
+        k1 = self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        # k2 = self.dts_non_dim * ((v_avg+0.5*k1)**2 - self.alpha * (v_avg+0.5*k1) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        # k3 = self.dts_non_dim * ((v_avg+0.5*k2)**2 - self.alpha * (v_avg+0.5*k2) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        # k4 = self.dts_non_dim * ((v_avg+k3)**2 - self.alpha * (v_avg+k3) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+
+        v_avg = v_avg + k1 # (k1 + 2*k2 + 2*k3 + k4) / 6
+
+
         w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
