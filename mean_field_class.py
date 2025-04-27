@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer
-from tensorflow.keras.callbacks import Callback, TerminateOnNaN, ModelCheckpoint
+from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Model
 from tensorflow.keras.saving import load_model
 import izhs_lib
@@ -21,18 +21,21 @@ tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 
 class SaveFirings(Callback):
-    def __init__(self, firing_model, t_full, path, filename_template, **kwargs):
+    def __init__(self, firing_model, t_full, path, filename_template, save_freq=4, **kwargs):
         super().__init__(**kwargs)
 
         self.firing_model = firing_model
         self.t_full = t_full
         self.path = path
         self.filename_template = filename_template
+        self.save_freq = save_freq
 
     def on_epoch_end(self, epoch, logs=None):
+        if ( (epoch+1) % self.save_freq) != 0:
+            return
 
         filepath = self.path + self.filename_template.format(epoch=epoch)
-        firings = self.firings_model.predict(self.t_full)
+        firings = self.firing_model.predict(self.t_full)
 
         with h5py.File(filepath, mode='w') as h5file:
             h5file.create_dataset('firings', data=firings)
@@ -110,7 +113,7 @@ class MeanFieldNetwork(Layer):
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
-                                        trainable=False,
+                                        trainable=True,
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -127,7 +130,7 @@ class MeanFieldNetwork(Layer):
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer=tf.keras.initializers.Constant(gsyn_max),
                                         # regularizer=self.gmax_regulizer,  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                        trainable=False,
+                                        trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=tf.keras.constraints.NonNeg(),
                                         name=f"gsyn_max")
@@ -135,7 +138,7 @@ class MeanFieldNetwork(Layer):
         self.tau_f = self.add_weight(shape=tf.keras.ops.shape(tau_f),
                                      initializer=tf.keras.initializers.Constant(tau_f),
                                      regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=dt_dim), # tf.keras.constraints.NonNeg(),
                                      name=f"tau_f")
@@ -143,7 +146,7 @@ class MeanFieldNetwork(Layer):
         self.tau_d = self.add_weight(shape=tf.keras.ops.shape(tau_d),
                                      initializer=tf.keras.initializers.Constant(tau_d),
                                      regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=dt_dim), # tf.keras.constraints.NonNeg(),
                                      name=f"tau_d")
@@ -151,7 +154,7 @@ class MeanFieldNetwork(Layer):
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),
                                      initializer=tf.keras.initializers.Constant(tau_r),
                                      regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
                                      name=f"tau_r")
@@ -159,7 +162,7 @@ class MeanFieldNetwork(Layer):
         self.Uinc = self.add_weight(shape=tf.keras.ops.shape(Uinc),
                                     initializer=tf.keras.initializers.Constant(Uinc),
                                     regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
-                                    trainable=False,
+                                    trainable=True,
                                     dtype=myconfig.DTYPE,
                                     constraint=MinMaxWeights(min=0, max=1),  # ZeroOnesWeights(),
                                     name=f"Uinc")
@@ -203,23 +206,8 @@ class MeanFieldNetwork(Layer):
 
         Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
-        #rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-
-        k1 = self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        # k2 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+0.5*k1) * v_avg - (self.alpha + g_syn_tot) * (rates+0.5*k1))
-        # k3 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+0.5*k2) * v_avg - (self.alpha + g_syn_tot) * (rates+0.5*k2))
-        # k4 = self.dts_non_dim * (self.Delta_eta / PI + 2 * (rates+k3) * v_avg - (self.alpha + g_syn_tot) * (rates+k3))
-
-        rates = rates + k1 #(k1 + 2*k2 + 2*k3 + k4) / 6
-
-        k1 = self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        # k2 = self.dts_non_dim * ((v_avg+0.5*k1)**2 - self.alpha * (v_avg+0.5*k1) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        # k3 = self.dts_non_dim * ((v_avg+0.5*k2)**2 - self.alpha * (v_avg+0.5*k2) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        # k4 = self.dts_non_dim * ((v_avg+k3)**2 - self.alpha * (v_avg+k3) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-
-        v_avg = v_avg + k1 # (k1 + 2*k2 + 2*k3 + k4) / 6
-
-
+        rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+        v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
@@ -325,7 +313,7 @@ if __name__ == '__main__':
         "b": 0.22,  # * mS,
         "d": 2,  # * pA,
 
-        "Iext": 700,  # pA
+        "Iext": 0,  # pA
     }
 
     # Словарь с константами
@@ -348,14 +336,14 @@ if __name__ == '__main__':
     Uinc = 0.25
 
     gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-    gsyn_max[0, 1] = 20
-    gsyn_max[1, 0] = 15
+    # gsyn_max[0, 1] = 20
+    # gsyn_max[1, 0] = 15
 
 
 
     pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-    pconn[0, 1] = 1
-    pconn[1, 0] = 1
+    # pconn[0, 1] = 1
+    # pconn[1, 0] = 1
 
     Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) - 75
     e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
@@ -374,10 +362,10 @@ if __name__ == '__main__':
 
     firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
 
+    for key, val in izh_params.items():
+        print(key, "\n", val)
 
-    print("gsyn_max", izh_params["gsyn_max"].shape)
-    print("alpha", izh_params["alpha"].shape)
-    print("e_r", izh_params["e_r"].shape)
+
 
     meanfieldlayer = MeanFieldNetwork(izh_params, dt_dim=dt_dim, use_input=True)
     meanfieldlayer_rnn = RNN(meanfieldlayer, return_sequences=True, stateful=True)

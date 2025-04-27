@@ -59,7 +59,7 @@ class TsodycsMarkramSynapse(BaseSynapse):
         super(TsodycsMarkramSynapse, self).__init__(params, dt=dt, mask=mask, **kwargs)
 
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
-        self.gmax_regulizer = tf.keras.regularizers.L2(l2=1e-11)
+        self.gmax_regulizer = tf.keras.regularizers.L2(l2=1e-9)
         gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
         tau_f = tf.convert_to_tensor(params['tau_f'])
         tau_d = tf.convert_to_tensor(params['tau_d'])
@@ -108,6 +108,13 @@ class TsodycsMarkramSynapse(BaseSynapse):
                                      dtype=myconfig.DTYPE,
                                      constraint=ZeroOnesWeights(),
                                      name=f"Uinc_{self.pop_idx}")
+
+        self.Vbias = self.add_weight(shape = [1, ],
+                                        initializer = tf.keras.initializers.Zeros(),
+                                        trainable = True,
+                                        dtype = myconfig.DTYPE,
+                                        # constraint = tf.keras.constraints.NonNeg(),
+                                        name = f"Vbias_{self.pop_idx}")
 
         self.state_size = [self.units, self.units, self.units, 1]
 
@@ -195,7 +202,10 @@ class TsodycsMarkramSynapse(BaseSynapse):
         tau = self.Cm / g_tot
 
         Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt / tau))
-        output = (Vsyn - self.Erev_min) / (self.Erev_max - self.Erev_min)
+
+        Vout = Vsyn + self.Vbias
+
+        output = (Vout - self.Erev_min) / (self.Erev_max - self.Erev_min)
         output = tf.reshape(output, shape=(1, 1))
 
         #print(output.Vsyn())
