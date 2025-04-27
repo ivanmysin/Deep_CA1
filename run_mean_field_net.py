@@ -291,24 +291,24 @@ if __name__ == '__main__':
 
 
 
-    ##history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    Ys = big_model.predict(Xtrain, batch_size=1)
-
-    for y_idx, y in enumerate(Ys):
-        print( np.sum(np.isnan(y)) )
-        print('##############################')
-
-
-        if y_idx == 0:
-            with h5py.File('./outputs/firings/pyr_firings.h5', 'w') as h5file:
-                h5file.create_dataset('firings', data=y)
-
-
-            import matplotlib.pyplot as plt
-            #y = y.reshape()
-            plt.plot(y[0, :, 0] )
-            plt.show()
+    # Ys = big_model.predict(Xtrain, batch_size=1)
+    #
+    # for y_idx, y in enumerate(Ys):
+    #     print( np.sum(np.isnan(y)) )
+    #     print('##############################')
+    #
+    #
+    #     if y_idx == 0:
+    #         with h5py.File('./outputs/firings/pyr_firings.h5', 'w') as h5file:
+    #             h5file.create_dataset('firings', data=y)
+    #
+    #
+    #         import matplotlib.pyplot as plt
+    #         #y = y.reshape()
+    #         plt.plot(y[0, :, 0] )
+    #         plt.show()
 
 
 
