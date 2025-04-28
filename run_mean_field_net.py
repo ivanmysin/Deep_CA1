@@ -234,7 +234,7 @@ def get_model():
 
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
-    output_layers.append(phase_locking_selector(net_layer))
+    #output_layers.append(phase_locking_selector(net_layer))
 
     # net_layer = Layer(activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))(net_layer)
 
@@ -248,7 +248,7 @@ def get_model():
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.logcosh,
             # 'robast_mean': tf.keras.losses.logcosh,
-            'locking': tf.keras.losses.logcosh,
+            # 'locking': tf.keras.losses.logcosh,
         }
     )
 
@@ -291,6 +291,7 @@ if __name__ == '__main__':
 
 
     del Ytrain['robast_mean']
+    del Ytrain['locking']
     history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
