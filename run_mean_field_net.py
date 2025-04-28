@@ -289,7 +289,7 @@ if __name__ == '__main__':
                      save_freq = 2),
     ]
 
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
         history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
