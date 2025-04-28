@@ -495,9 +495,9 @@ class RobastMeanOut(CommonOutProcessing):
         super(RobastMeanOut, self).__init__(mask, **kwargs)
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=-1)
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
-        robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=0))
+        robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
 
 
         robast_mean = tf.reshape(robast_mean, shape=(1, 1, -1))
