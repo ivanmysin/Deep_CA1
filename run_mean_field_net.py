@@ -166,14 +166,14 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     params = params | params_dimless
 
 
-    params['alpha'][:] = 0.38348082
-    params['a'][:] = 0.0083115
-    params['b'][:] = 0.00320795
-    params['w_jump'][:] = 0.00050604
-    params['Delta_eta'][:] = 0.02024164
-    params['dts_non_dim'][:] = 0.06015763
-    for key, val in params.items():
-        print(key, "\n", val)
+    # params['alpha'][:] = 0.38348082
+    # params['a'][:] = 0.0083115
+    # params['b'][:] = 0.00320795
+    # params['w_jump'][:] = 0.00050604
+    # params['Delta_eta'][:] = 0.02024164
+    # params['dts_non_dim'][:] = 0.06015763
+    # for key, val in params.items():
+    #     print(key, "\n", val)
 
 
 
@@ -295,8 +295,10 @@ if __name__ == '__main__':
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
     #
-    # for y_idx, y in enumerate(Ys):
-    #     print( np.sum(np.isnan(y)) )
+    #
+    #
+    # for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
+    #     print( ypred.shape,  ytrain.shape)
     #     print('##############################')
     #
     #
