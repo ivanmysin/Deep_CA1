@@ -246,9 +246,9 @@ def get_model():
         # loss = tf.keras.losses.logcosh
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
-            'locking_with_phase': tf.keras.losses.mean_squared_error,
-            'robast_mean': tf.keras.losses.mean_squared_error,
-            'locking': tf.keras.losses.mean_squared_error,
+            'locking_with_phase': tf.keras.losses.logcosh,
+            'robast_mean': tf.keras.losses.logcosh,
+            'locking': tf.keras.losses.logcosh,
         }
     )
 
