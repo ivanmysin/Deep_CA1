@@ -424,15 +424,15 @@ class PhaseLockingOutput(CommonOutProcessing):
         real = cos(theta_phases)
         imag = sin(theta_phases)
 
-        normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=0) + 0.00000000001)
+        normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
 
-        real_sim = tf.reduce_sum(normed_firings * real, axis=0)
-        imag_sim = tf.reduce_sum(normed_firings * imag, axis=0)
+        real_sim = tf.reduce_sum(normed_firings * real, axis=1)
+        imag_sim = tf.reduce_sum(normed_firings * imag, axis=1)
 
         return real_sim, imag_sim
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=-1)
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
         Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
