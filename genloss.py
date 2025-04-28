@@ -465,7 +465,7 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
         #self.phases = tf.constant(phases, dtype=myconfig.DTYPE)
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=-1)
+        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
 
         output = tf.stack([real_sim, imag_sim], axis=1)
