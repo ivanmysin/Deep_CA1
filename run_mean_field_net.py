@@ -291,15 +291,15 @@ if __name__ == '__main__':
 
 
 
-    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    #history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    # Ys = big_model.predict(Xtrain, batch_size=1)
-    #
-    #
-    #
-    # for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
-    #     print( ypred.shape,  ytrain.shape)
-    #     print('##############################')
+    Ys = big_model.predict(Xtrain, batch_size=1)
+
+
+
+    for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
+        print( ypred.shape,  ytrain.shape)
+        print('##############################')
     #
     #
     #     if y_idx == 0:
