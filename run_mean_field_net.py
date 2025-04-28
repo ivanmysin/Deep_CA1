@@ -299,6 +299,7 @@ if __name__ == '__main__':
 
     for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
         print( ypred.shape,  ytrain.shape)
+        print('N of nans', np.sum( np.isnan(ypred) ) )
         print('##############################')
     #
     #
