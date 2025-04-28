@@ -296,11 +296,14 @@ if __name__ == '__main__':
     # Ys = big_model.predict(Xtrain, batch_size=1)
     #
     #
-    #
+
+
+
     # for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
     #     print( ypred.shape,  ytrain.shape)
     #     print('N of nans', np.sum( np.isnan(ypred) ) )
     #     print('##############################')
+
     #
     #
     #     if y_idx == 0:
