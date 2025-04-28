@@ -230,7 +230,7 @@ def get_model():
     output_layers.append(theta_phase_locking_with_phase(net_layer))
 
     robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
-    output_layers.append(robast_mean_out(net_layer))
+    #output_layers.append(robast_mean_out(net_layer))
 
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
@@ -247,7 +247,7 @@ def get_model():
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.logcosh,
-            'robast_mean': tf.keras.losses.logcosh,
+            # 'robast_mean': tf.keras.losses.logcosh,
             'locking': tf.keras.losses.logcosh,
         }
     )
@@ -262,37 +262,36 @@ if __name__ == '__main__':
     duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY  # ms
     t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
+    big_model, Xtrain, Ytrain = get_model()
+
+    firings_outputs_layer = big_model.get_layer('firings_outputs').output
+    firings_model = Model(inputs=big_model.input, outputs=firings_outputs_layer)
+
+    checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
+    filename_template = 'firings_{epoch:02d}.h5'
+
+    Nepoches4modelsaving = 2 * len(Xtrain) + 1
+
+    callbacks = [
+        TerminateOnNaN(),
+        ModelCheckpoint(filepath=checkpoint_filepath,
+            save_weights_only=False,
+            monitor='loss',
+            mode='auto',
+            save_best_only=False,
+            save_freq = 'epoch'),
 
 
+        SaveFirings( firing_model=firings_model,
+                     t_full=t_full,
+                     path=myconfig.OUTPUTSPATH_FIRINGS,
+                     filename_template=filename_template,
+                     save_freq = 2),
+    ]
 
-    with tf.device('/cpu:0'):
-        big_model, Xtrain, Ytrain = get_model()
 
-        firings_outputs_layer = big_model.get_layer('firings_outputs').output
-        firings_model = Model(inputs=big_model.input, outputs=firings_outputs_layer)
-
-        checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
-        filename_template = 'firings_{epoch:02d}.h5'
-
-        Nepoches4modelsaving = 2 * len(Xtrain) + 1
-
-        callbacks = [
-            TerminateOnNaN(),
-            ModelCheckpoint(filepath=checkpoint_filepath,
-                            save_weights_only=False,
-                            monitor='loss',
-                            mode='auto',
-                            save_best_only=False,
-                            save_freq='epoch'),
-
-            SaveFirings(firing_model=firings_model,
-                        t_full=t_full,
-                        path=myconfig.OUTPUTSPATH_FIRINGS,
-                        filename_template=filename_template,
-                        save_freq=2),
-        ]
-
-        history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    del Ytrain['robast_mean']
+    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
     #
