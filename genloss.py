@@ -319,7 +319,7 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 
 
     def call(self, firings):
-        selected_firings = tf.boolean_mask(firings, self.mask, axis=3)
+        selected_firings = tf.boolean_mask(firings, self.mask, axis=2)
         return selected_firings
 
     def get_config(self):
