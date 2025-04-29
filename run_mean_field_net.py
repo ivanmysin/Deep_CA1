@@ -272,6 +272,8 @@ if __name__ == '__main__':
 
     Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
+
     callbacks = [
         TerminateOnNaN(),
         ModelCheckpoint(filepath=checkpoint_filepath,
@@ -286,6 +288,7 @@ if __name__ == '__main__':
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
                      save_freq = 2),
+        tensorboard_callback,
     ]
 
 
@@ -294,13 +297,12 @@ if __name__ == '__main__':
 
     for key, val in Ytrain.items():
          print( key, val.shape )
-    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=0, batch_size=1, callbacks=None)
+    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
     # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
     # pprint(loss)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
-    #
-    #
+
 
 
 
