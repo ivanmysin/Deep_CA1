@@ -275,7 +275,6 @@ if __name__ == '__main__':
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
 
     callbacks = [
-        TerminateOnNaN(),
         ModelCheckpoint(filepath=checkpoint_filepath,
             save_weights_only=False,
             monitor='loss',
@@ -287,8 +286,9 @@ if __name__ == '__main__':
                      t_full=t_full,
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
-                     save_freq = 2),
+                     save_freq = 1),
         tensorboard_callback,
+        TerminateOnNaN(),
     ]
 
 
