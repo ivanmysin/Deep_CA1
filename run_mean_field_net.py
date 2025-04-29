@@ -294,7 +294,7 @@ if __name__ == '__main__':
 
     for key, val in Ytrain.items():
          print( key, val.shape )
-    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=None)
+    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=0, batch_size=1, callbacks=None)
     # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
     # pprint(loss)
 
