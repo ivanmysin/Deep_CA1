@@ -40,7 +40,7 @@ FIRINGSNEURONPARAMS = "./parameters/neurons_parameters.xlsx"
 ####### global parameters for simulation #####
 NUMBERNEURONSINPOP = 4000
 NFILESDATASETS = 1000
-DT = 0.5 ##!! 0.1 # time step, ms
+DT = 0.1 ##!! 0.1 # time step, ms
 
 IS_SAVE_V = True
 GREST = 0.0000000001
@@ -71,7 +71,7 @@ DV_MAX = 200
 
 TRACK_LENGTH = 250 # cm
 ANIMAL_VELOCITY = 20 # cm/sec
-N_TIMESTEPS = 240
+N_TIMESTEPS = 1200 #240
 
 EPOCHES_ON_BATCH = 50
-EPOCHES_FULL_T = 100
+EPOCHES_FULL_T = 1000

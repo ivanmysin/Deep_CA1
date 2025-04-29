@@ -27,8 +27,10 @@ def save_trained_to_pickle(trainable_variables, connections):
             if conn["post_idx"] != pop_idx:
                 continue
 
-            conn["gsyn"] = tv[conn_counter]
-
+            try:
+                conn["gsyn"] = tv[conn_counter]
+            except IndexError:
+                conn["gsyn"] = None
             conn_counter += 1
 
     if myconfig.RUNMODE == 'DEBUG':

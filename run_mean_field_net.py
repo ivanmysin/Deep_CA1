@@ -114,7 +114,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         pre_idx = conn['pre_idx']
         post_idx = conn['post_idx']
 
-        #!!!!!  params['pconn'][pre_idx, post_idx] = conn['pconn']
+        params['pconn'][pre_idx, post_idx] = conn['pconn']
 
         pre_type = conn['pre_type']
 
@@ -158,7 +158,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
         params['tau_f'][pre_idx, post_idx] = tau_f
         params['tau_d'][pre_idx, post_idx] = tau_d
         dimpopparams['Erev'][pre_idx, post_idx] = Erev
-        #!!!!!!  dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
+        dimpopparams['gsyn_max'][pre_idx, post_idx] = gsyn_max
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
@@ -166,14 +166,14 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
     params = params | params_dimless
 
 
-    params['alpha'][:] = 0.38348082
-    params['a'][:] = 0.0083115
-    params['b'][:] = 0.00320795
-    params['w_jump'][:] = 0.00050604
-    params['Delta_eta'][:] = 0.02024164
-    params['dts_non_dim'][:] = 0.06015763
-    for key, val in params.items():
-        print(key, "\n", val)
+    # params['alpha'][:] = 0.38348082
+    # params['a'][:] = 0.0083115
+    # params['b'][:] = 0.00320795
+    # params['w_jump'][:] = 0.00050604
+    # params['Delta_eta'][:] = 0.02024164
+    # params['dts_non_dim'][:] = 0.06015763
+    # for key, val in params.items():
+    #     print(key, "\n", val)
 
 
 
@@ -183,7 +183,7 @@ def get_params_from_pop_conns(populations, connections, neurons_params, synapses
 
 
 def get_model():
-    Delta_eta = 80
+    Delta_eta = 15
     # load data about network
     if myconfig.RUNMODE == 'DEBUG':
         neurons_path = myconfig.STRUCTURESOFNET + "test_neurons.pickle"
@@ -246,9 +246,9 @@ def get_model():
         # loss = tf.keras.losses.logcosh
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
-            'locking_with_phase': tf.keras.losses.MSE,
-            'robast_mean': tf.keras.losses.MSE,
-            'locking': tf.keras.losses.MSE,
+            'locking_with_phase': tf.keras.losses.logcosh,
+            'robast_mean': tf.keras.losses.logcosh,
+            'locking': tf.keras.losses.logcosh,
         }
     )
 
@@ -290,25 +290,36 @@ if __name__ == '__main__':
     ]
 
 
+    # del Ytrain['robast_mean']
+    # del Ytrain['locking']
 
-    ##history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    for key, val in Ytrain.items():
+         print( key, val.shape )
+    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
 
-    Ys = big_model.predict(Xtrain, batch_size=1)
-
-    for y_idx, y in enumerate(Ys):
-        print( np.sum(np.isnan(y)) )
-        print('##############################')
-
-
-        if y_idx == 0:
-            with h5py.File('./outputs/firings/pyr_firings.h5', 'w') as h5file:
-                h5file.create_dataset('firings', data=y)
+    # Ys = big_model.predict(Xtrain, batch_size=1)
+    #
+    #
 
 
-            import matplotlib.pyplot as plt
-            #y = y.reshape()
-            plt.plot(y[0, :, 0] )
-            plt.show()
+
+    # for y_idx, (ypred, ytrain) in enumerate(zip(Ys, Ytrain.values())):
+
+
+    #     print('N of nans', np.sum( np.isnan(ypred) ) )
+    #     print('##############################')
+
+    #
+    #
+    #     if y_idx == 0:
+    #         with h5py.File('./outputs/firings/pyr_firings.h5', 'w') as h5file:
+    #             h5file.create_dataset('firings', data=y)
+    #
+    #
+    #         import matplotlib.pyplot as plt
+    #         #y = y.reshape()
+    #         plt.plot(y[0, :, 0] )
+    #         plt.show()
 
 
 
