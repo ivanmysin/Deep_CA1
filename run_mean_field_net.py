@@ -281,12 +281,11 @@ if __name__ == '__main__':
             save_best_only=False,
             save_freq = 'epoch'),
 
-
-        # SaveFirings( firing_model=firings_model,
-        #              t_full=t_full,
-        #              path=myconfig.OUTPUTSPATH_FIRINGS,
-        #              filename_template=filename_template,
-        #              save_freq = 2),
+        SaveFirings( firing_model=firings_model,
+                     t_full=t_full,
+                     path=myconfig.OUTPUTSPATH_FIRINGS,
+                     filename_template=filename_template,
+                     save_freq = 2),
     ]
 
 
@@ -295,7 +294,9 @@ if __name__ == '__main__':
 
     for key, val in Ytrain.items():
          print( key, val.shape )
-    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    #history = big_model.fit(x=Xtrain, y=Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
+    pprint(loss)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
     #
