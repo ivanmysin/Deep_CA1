@@ -255,7 +255,7 @@ def get_model():
         }
     )
 
-    big_model = tf.keras.models.clone_model(big_model)
+    #big_model = tf.keras.models.clone_model(big_model)
 
 
 
