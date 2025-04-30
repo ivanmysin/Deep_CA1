@@ -241,6 +241,8 @@ def get_model():
     outputs = output_layers  # net_layer # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
+    big_model = tf.keras.models.clone_model(big_model)
+
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
         # loss = tf.keras.losses.logcosh
