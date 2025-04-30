@@ -7,7 +7,7 @@ import izhs_lib
 from main import get_dataset
 from pprint import pprint
 import sys
-sys.stdout = open('err.txt', 'w')
+sys.stderr = open('err.txt', 'w')
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Layer
