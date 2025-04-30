@@ -19,7 +19,7 @@ PI = 3.141592653589793
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
-@tf.keras.utils.register_keras_serializable(package="SaveFirings")
+#@tf.keras.utils.register_keras_serializable(package="SaveFirings")
 class SaveFirings(Callback):
     def __init__(self, firing_model, t_full, path, filename_template, save_freq=4, **kwargs):
         super().__init__(**kwargs)
