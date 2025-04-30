@@ -19,7 +19,7 @@ PI = 3.141592653589793
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
-
+@keras.utils.register_keras_serializable(package="SaveFirings")
 class SaveFirings(Callback):
     def __init__(self, firing_model, t_full, path, filename_template, save_freq=4, **kwargs):
         super().__init__(**kwargs)
@@ -40,7 +40,7 @@ class SaveFirings(Callback):
         with h5py.File(filepath, mode='w') as h5file:
             h5file.create_dataset('firings', data=firings)
 
-
+@keras.utils.register_keras_serializable(package="ZeroWallReg")
 class ZeroWallReg(Regularizer):
 
     def __init__(self, lw=0.01, close_coeff=100):
@@ -62,6 +62,7 @@ class ZeroWallReg(Regularizer):
     def from_config(cls, config):
         return cls(**config)
 
+@keras.utils.register_keras_serializable(package="ZeroOneWallReg")
 class ZeroOneWallReg(ZeroWallReg):
     def __call__(self, x):
         res = -self.lw * (tf.reduce_sum( tf.math.log(x * self.close_coeff)) + tf.reduce_sum( tf.math.log( (1.0 - x) * self.close_coeff)))
@@ -69,7 +70,7 @@ class ZeroOneWallReg(ZeroWallReg):
 
 
 
-
+@keras.utils.register_keras_serializable(package="MinMaxWeights")
 class MinMaxWeights(Constraint):
 
     def __init__(self, min=0, max=10000):
@@ -94,6 +95,7 @@ class MinMaxWeights(Constraint):
 
 
 
+@keras.utils.register_keras_serializable(package="MeanFieldNetwork")
 class MeanFieldNetwork(Layer):
 
     def __init__(self, params, dt_dim=0.5, use_input=False, **kwargs):
