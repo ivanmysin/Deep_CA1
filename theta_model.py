@@ -77,7 +77,7 @@ def get_params():
     Nsim = NN - len(generators_params)
     gsyn_max = np.zeros(shape=(NN, Nsim), dtype=np.float32)
 
-    print(gsyn_max.shape)
+    #print(gsyn_max.shape)
 
     dimpopparams['gsyn_max'] = gsyn_max
     dimpopparams["Erev"] = np.zeros_like(gsyn_max) - 75.0
@@ -117,7 +117,7 @@ def get_params():
                 print("Connection from ", pre_type, "to", post_type, "not finded!")
                 continue
 
-            params['pconn'][pre_idx, post_idx] = syn['pconn'].values[0]
+            params['pconn'][pre_idx, post_idx] = 1 # syn['pconn'].values[0]
             Uinc = syn['Uinc'].values[0]
             tau_r = syn['tau_r'].values[0]
             tau_f = syn['tau_f'].values[0]
