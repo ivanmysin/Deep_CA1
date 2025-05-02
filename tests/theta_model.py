@@ -215,11 +215,11 @@ callbacks = [
                      t_full=Xtrain.reshape(1, -1, 1),
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
-                     save_freq = 1),
+                     save_freq = 10),
 
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
