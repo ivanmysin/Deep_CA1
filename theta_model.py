@@ -12,12 +12,6 @@ from tensorflow.keras.layers import Input, RNN, Layer
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
-import sys
-sys.path.append('/')
-
-import os
-os.chdir('/')
-
 from mean_field_class import MeanFieldNetwork, SaveFirings
 from genloss import SpatialThetaGenerators
 import myconfig
