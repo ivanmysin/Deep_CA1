@@ -6,10 +6,14 @@ import izhs_lib
 from pprint import pprint
 
 
+
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Layer
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
+
+import sys
+sys.path.append('../')
 
 import os
 os.chdir('../')
