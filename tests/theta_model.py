@@ -15,7 +15,7 @@ import os
 os.chdir('../')
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
+from genloss import SpatialThetaGenerators
 import myconfig
 
 
@@ -143,10 +143,14 @@ def get_params():
 
     params = params | params_dimless
 
+
     for p in generators_params:
         p['ThetaFreq'] = myconfig.ThetaFreq
 
-    return params, generators_params
+    target_params = populations[~populations['type'].astype(str).str.contains('generator')]   #[not populations['type'] is]
+    target_params['ThetaFreq'] = myconfig.ThetaFreq
+
+    return params, generators_params, target_params
 ########################################################################
 def get_model(params, generators_params, dt):
     input = Input(shape=(None, 1), batch_size=1)
@@ -167,13 +171,55 @@ def get_model(params, generators_params, dt):
 
     return big_model
 
-def get_dataset(params, duration):
-    pass
+def get_dataset(target_params, dt, batch_len, nbatches):
+    duration = int(batch_len * nbatches * dt)
+
+    generators = SpatialThetaGenerators(target_params)
+    t = tf.reshape(tf.range(0, duration, dt, dtype=myconfig.DTYPE), shape=(1, -1, 1))
+
+    target_firings = generators(t)
+
+    #print(target_firings[0, :10, ])
+
+    X = t.numpy().reshape(nbatches, batch_len, 1)
+    Y = target_firings.numpy().reshape(nbatches, batch_len, -1)
+
+    return X, Y
+
+
+
 
 ########################################################################
-params, generators_params = get_params()
-model = get_model(params, generators_params, myconfig.DT)
-# for key, vals in params.items():
-#     print(key, vals.shape)
+batch_len = 12000
+nbatches = 20
+params, generators_params, target_params = get_params()
+Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
-print(model.summary())
+model = get_model(params, generators_params, myconfig.DT)
+
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
+filename_template = 'firings_{epoch:02d}.h5'
+
+Nepoches4modelsaving = 2 * len(Xtrain) + 1
+
+
+callbacks = [
+        ModelCheckpoint(filepath=checkpoint_filepath,
+            save_weights_only=False,
+            monitor='loss',
+            mode='auto',
+            save_best_only=False,
+            save_freq = 'epoch'),
+
+        SaveFirings( firing_model=model,
+                     t_full=Xtrain.reshape(1, -1, 1),
+                     path=myconfig.OUTPUTSPATH_FIRINGS,
+                     filename_template=filename_template,
+                     save_freq = 1),
+
+        TerminateOnNaN(),
+]
+
+history = model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
+
+#Ypred = model.predict(Xtrain, batch_size=1)

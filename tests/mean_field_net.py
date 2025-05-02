@@ -9,7 +9,7 @@ from pprint import pprint
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Layer
-from mean_field_class import MeanFieldNetwork, SaveFirings
+from test_mean_field_class import MeanFieldNetwork, SaveFirings
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint
 
