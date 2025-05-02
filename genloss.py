@@ -175,34 +175,49 @@ class SpatialThetaGenerators(CommonGenerator):
         super(SpatialThetaGenerators, self).__init__(params, **kwargs)
         self.ALPHA = 5.0
 
-        ThetaFreq = []
+        if type(params) == list:
 
-        OutPlaceFiringRate = []
-        OutPlaceThetaPhase = []
-        InPlacePeakRate = []
-        CenterPlaceField = []
-        Rs = []
-        SigmaPlaceField = []
-        SlopePhasePrecession = []
-        PrecessionOnset = []
+            ThetaFreq = []
 
-        self.n_outs = len(params)
+            OutPlaceFiringRate = []
+            OutPlaceThetaPhase = []
+            InPlacePeakRate = []
+            CenterPlaceField = []
+            Rs = []
+            SigmaPlaceField = []
+            SlopePhasePrecession = []
+            PrecessionOnset = []
 
-        for p in params:
-            OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
-            OutPlaceThetaPhase.append( p["OutPlaceThetaPhase"] )
-            InPlacePeakRate.append( p["InPlacePeakRate"] )
-            Rs.append(p["R"]),
-
-            CenterPlaceField.append(p["CenterPlaceField"])
-
-            SigmaPlaceField.append(p["SigmaPlaceField"])
-            SlopePhasePrecession.append(p["SlopePhasePrecession"])
-            PrecessionOnset.append(p["PrecessionOnset"])
+            self.n_outs = len(params)
 
 
-            ThetaFreq.append( p["ThetaFreq"] )
+            for p in params:
+                OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
+                OutPlaceThetaPhase.append( p["OutPlaceThetaPhase"] )
+                InPlacePeakRate.append( p["InPlacePeakRate"] )
+                Rs.append(p["R"]),
 
+                CenterPlaceField.append(p["CenterPlaceField"])
+
+                SigmaPlaceField.append(p["SigmaPlaceField"])
+                SlopePhasePrecession.append(p["SlopePhasePrecession"])
+                PrecessionOnset.append(p["PrecessionOnset"])
+
+
+                ThetaFreq.append( p["ThetaFreq"] )
+        else:
+            ThetaFreq = params['ThetaFreq']
+
+            OutPlaceFiringRate = params['OutPlaceFiringRate']
+            OutPlaceThetaPhase = params['OutPlaceThetaPhase']
+            InPlacePeakRate = params['InPlacePeakRate']
+            CenterPlaceField = params['CenterPlaceField']
+            Rs = params['R']
+            SigmaPlaceField = params['SigmaPlaceField']
+            SlopePhasePrecession = params['SlopePhasePrecession']
+            PrecessionOnset = params['PrecessionOnset']
+
+            self.n_outs = len(OutPlaceFiringRate)
 
         self.ThetaFreq = tf.reshape( tf.constant(ThetaFreq, dtype=myconfig.DTYPE), [1, -1])
         self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=myconfig.DTYPE), [1, -1])
