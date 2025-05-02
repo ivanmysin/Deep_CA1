@@ -22,7 +22,7 @@ with open(connections_path, "rb") as synapses_file: ##!!
     connections = pickle.load(synapses_file)
 
 
-with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "test_firings.h5", mode='r') as h5file:
+with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "firings_00.h5", mode='r') as h5file:
     firings = h5file['firings'][:]
 
 params4targets_pyrs = []
@@ -38,7 +38,7 @@ for pop in populations:
 
 print(firings.shape)
 
-duration_full_simulation = 1000 # * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
+duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
 t = np.arange(0, duration_full_simulation, myconfig.DT)
 
 print(t.shape)
@@ -62,6 +62,8 @@ for f_idx in range(firings.shape[-1]):
 
     axes[0].set_title(populations[f_idx]['type'])
     axes[0].plot(t, firings[0, :, f_idx], color='blue')
+
+    print(f_idx, np.sum( np.isnan(firings[0, :, f_idx]) ) )
 
 
     if f_idx < targents_pyrs.shape[-1]:

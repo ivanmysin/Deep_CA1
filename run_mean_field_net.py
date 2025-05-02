@@ -6,7 +6,8 @@ import h5py
 import izhs_lib
 from main import get_dataset
 from pprint import pprint
-
+import sys
+sys.stderr = open('err.txt', 'w')
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, RNN, Layer
@@ -241,6 +242,8 @@ def get_model():
     outputs = output_layers  # net_layer # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
+
+
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
         # loss = tf.keras.losses.logcosh
@@ -251,6 +254,8 @@ def get_model():
             'locking': tf.keras.losses.logcosh,
         }
     )
+
+    #big_model = tf.keras.models.clone_model(big_model)
 
 
 
@@ -272,8 +277,9 @@ if __name__ == '__main__':
 
     Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
+
     callbacks = [
-        TerminateOnNaN(),
         ModelCheckpoint(filepath=checkpoint_filepath,
             save_weights_only=False,
             monitor='loss',
@@ -281,12 +287,13 @@ if __name__ == '__main__':
             save_best_only=False,
             save_freq = 'epoch'),
 
-
         SaveFirings( firing_model=firings_model,
                      t_full=t_full,
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
-                     save_freq = 2),
+                     save_freq = 1),
+        tensorboard_callback,
+        TerminateOnNaN(),
     ]
 
 
@@ -295,11 +302,12 @@ if __name__ == '__main__':
 
     for key, val in Ytrain.items():
          print( key, val.shape )
-    history = big_model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_FULL_T, verbose=2, batch_size=1, callbacks=callbacks)
+    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
+    # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
+    # pprint(loss)
 
     # Ys = big_model.predict(Xtrain, batch_size=1)
-    #
-    #
+
 
 
 
