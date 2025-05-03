@@ -165,8 +165,8 @@ def get_model(params, generators_params, dt):
     big_model = Model(inputs=input, outputs=outputs)
 
     big_model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
-        loss = tf.keras.losses.mean_squared_logarithmic_error,
+        optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.5),
+        loss = tf.keras.losses.MeanSquaredLogarithmicError(),
     )
 
     return big_model
