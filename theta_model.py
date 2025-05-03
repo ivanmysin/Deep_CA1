@@ -5,6 +5,7 @@ import h5py
 import izhs_lib
 from pprint import pprint
 
+import os
 
 
 from tensorflow.keras.models import Model
@@ -145,8 +146,9 @@ def get_params():
     for p in generators_params:
         p['ThetaFreq'] = myconfig.ThetaFreq
 
-    target_params = populations[~populations['type'].astype(str).str.contains('generator')]   #[not populations['type'] is]
-    target_params['ThetaFreq'] = myconfig.ThetaFreq
+    populations['ThetaFreq'] = myconfig.ThetaFreq
+
+    target_params = populations[~populations['type'].astype(str).str.contains('generator')]
 
     return params, generators_params, target_params
 ########################################################################
@@ -164,7 +166,7 @@ def get_model(params, generators_params, dt):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
-        loss = tf.keras.losses.logcosh,
+        loss = tf.keras.losses.mean_squared_logarithmic_error,
     )
 
     return big_model
@@ -192,6 +194,11 @@ batch_len = 12000
 nbatches = 20
 params, generators_params, target_params = get_params()
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
+
+with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
+    dfile.create_dataset('Xtrain', data=Xtrain)
+    dfile.create_dataset('Ytrain', data=Ytrain)
+
 
 model = get_model(params, generators_params, myconfig.DT)
 
@@ -221,3 +228,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
+with h5py.File(myconfig.OUTPUTSPATH + 'history.h5', mode='w') as dfile:
+    dfile.create_dataset('loss', data=history.history['loss'])
+
+

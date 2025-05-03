@@ -22,7 +22,7 @@ with open(connections_path, "rb") as synapses_file: ##!!
     connections = pickle.load(synapses_file)
 
 
-with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "firings_15.h5", mode='r') as h5file:
+with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + "firings_969.h5", mode='r') as h5file:
     firings = h5file['firings'][:]
 
 params4targets_pyrs = []
@@ -41,19 +41,19 @@ print(firings.shape)
 duration_full_simulation = 2400 #1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
 t = np.arange(0, duration_full_simulation, myconfig.DT)
 
-# print(t.shape)
-#
-# genrators_targents_pyrs = SpatialThetaGenerators(params4targets_pyrs)
-# targents_pyrs = genrators_targents_pyrs(t.reshape(1, -1, 1))
-# targents_pyrs = targents_pyrs.numpy()
-#
-# genrators = SpatialThetaGenerators(params4generators)
-# generators_firings = genrators(t.reshape(1, -1, 1))
-# generators_firings = generators_firings.numpy()
-#
-#
-#
-# firings = np.append(firings, generators_firings, axis=2)
+print(t.shape)
+
+genrators_targents_pyrs = SpatialThetaGenerators(params4targets_pyrs)
+targents_pyrs = genrators_targents_pyrs(t.reshape(1, -1, 1))
+targents_pyrs = targents_pyrs.numpy()
+
+genrators = SpatialThetaGenerators(params4generators)
+generators_firings = genrators(t.reshape(1, -1, 1))
+generators_firings = generators_firings.numpy()
+
+
+
+firings = np.append(firings, generators_firings, axis=2)
 
 for f_idx in range(firings.shape[-1]):
 
