@@ -105,9 +105,8 @@ class MeanFieldNetwork:
 
     def predict(self, inputs, time_axis=1):
         states = self.get_initial_state()
-
         outputs = []
-        hist_states = [[], ]*len(states)
+        hist_states = []
         for idx in range(inputs.shape[time_axis]):
             inp = inputs[:, idx, :]
 
@@ -115,16 +114,22 @@ class MeanFieldNetwork:
 
             outputs.append(output)
 
-            for s_idx, s in enumerate(states):
-                hist_states[s_idx].append(s)
+            for s in states:
+                hist_states.append(s)
 
         outputs = np.stack(outputs)
-        for s_idx, s in enumerate(hist_states):
-            print(s[0].shape, s[-1].shape)
-            print()
-            #hist_states[s_idx] = np.stack(s)
 
-        return outputs, hist_states
+        #hist_states = np.stack(hist_states)
+        # print('outputs', outputs.shape)
+        h_states = []
+        for s_idx in range(len(states)):
+            s = hist_states[s_idx:-1:len(states)]
+            #print(s[0].shape, s[-1].shape)
+
+            s = np.stack(s)
+
+            h_states.append(s)
+        return outputs, h_states
 
 
 ######################################################################
@@ -133,7 +138,7 @@ if __name__ == '__main__':
     NN = 2
     Ninps = 3
     dt_dim = 0.1  # ms
-    duration = 1000.0
+    duration = 100.0
 
     dim_izh_params = {
         "V0": -57.63,
