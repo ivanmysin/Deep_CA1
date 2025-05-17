@@ -123,7 +123,7 @@ class MeanFieldNetwork:
         # print('outputs', outputs.shape)
         h_states = []
         for s_idx in range(len(states)):
-            s = hist_states[s_idx:-1:len(states)]
+            s = hist_states[s_idx::len(states)]
             #print(s[0].shape, s[-1].shape)
 
             s = np.stack(s)
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     NN = 2
     Ninps = 3
     dt_dim = 0.1  # ms
-    duration = 100.0
+    duration = 1000.0
 
     dim_izh_params = {
         "V0": -57.63,
@@ -212,8 +212,25 @@ if __name__ == '__main__':
 
     rates, hist_states = model.predict(firings_inputs)
 
+    A = hist_states[-1]
+
+    gsyn_12 = A[:, 0, 1] * gsyn_max[0, 1]
+    gsyn_21 = A[:, 1, 0] * gsyn_max[1, 0]
+
+    print(A.shape)
+    print(rates.shape)
+    print(hist_states[1].shape)
+
     rates = rates.reshape(-1, NN)
     t = t.ravel()
 
-    plt.plot(t, rates)
+    fig, axes = plt.subplots(nrows=4)
+    axes[0].plot(t, rates)
+    axes[1].plot(t, hist_states[1].reshape(-1, NN))
+    axes[2].plot(t, hist_states[2].reshape(-1, NN))
+    axes[3].plot(t, gsyn_12)
+    axes[3].plot(t, gsyn_21)
+
+
+
     plt.show()
