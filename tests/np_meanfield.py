@@ -44,11 +44,11 @@ class MeanFieldNetwork:
 
         r = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
         v = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
-        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE) + 0.2
+        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE) + 0.5
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
-        R = np.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        R = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         U = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
