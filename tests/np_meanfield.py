@@ -43,8 +43,8 @@ class MeanFieldNetwork:
         shape = [self.units+3, self.units]
 
         r = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
-        v = np.zeros( [1, self.units], dtype=myconfig.DTYPE) - 0.1
-        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE) + 0.2
+        v = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
+        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
@@ -80,6 +80,8 @@ class MeanFieldNetwork:
             inputs = inputs.T * 0.001 * self.dt_dim
             firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
 
+        firing_probs[firing_probs > 0.01] = 0.01
+
         FRpre_normed = self.pconn *  firing_probs
 
         tau1r = np.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
@@ -100,6 +102,8 @@ class MeanFieldNetwork:
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
         #output = v_avg
+
+
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
