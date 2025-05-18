@@ -80,7 +80,8 @@ class MeanFieldNetwork:
             inputs = inputs.T * 0.001 * self.dt_dim
             firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
 
-        firing_probs[firing_probs > 0.01] = 0.01
+        v_avg[v_avg > 1] = 1
+        v_avg[v_avg < -1] = -1
 
         FRpre_normed = self.pconn *  firing_probs
 
