@@ -56,18 +56,21 @@ params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
 generators = SpatialThetaGenerators(generators_params)
-t = np.arange(0, 10, myconfig.DT, dtype=np.float32).reshape(1, -1, 1)
+t = np.arange(0, 400, myconfig.DT, dtype=np.float32).reshape(1, -1, 1)
 
 generators_firings = generators(t)
 generators_firings = generators_firings.numpy()
+
+print(generators_firings.shape)
 model = MeanFieldNetwork(params, dt_dim=myconfig.DT, use_input=True)
 
 
 firing, states = model.predict(generators_firings)
 firing = firing.reshape(-1, firing.shape[-1])
+generators_firings = generators_firings.reshape(-1, generators_firings.shape[-1])
 t = t.ravel()
 
-plt.plot(t, firing)
+plt.plot(t, generators_firings)
 plt.show()
 
 
