@@ -44,7 +44,7 @@ class MeanFieldNetwork:
 
         r = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
         v = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
-        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE) + 0.5
+        w = np.zeros( [1, self.units], dtype=myconfig.DTYPE) + 1.5
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
