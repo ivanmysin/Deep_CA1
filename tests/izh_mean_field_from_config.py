@@ -3,16 +3,11 @@ import zipfile
 import json
 import sys
 
-from Cython.Shadow import returns
+import matplotlib.pyplot as plt
 
 sys.path.append('../')
 
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, RNN, Layer
-from mean_field_class import MeanFieldNetwork, SaveFirings
-from tensorflow.keras.saving import load_model
-from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
-
+from np_meanfield import MeanFieldNetwork
 
 from genloss import SpatialThetaGenerators
 import myconfig
@@ -60,18 +55,20 @@ model_path = '/home/ivan/PycharmProjects/Deep_CA1/outputs/big_models/big_model_2
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-input = Input(shape=(None, 1), batch_size=1)
-
-generators = SpatialThetaGenerators(generators_params)(input)
-net_layer = RNN(MeanFieldNetwork(params, dt_dim=myconfig.DT, use_input=True),
-                    return_sequences=True, stateful=True, return_state=True,
-                    name="firings_outputs")(generators)
-outputs = net_layer # generators #
-big_model = Model(inputs=input, outputs=outputs)
-
+generators = SpatialThetaGenerators(generators_params)
 t = np.arange(0, 10, myconfig.DT, dtype=np.float32).reshape(1, -1, 1)
 
-states = big_model.predict(t)
+generators_firings = generators(t)
+generators_firings = generators_firings.numpy()
+model = MeanFieldNetwork(params, dt_dim=myconfig.DT, use_input=True)
 
-for s in states:
-    print(s.shape)
+
+firing, states = model.predict(generators_firings)
+firing = firing.reshape(-1, firing.shape[-1])
+t = t.ravel()
+
+plt.plot(t, firing)
+plt.show()
+
+
+
