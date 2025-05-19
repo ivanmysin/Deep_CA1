@@ -57,7 +57,7 @@ class MeanFieldNetwork:
         return initial_state
 
     def get_rate_derivative(self, rates, v_avg, g_syn_tot):
-        drdt = self.dts_non_dim * (self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+        drdt = self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates
         return drdt
 
     def get_v_avg_derivative(self, rates, v_avg, w_avg, g_syn):
@@ -72,38 +72,38 @@ class MeanFieldNetwork:
     def runge_kutta_step(self, rates, v_avg, w_avg, g_syn):
         g_syn_tot = np.sum(g_syn, axis=0)
 
-        k1_rates = self.dts_non_dim * self.get_rate_derivative(rates, v_avg, g_syn_tot)
-        k1_v = self.dts_non_dim * self.get_v_avg_derivative(rates, v_avg, w_avg, g_syn)
-        k1_w = self.dts_non_dim * self.get_w_avg_derivative(rates, v_avg, w_avg)
+        k1_rates = self.get_rate_derivative(rates, v_avg, g_syn_tot)
+        k1_v = self.get_v_avg_derivative(rates, v_avg, w_avg, g_syn)
+        k1_w = self.get_w_avg_derivative(rates, v_avg, w_avg)
 
-        half_rate = rates + 0.5 * k1_rates
-        half_v = v_avg + 0.5 * k1_v
-        half_w = w_avg + 0.5 * k1_w
+        half_rate = rates + 0.5 * self.dts_non_dim * k1_rates
+        half_v = v_avg + 0.5 * self.dts_non_dim * k1_v
+        half_w = w_avg + 0.5 * self.dts_non_dim * k1_w
 
 
-        k2_rates = self.dts_non_dim * self.get_rate_derivative(half_rate, half_v, g_syn_tot)
-        k2_v = self.dts_non_dim * self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
-        k2_w = self.dts_non_dim * self.get_w_avg_derivative(half_rate, half_v, half_w)
+        k2_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k2_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k2_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
 
-        half_rate = rates + 0.5 * k2_rates
-        half_v = v_avg + 0.5 * k2_v
-        half_w = w_avg + 0.5 * k2_w
+        half_rate = rates + 0.5 * self.dts_non_dim * k2_rates
+        half_v = v_avg + 0.5 * self.dts_non_dim *  k2_v
+        half_w = w_avg + 0.5 * self.dts_non_dim * k2_w
 
-        k3_rates = self.dts_non_dim * self.get_rate_derivative(half_rate, half_v, g_syn_tot)
-        k3_v = self.dts_non_dim * self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
-        k3_w = self.dts_non_dim * self.get_w_avg_derivative(half_rate, half_v, half_w)
+        k3_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k3_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k3_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
 
-        half_rate = rates + k3_rates
-        half_v = v_avg + k3_v
-        half_w = w_avg + k3_w
+        half_rate = rates + self.dts_non_dim * k3_rates
+        half_v = v_avg + self.dts_non_dim * k3_v
+        half_w = w_avg + self.dts_non_dim * k3_w
 
-        k4_rates = self.dts_non_dim * self.get_rate_derivative(half_rate, half_v, g_syn_tot)
-        k4_v = self.dts_non_dim * self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
-        k4_w = self.dts_non_dim * self.get_w_avg_derivative(half_rate, half_v, half_w)
+        k4_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k4_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k4_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
 
-        rates = (k1_rates + 2*k2_rates + 2*k3_rates + k4_rates) / 6.0
-        v_avg = (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6.0
-        w_avg = (k1_w + 2*k2_w + 2*k3_w + k4_w) / 6.0
+        rates = rates + self.dts_non_dim * (k1_rates + 2*k2_rates + 2*k3_rates + k4_rates) / 6.0
+        v_avg = v_avg + self.dts_non_dim * (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6.0
+        w_avg = w_avg + self.dts_non_dim * (k1_w + 2*k2_w + 2*k3_w + k4_w) / 6.0
 
         return rates, v_avg, w_avg
 
@@ -121,9 +121,13 @@ class MeanFieldNetwork:
         #
         # Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
         #
-        # rates = rates + self.dts_non_dim * (self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        # v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi *rates)**2)
-        # w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
+        # drates = self.dts_non_dim * (self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+        # dv_avg = self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi *rates)**2)
+        # dw_avg = self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
+        #
+        # rates = rates + drates
+        # v_avg = v_avg + dv_avg
+        # w_avg = w_avg + dw_avg
 
         rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
@@ -133,7 +137,7 @@ class MeanFieldNetwork:
             inputs = inputs.T * 0.001 * self.dt_dim
             firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
 
-        v_avg[v_avg > 1] = 1
+        # v_avg[v_avg > 1] = 1
         #v_avg[v_avg < -0.5] = -1
 
         FRpre_normed = self.pconn *  firing_probs
@@ -155,9 +159,6 @@ class MeanFieldNetwork:
 
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
-        #output = v_avg
-
-
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
@@ -195,7 +196,7 @@ if __name__ == '__main__':
 
     NN = 2
     Ninps = 3
-    dt_dim = 0.01  # ms
+    dt_dim = 0.1  # ms
     duration = 1000.0
 
     dim_izh_params = {
