@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import izhs_lib
 
 NN = 2
-dt_dim = 0.5 # ms
+dt_dim = 0.01 # ms
 duration = 1000
 
 dim_izh_params = {
@@ -49,7 +49,7 @@ b = params['b']
 
 ## population dynamic variables
 rate = np.zeros(NN, dtype=np.float64)
-v_avg = np.zeros_like(rate) + izh_params['vk']
+v_avg = np.zeros_like(rate) + 1.0 # izh_params['vk']
 #v_avg[0] = -0.05
 
 w_avg = np.zeros_like(rate) + izh_params['wk']

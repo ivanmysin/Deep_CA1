@@ -1,9 +1,9 @@
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import izhs_lib
 
-def mf_izh_ode(y, t, constants):
+def mf_izh_ode(t, y, constants):
     """
     Функция, возвращающая правые части системы дифференциальных уравнений.
 
@@ -64,33 +64,33 @@ izh_params['v_peak'] = 200
 izh_params['v_reset'] = -200
 
 # Начальные условия
-y0 = [0.0, izh_params['vk'], izh_params['wk']] # , 0
+y0 = np.asarray([0.0, 2.2, 0.0]) # , 0
 
 # Временной интервал
 duration = 50
-dt = 0.001
+dt = 0.05
 t = np.linspace(0, duration, int(duration/dt))
 
 # Решение системы ОДУ
-solution = odeint(mf_izh_ode, y0, t, args=(izh_params,))
+solution = solve_ivp(mf_izh_ode, t_span=[0, duration], y0=y0, t_eval=t, args=(izh_params,), method='RK23')
 
-direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, izh_params, dt=dt, duration=duration, NN=10000)
+# direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_nondim_simulate(izh_params, izh_params, dt=dt, duration=duration, NN=10000)
 #direct_r, direct_v_avg, direct_u_avg = izhs_lib.izh_simulate(izh_params, cauchy_dencity_params, dt=dt, duration=duration, NN=10000)
 
 # Извлекаем результаты
-r = solution[:, 0]
-v_avg = solution[:, 1]
-w_avg = solution[:, 2]
+r = solution.y[0, :]
+v_avg = solution.y[1, :]
+w_avg = solution.y[2, :]
 #s = solution[:, 3]
 
 fig, axes = plt.subplots(nrows=3)
-axes[0].plot(t, direct_r)
+#axes[0].plot(t, direct_r)
 axes[0].plot(t, r, linewidth=3)
 
-axes[1].plot(t, direct_v_avg)
+#axes[1].plot(t, direct_v_avg)
 axes[1].plot(t, v_avg, linewidth=3)
 
-axes[2].plot(t, direct_u_avg)
+#axes[2].plot(t, direct_u_avg)
 axes[2].plot(t, w_avg, linewidth=3)
 
 #axes[3].plot(t, s)
