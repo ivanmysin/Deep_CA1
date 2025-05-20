@@ -162,8 +162,11 @@ class MeanFieldNetwork:
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
-    def predict(self, inputs, time_axis=1):
-        states = self.get_initial_state()
+    def predict(self, inputs, time_axis=1, initial_states=None):
+        if initial_states is None:
+            states = self.get_initial_state()
+        else:
+            states = initial_states
         outputs = []
         hist_states = []
         for idx in range(inputs.shape[time_axis]):
