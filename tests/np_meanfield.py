@@ -11,7 +11,7 @@ class MeanFieldNetwork:
 
     def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
 
-
+        self.v_threshold = 2.0
         self.dt_dim = dt_dim
         self.use_input = use_input
 
@@ -137,7 +137,7 @@ class MeanFieldNetwork:
             inputs = inputs.T * 0.001 * self.dt_dim
             firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
 
-        # v_avg[v_avg > 1] = 1
+        v_avg[ v_avg > self.v_threshold ] = self.v_threshold
         #v_avg[v_avg < -0.5] = -1
 
         FRpre_normed = self.pconn *  firing_probs
