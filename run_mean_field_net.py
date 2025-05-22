@@ -246,13 +246,13 @@ def get_model():
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
-        # loss = tf.keras.losses.logcosh
-        loss={
-            'pyramilad_mask': tf.keras.losses.logcosh,
-            'locking_with_phase': tf.keras.losses.logcosh,
-            'robast_mean': tf.keras.losses.logcosh,
-            'locking': tf.keras.losses.logcosh,
-        }
+        loss = tf.keras.losses.logcosh
+        # loss={
+        #     'pyramilad_mask': tf.keras.losses.logcosh,
+        #     'locking_with_phase': tf.keras.losses.logcosh,
+        #     'robast_mean': tf.keras.losses.logcosh,
+        #     'locking': tf.keras.losses.logcosh,
+        # }
     )
 
     #big_model = tf.keras.models.clone_model(big_model)
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                      filename_template=filename_template,
                      save_freq = 1),
        #  tensorboard_callback,
-       # TerminateOnNaN(),
+       TerminateOnNaN(),
     ]
 
 

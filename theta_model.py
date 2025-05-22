@@ -225,7 +225,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
 with h5py.File(myconfig.OUTPUTSPATH + 'history.h5', mode='w') as dfile:
