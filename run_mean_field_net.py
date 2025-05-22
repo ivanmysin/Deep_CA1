@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
     Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
+    #tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
 
     callbacks = [
         ModelCheckpoint(filepath=checkpoint_filepath,
@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     # for key, val in Ytrain.items():
     #      print( key, val.shape )
-    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
+    history = big_model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
     # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
     # pprint(loss)
 
