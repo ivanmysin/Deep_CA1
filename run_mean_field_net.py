@@ -300,8 +300,8 @@ if __name__ == '__main__':
     # del Ytrain['robast_mean']
     # del Ytrain['locking']
 
-    for key, val in Ytrain.items():
-         print( key, val.shape )
+    # for key, val in Ytrain.items():
+    #      print( key, val.shape )
     history = big_model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
     # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
     # pprint(loss)
