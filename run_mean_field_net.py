@@ -293,7 +293,7 @@ if __name__ == '__main__':
                      filename_template=filename_template,
                      save_freq = 1),
        #  tensorboard_callback,
-        TerminateOnNaN(),
+       # TerminateOnNaN(),
     ]
 
 
