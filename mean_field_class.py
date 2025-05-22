@@ -187,7 +187,7 @@ class MeanFieldNetwork(Layer):
 
         synaptic_matrix_shapes = tf.shape(self.gsyn_max)
 
-        R = tf.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        R = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         U = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
