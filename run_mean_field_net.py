@@ -217,42 +217,42 @@ def get_model():
     generators = SpatialThetaGenerators(generators_params)(input)
     net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True),
                     return_sequences=True, stateful=True,
-                    activity_regularizer=Decorrelator(strength=0.001),
+                    # activity_regularizer=Decorrelator(strength=0.001),
                     name="firings_outputs")(generators)
 
-    output_layers = []
-
-    simple_selector = CommonOutProcessing(simple_out_mask, name='pyramilad_mask')
-    output_layers.append(simple_selector(net_layer))
-
-    theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask, \
-                                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
-                                                                 name='locking_with_phase')
-    output_layers.append(theta_phase_locking_with_phase(net_layer))
-
-    robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
-    output_layers.append(robast_mean_out(net_layer))
-
-    phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
-                                                ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
-    output_layers.append(phase_locking_selector(net_layer))
+    # output_layers = []
+    #
+    # simple_selector = CommonOutProcessing(simple_out_mask, name='pyramilad_mask')
+    # output_layers.append(simple_selector(net_layer))
+    #
+    # theta_phase_locking_with_phase = PhaseLockingOutputWithPhase(mask=frequecy_filter_out_mask, \
+    #                                                              ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
+    #                                                              name='locking_with_phase')
+    # output_layers.append(theta_phase_locking_with_phase(net_layer))
+    #
+    # robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
+    # output_layers.append(robast_mean_out(net_layer))
+    #
+    # phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
+    #                                             ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
+    # output_layers.append(phase_locking_selector(net_layer))
 
     # net_layer = Layer(activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))(net_layer)
 
-    outputs = output_layers  # net_layer # generators #
+    outputs = net_layer # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
 
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
-        # loss = tf.keras.losses.logcosh
-        loss={
-            'pyramilad_mask': tf.keras.losses.logcosh,
-            'locking_with_phase': tf.keras.losses.logcosh,
-            'robast_mean': tf.keras.losses.logcosh,
-            'locking': tf.keras.losses.logcosh,
-        }
+        loss = tf.keras.losses.logcosh
+        # loss={
+        #     'pyramilad_mask': tf.keras.losses.logcosh,
+        #     'locking_with_phase': tf.keras.losses.logcosh,
+        #     'robast_mean': tf.keras.losses.logcosh,
+        #     'locking': tf.keras.losses.logcosh,
+        # }
     )
 
     #big_model = tf.keras.models.clone_model(big_model)
@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
     Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
+    #tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir='./logs', update_freq=1)
 
     callbacks = [
         ModelCheckpoint(filepath=checkpoint_filepath,
@@ -292,16 +292,16 @@ if __name__ == '__main__':
                      path=myconfig.OUTPUTSPATH_FIRINGS,
                      filename_template=filename_template,
                      save_freq = 1),
-        tensorboard_callback,
-        TerminateOnNaN(),
+       #  tensorboard_callback,
+       TerminateOnNaN(),
     ]
 
 
     # del Ytrain['robast_mean']
     # del Ytrain['locking']
 
-    for key, val in Ytrain.items():
-         print( key, val.shape )
+    # for key, val in Ytrain.items():
+    #      print( key, val.shape )
     history = big_model.fit(x=Xtrain, y=Ytrain, epochs=20, verbose=2, batch_size=1, callbacks=callbacks)
     # loss = big_model.evaluate(x=Xtrain, y=Ytrain, verbose=2, batch_size=1)
     # pprint(loss)
