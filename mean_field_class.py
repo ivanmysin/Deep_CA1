@@ -131,7 +131,7 @@ class MeanFieldNetwork(Layer):
         self.pconn = self.add_weight(shape=tf.keras.ops.shape(pconn),
                                         initializer=tf.keras.initializers.Constant(pconn),
                                         # regularizer=self.gmax_regulizer,  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                        trainable=True,
+                                        trainable=False,
                                         dtype=myconfig.DTYPE,
                                         constraint=MinMaxWeights(min=0, max=1),
                                         name=f"pconn")
