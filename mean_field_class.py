@@ -179,7 +179,24 @@ class MeanFieldNetwork(Layer):
 
         synaptic_matrix_shapes = tf.shape(self.gsyn_max)
 
-        self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
+        self.is_nmda = False
+        if 'nmda' in params.keys():
+            self.is_nmda = True
+
+            self.pconn_nmda = tf.convert_to_tensor(params['nmda']['pconn_nmda'], dtype=myconfig.DTYPE)
+            self.Mgb = tf.convert_to_tensor(params['nmda']['Mgb'], dtype=myconfig.DTYPE)
+            self.av_nmda = tf.convert_to_tensor(params['nmda']['av_nmda'], dtype=myconfig.DTYPE)
+            self.gsyn_max_nmda = tf.convert_to_tensor(params['nmda']['gsyn_max_nmda'], dtype=myconfig.DTYPE)
+            self.tau1_nmda = tf.convert_to_tensor(params['nmda']['tau1_nmda'], dtype=myconfig.DTYPE)
+            self.tau2_nmda = tf.convert_to_tensor(params['nmda']['tau2_nmda'], dtype=myconfig.DTYPE)
+
+
+
+        if self.is_nmda:
+            self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes,
+                           synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
+        else:
+            self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
 
     def build(self, input_shape):
         super().build(input_shape)
@@ -198,7 +215,13 @@ class MeanFieldNetwork(Layer):
         U = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
-        initial_state = [r, v, w, R, U, A]
+        if self.is_nmda:
+            dgnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+            gnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+
+            initial_state = [r, v, w, R, U, A, gnmda, dgnmda]
+        else:
+            initial_state = [r, v, w, R, U, A]
 
         return initial_state
 
@@ -210,11 +233,22 @@ class MeanFieldNetwork(Layer):
         U = states[4]
         A = states[5]
 
+        if self.is_nmda:
+            gnmda = states[6]
+            dgnmda = states[7]
+
         g_syn = self.gsyn_max * A
         g_syn_tot = tf.math.reduce_sum(g_syn, axis=0)
 
 
         Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
+
+        if self.is_nmda:
+            g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * v_avg) )
+
+            Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
+
+            Isyn += Inmda
 
         rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
         v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
@@ -239,15 +273,27 @@ class MeanFieldNetwork(Layer):
         r_ = 1 + (R - 1 + tau1r * A) * exp_tau_r  - tau1r * A
         u_ = U * exp_tau_f
 
-        U = u_ + self.Uinc * (1 - u_) * FRpre_normed
-        A = a_ + U * r_ * FRpre_normed
-        R = r_ - U * r_ * FRpre_normed
+        released_mediator = U * r_ * FRpre_normed
 
+        U = u_ + self.Uinc * (1 - u_) * FRpre_normed
+        A = a_ + released_mediator
+        R = r_ - released_mediator
+
+
+
+        if self.is_nmda:
+            dgnmda = dgnmda + self.dt_dim * (released_mediator * gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
+            gnmda = gnmda + self.dt_dim * dgnmda
+
+            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
+
+        else:
+            new_states = [rates, v_avg, w_avg, R, U, A]
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
-        #output = v_avg
 
-        return output, [rates, v_avg, w_avg, R, U, A]
+
+        return output, new_states
 
     def get_config(self):
         config = super().get_config()
