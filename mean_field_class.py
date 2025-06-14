@@ -248,6 +248,8 @@ class MeanFieldNetwork(Layer):
 
             Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
 
+            g_syn_tot += tf.math.reduce_sum(g_syn_nmda, axis=0)
+
             Isyn += Inmda
 
         rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
@@ -282,7 +284,7 @@ class MeanFieldNetwork(Layer):
 
 
         if self.is_nmda:
-            dgnmda = dgnmda + self.dt_dim * (released_mediator * gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
+            dgnmda = dgnmda + self.dt_dim * (released_mediator - gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
             gnmda = gnmda + self.dt_dim * dgnmda
 
             new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
@@ -291,6 +293,8 @@ class MeanFieldNetwork(Layer):
             new_states = [rates, v_avg, w_avg, R, U, A]
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
+
+        #output = gnmda
 
 
         return output, new_states
@@ -374,7 +378,7 @@ if __name__ == '__main__':
 
     # Словарь с константами
     cauchy_dencity_params = {
-        'Delta_eta': 80,  # 0.02,
+        'Delta_eta': 15,  # 0.02,
         'bar_eta': 0.0,  # 0.191,
     }
 
