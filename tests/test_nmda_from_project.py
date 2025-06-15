@@ -24,7 +24,7 @@ generators_params = [
         "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0, # np.deg2rad(10)*10 * 0.001,
         "PrecessionOnset":  -1.57,
-        "ThetaFreq": 8.0,
+        "ThetaFreq": 5.0,
     },
 
     {
@@ -36,7 +36,7 @@ generators_params = [
         "SigmaPlaceField": 500,
         "SlopePhasePrecession": 0.0,  # np.deg2rad(10)*10 * 0.001,
         "PrecessionOnset": np.nan,  # -1.57,
-        "ThetaFreq": 5.0,
+        "ThetaFreq": 15.0,
     },
 ]
 
@@ -121,7 +121,7 @@ izh_params['nmda']['av_nmda'] = 0.062 * np.abs(dim_izh_params['Vrest'])
 
 
 izh_params['nmda']['gsyn_max_nmda'] = np.zeros(shape=(NN + Ninps, NN), dtype=np.float32)
-izh_params['nmda']['gsyn_max_nmda'][3, 0] = 500
+izh_params['nmda']['gsyn_max_nmda'][3, 0] = 15000
 
 izh_params['nmda']['tau1_nmda'] = 2.3
 izh_params['nmda']['tau2_nmda'] = 150
