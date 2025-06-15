@@ -244,7 +244,7 @@ class MeanFieldNetwork(Layer):
         Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
         if self.is_nmda:
-            g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * v_avg) )
+            g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * (v_avg - 1.0) ) )
 
             Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
 
