@@ -186,11 +186,34 @@ class MeanFieldNetwork(Layer):
             self.pconn_nmda = tf.convert_to_tensor(params['nmda']['pconn_nmda'], dtype=myconfig.DTYPE)
             self.Mgb = tf.convert_to_tensor(params['nmda']['Mgb'], dtype=myconfig.DTYPE)
             self.av_nmda = tf.convert_to_tensor(params['nmda']['av_nmda'], dtype=myconfig.DTYPE)
-            self.gsyn_max_nmda = tf.convert_to_tensor(params['nmda']['gsyn_max_nmda'], dtype=myconfig.DTYPE)
-            self.tau1_nmda = tf.convert_to_tensor(params['nmda']['tau1_nmda'], dtype=myconfig.DTYPE)
-            self.tau2_nmda = tf.convert_to_tensor(params['nmda']['tau2_nmda'], dtype=myconfig.DTYPE)
 
+            gsyn_max_nmda = tf.convert_to_tensor(params['nmda']['gsyn_max_nmda'], dtype=myconfig.DTYPE)
+            self.gsyn_max_nmda = self.add_weight(shape=tf.keras.ops.shape(gsyn_max_nmda),
+                                    initializer=tf.keras.initializers.Constant(gsyn_max_nmda),
+                                    # regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
+                                    trainable=True,
+                                    dtype=myconfig.DTYPE,
+                                    constraint=tf.keras.constraints.NonNeg(),
+                                    name=f"gsyn_max_nmda")
 
+            tau1_nmda = tf.convert_to_tensor(params['nmda']['tau1_nmda'], dtype=myconfig.DTYPE)
+
+            self.tau1_nmda = self.add_weight(shape=tf.keras.ops.shape(tau1_nmda),
+                                     initializer=tf.keras.initializers.Constant(tau1_nmda),
+                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
+                                     name=f"tau1_nmda")
+
+            tau2_nmda = tf.convert_to_tensor(params['nmda']['tau2_nmda'], dtype=myconfig.DTYPE)
+            self.tau2_nmda = self.add_weight(shape=tf.keras.ops.shape(tau2_nmda),
+                                     initializer=tf.keras.initializers.Constant(tau2_nmda),
+                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
+                                     name=f"tau2_nmda")
 
         if self.is_nmda:
             self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes,

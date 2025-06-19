@@ -117,7 +117,10 @@ izh_params['nmda']['pconn_nmda'] = np.zeros(shape=(NN + Ninps, NN), dtype=np.flo
 izh_params['nmda']['pconn_nmda'][3, 0] = 1
 
 izh_params['nmda']['Mgb'] = 0.27027027027027023
-izh_params['nmda']['av_nmda'] = 0.062 * np.abs(dim_izh_params['Vrest'])
+
+Vrest = np.zeros_like(izh_params['alpha']) + dim_izh_params['Vrest']
+izh_params['nmda']['av_nmda'] = 0.062 * np.abs(Vrest).reshape(1, -1)
+
 
 
 izh_params['nmda']['gsyn_max_nmda'] = np.zeros(shape=(NN + Ninps, NN), dtype=np.float32)
