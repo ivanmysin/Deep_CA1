@@ -345,6 +345,11 @@ class MeanFieldNetwork(Layer):
             "I_ext": self.I_ext,
         })
 
+        if self.is_nmda:
+            nmda_keys = ['pconn_nmda', 'Mgb', 'av_nmda', 'gsyn_max_nmda', 'tau1_nmda', 'tau2_nmda']
+            for key in nmda_keys:
+                config[key] = getattr(self, key)
+
         return config
 
     @classmethod
@@ -370,6 +375,13 @@ class MeanFieldNetwork(Layer):
 
         dt_dim = config['dt_dim']
         use_input = config['use_input']
+
+        if 'gsyn_max_nmda' in config.keys():
+            params['nmda'] = {}
+            nmda_keys = ['pconn_nmda', 'Mgb', 'av_nmda', 'gsyn_max_nmda', 'tau1_nmda', 'tau2_nmda']
+
+            for key in nmda_keys:
+                params['nmda'][key] = config[key]['config']["value"]
 
 
         return cls(params, dt_dim=dt_dim, use_input=use_input)
