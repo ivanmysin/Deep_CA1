@@ -149,7 +149,7 @@ def get_params():
 
     params['nmda']['av_nmda'] = 0.062 * np.abs(dimpopparams['Vrest']).reshape(1, -1)
 
-    params['nmda']['gsyn_max_nmda'] = np.zeros_like(gsyn_max) + 1500.0
+    params['nmda']['gsyn_max_nmda'] = np.zeros_like(gsyn_max) + 15000.0
 
     params['nmda']['tau1_nmda'] = np.zeros_like(gsyn_max) + 2.3
     params['nmda']['tau2_nmda'] = np.zeros_like(gsyn_max) + 150.0
@@ -238,7 +238,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain, epochs=5000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
 with h5py.File(myconfig.OUTPUTSPATH + '2_history.h5', mode='w') as dfile:
