@@ -117,7 +117,7 @@ class MeanFieldNetwork(Layer):
                                         initializer=tf.keras.initializers.Constant(Delta_eta),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
-                                        constraint=tf.keras.constraints.NonNeg(),
+                                        constraint=MinMaxWeights(min=0.0001),
                                         name=f"Delta_eta")
 
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
