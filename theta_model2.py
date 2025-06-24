@@ -89,7 +89,7 @@ def get_params():
     params['tau_f'] = np.zeros_like(gsyn_max) + 5  # + tau_f
     params['Uinc'] = np.zeros_like(gsyn_max) + 0.5  # + Uinc
 
-    params['nmda'] = {}
+    #params['nmda'] = {}
 
     for pre_idx, (_, pre_pop) in enumerate(populations.iterrows()):
         for post_idx, (_, post_pop) in enumerate(populations.iterrows()):
@@ -144,15 +144,15 @@ def get_params():
 
     params = params | params_dimless
 
-    params['nmda']['pconn_nmda'] = np.sign(params['e_r'], dtype=np.float32) #!!!
-    params['nmda']['Mgb'] = 0.27027027027027023
-
-    params['nmda']['av_nmda'] = 0.062 * np.abs(dimpopparams['Vrest']).reshape(1, -1)
-
-    params['nmda']['gsyn_max_nmda'] = np.zeros_like(gsyn_max) + 15000.0
-
-    params['nmda']['tau1_nmda'] = np.zeros_like(gsyn_max) + 2.3
-    params['nmda']['tau2_nmda'] = np.zeros_like(gsyn_max) + 150.0
+    # params['nmda']['pconn_nmda'] = np.sign(params['e_r'], dtype=np.float32) #!!!
+    # params['nmda']['Mgb'] = 0.27027027027027023
+    #
+    # params['nmda']['av_nmda'] = 0.062 * np.abs(dimpopparams['Vrest']).reshape(1, -1)
+    #
+    # params['nmda']['gsyn_max_nmda'] = np.zeros_like(gsyn_max) + 15000.0
+    #
+    # params['nmda']['tau1_nmda'] = np.zeros_like(gsyn_max) + 2.3
+    # params['nmda']['tau2_nmda'] = np.zeros_like(gsyn_max) + 150.0
 
 
     for p in generators_params:

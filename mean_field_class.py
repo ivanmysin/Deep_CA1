@@ -110,7 +110,15 @@ class MeanFieldNetwork(Layer):
         self.b = tf.convert_to_tensor( params['b'], dtype=myconfig.DTYPE )
         self.w_jump = tf.convert_to_tensor( params['w_jump'], dtype=myconfig.DTYPE )
         self.dts_non_dim = tf.convert_to_tensor( params['dts_non_dim'], dtype=myconfig.DTYPE )
-        self.Delta_eta = tf.convert_to_tensor( params['Delta_eta'], dtype=myconfig.DTYPE)
+
+        Delta_eta = tf.convert_to_tensor(params['Delta_eta'], dtype=myconfig.DTYPE)
+
+        self.Delta_eta = self.add_weight(shape=tf.keras.ops.shape(Delta_eta),
+                                        initializer=tf.keras.initializers.Constant(Delta_eta),
+                                        trainable=True,
+                                        dtype=myconfig.DTYPE,
+                                        constraint=tf.keras.constraints.NonNeg(),
+                                        name=f"Delta_eta")
 
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
