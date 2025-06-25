@@ -1,8 +1,8 @@
 
 plotting_colors = {
     "neuron_colors" : {
-        "CA1 Pyramidal" : "#FF0000", #(1.0, 0.0, 0.0), # red
-        "CA1 Pyramidal" : "#8B0000", # (0.8, 0.2, 0.0),  #
+        "CA1 Pyramidal (deep)" : "#FF0000", #(1.0, 0.0, 0.0), # red
+        "CA1 Pyramidal (superficial)" : "#8B0000", # (0.8, 0.2, 0.0),  #
 
         "CA1 Basket": (0.0, 0.0, 1.0), # blue
         "CA1 O-LM": (0.0, 0.0, 0.5), #
@@ -23,11 +23,12 @@ plotting_colors = {
 
     },
 
-    "neurons_order" : ["CA1 Pyramidal", "CA1 Pyramidal" ,
-                       "CA1 Basket", "CA1 O-LM", "CA1 Basket CCK+"
+    "neurons_order" : ["CA1 Pyramidal (deep)", "CA1 Pyramidal (superficial)" ,
+                       "CA1 Basket", "CA1 O-LM", "CA1 Basket CCK+",
                        "CA1 Ivy", "CA1 Neurogliaform",
                        "CA1 Bistratified", "CA1 Axo-Axonic",
                        "CA1 Perforant Path-Associated", "CA1 Interneuron Specific R-O",
-                       "CA1 Interneuron Specific RO-O", "CA1 Trilaminar" ],
+                       "CA1 Interneuron Specific RO-O", "CA1 Trilaminar"
+                       ],
     "generators_order" : ["CA3 Pyramidal", "EC LIII Pyramidal"],
 }
