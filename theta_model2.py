@@ -26,17 +26,17 @@ def get_params():
          'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
 
 
-    #!!!!!!
-    change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
-                      'Izh d': 'd',
-                      'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
-
-    copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Basket']
-    tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar']
-
-    for col in change_columns:
-        neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
-    # !!!!!!
+    # #!!!!!!
+    # change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
+    #                   'Izh d': 'd',
+    #                   'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
+    #
+    # copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Basket']
+    # tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar']
+    #
+    # for col in change_columns:
+    #     neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
+    # # !!!!!!
 
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
