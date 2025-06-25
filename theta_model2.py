@@ -28,13 +28,14 @@ def get_params():
 
     #!!!!!!
     change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
-                      'Izh d': 'd',
-                      'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
+                      'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
 
-    copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Basket']
-    tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar']
+    copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Basket'].value[0]
+    tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar'].value[0]
 
     for col in change_columns:
+        print(neurons_params.loc[copyed_indx, col])
+
         neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
     # !!!!!!
 
