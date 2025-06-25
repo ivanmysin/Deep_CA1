@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from plots_config import plotting_colors
-#from scipy.signal.windows import parzen
+
 import h5py
 params = {'legend.fontsize': '12',
           'figure.figsize': (15, 5),
@@ -13,8 +13,7 @@ params = {'legend.fontsize': '12',
 plt.rcParams.update(params)
 TEXTFONTSIZE = 'xx-large'
 
-# Parzen = parzen(101)
-# Parzen = Parzen / np.sum(Parzen)
+
 
 dt = 0.01
 duration = 2400
