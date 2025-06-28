@@ -196,7 +196,7 @@ def get_model(params, generators_params, dt):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=1.0),
-        loss = tf.keras.losses.tf.keras.losses.LogCosh(),    #MeanSquaredLogarithmicError(),
+        loss = tf.keras.losses.LogCosh(),    #MeanSquaredLogarithmicError(),
     )
 
     return big_model
