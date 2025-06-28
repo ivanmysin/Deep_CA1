@@ -195,8 +195,8 @@ def get_model(params, generators_params, dt):
     big_model = Model(inputs=input, outputs=outputs)
 
     big_model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=1.0),
-        loss = tf.keras.losses.LogCosh(),    #MeanSquaredLogarithmicError(),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
+        loss = tf.keras.losses.MeanSquaredLogarithmicError(), # LogCosh(),    #
     )
 
     return big_model
@@ -233,8 +233,8 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
 
 model = get_model(params, generators_params, myconfig.DT)
 
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + '2_big_model_{epoch:02d}.keras'
-filename_template = '2_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + '3_big_model_{epoch:02d}.keras'
+filename_template = '3_firings_{epoch:02d}.h5'
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
