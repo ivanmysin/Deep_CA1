@@ -18,11 +18,11 @@ TEXTFONTSIZE = 'xx-large'
 dt = 0.01
 duration = 2400
 
-fig_name = 'fig2.2'
+fig_name = 'fig2.1'
 plotting_slice = [7, 14]
 
 neurons_order = plotting_colors["neurons_order"][plotting_slice[0] : plotting_slice[1]]
-path = '../outputs/firings/output.h5'
+path = '../outputs/firings/2_output.h5'
 
 hf = h5py.File(path, 'r')
 t = np.linspace(0, duration, 240000 )

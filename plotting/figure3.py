@@ -19,9 +19,9 @@ duration = 2400
 
 fig_name = 'fig3.2'
 
-neurons_order = plotting_colors["neurons_order"][8 : ]
+neurons_order = plotting_colors["neurons_order"][7 : ]
 
-path = '../outputs/firings/output.h5'
+path = '../outputs/firings/2_output.h5'
 hf = h5py.File(path, 'r')
 
 t = np.linspace(0, duration, 240000 )
@@ -30,14 +30,14 @@ sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)
 
 
 gridspec_kw = {
-    "width_ratios" : [0.15, ].extend([0.1 for _ in range(len(neurons_order))]),
+    "width_ratios" : [0.15, ] + [0.1, ] * 4 + [0.15, ]
 }
-fig, axes = plt.subplots(nrows=4, ncols=5, figsize=(20, 15), gridspec_kw=gridspec_kw)
+
+
+fig, axes = plt.subplots(nrows=4, ncols=6, figsize=(20, 15), gridspec_kw=gridspec_kw)
 
 
 for neuron_idx, neuron_name in enumerate(neurons_order):
-
-
 
     if neuron_idx < 4:
         row_idx = 0
@@ -46,14 +46,19 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
         row_idx = 2
         plot_idx = neuron_idx + 1 - 4
 
-    axes[row_idx, plot_idx].set_title(neuron_name)
+    neuron_name_title = neuron_name
+    if len(neuron_name_title) > 17:
+        neuron_name_title = neuron_name_title[:5] +  neuron_name_title[5:].replace(" ", "\n", 1)
+
+
+    axes[row_idx, plot_idx].set_title(neuron_name_title)
 
     if neuron_idx == 0 or neuron_idx == 4:
-        axes[row_idx, plot_idx].set_ylabel(r"$\mu S$")
-        axes[row_idx+1, plot_idx].set_ylabel(r"$\mu S$")
+        axes[row_idx, plot_idx].set_ylabel(r"")
+        axes[row_idx+1, plot_idx].set_ylabel(r"")
 
     if row_idx == 2 or plot_idx == 4:
-        axes[row_idx+1, plot_idx].set_xlabel("Time (ms)")
+        axes[row_idx+1, plot_idx].set_xlabel("Время (мс)")
     else:
         axes[row_idx+1, plot_idx].xaxis.set_ticklabels([])
 
@@ -107,6 +112,12 @@ for ax1 in axes:
 lines = []
 labels = ['sum exc', 'sum inh'] +  plotting_colors["neurons_order"] +  plotting_colors["generators_order"]
 
+gs = axes[0, -1].get_gridspec()
+
+for ax in axes[:, -1]:
+    ax.remove()
+
+legend_axes = fig.add_subplot(gs[:, -1])
 
 for label in labels:
     for ax in fig.axes:
@@ -119,36 +130,32 @@ for label in labels:
         except ValueError:
             continue
 
-axes[2, -1].axis("off")
-axes[3, -1].axis("off")
-
-
-axes[3, -1].legend(lines, labels,  ncol=2, loc='lower left') # , bbox_to_anchor =(0.15, 0.1),
-
+legend_axes.legend(lines, labels,  ncol=1, loc='upper left') # , bbox_to_anchor =(0.15, 0.1),
+legend_axes.axis('off')
 
 ax0 = axes[0, 0]
 ax0.axis("off")
 ax0.set_xlim(0, 1)
 ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Conductivity of \n exciting inputs", fontsize=TEXTFONTSIZE)
+ax0.text(0.0, 0.5, " Возбуждающие \n проводимости", fontsize=TEXTFONTSIZE)
 
 ax0 = axes[1, 0]
 ax0.axis("off")
 ax0.set_xlim(0, 1)
 ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Conductivity of \n inhibitory inputs", fontsize=TEXTFONTSIZE)
+ax0.text(0.0, 0.5, " Тормозные \n проводимости", fontsize=TEXTFONTSIZE)
 
 ax0 = axes[2, 0]
 ax0.axis("off")
 ax0.set_xlim(0, 1)
 ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Conductivity of \n exciting inputs", fontsize=TEXTFONTSIZE)
+ax0.text(0.0, 0.5, " Возбуждающие \n проводимости", fontsize=TEXTFONTSIZE)
 
 ax0 = axes[3, 0]
 ax0.axis("off")
 ax0.set_xlim(0, 1)
 ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Conductivity of \n inhibitory inputs", fontsize=TEXTFONTSIZE)
+ax0.text(0.0, 0.5, " Тормозные \n проводимости", fontsize=TEXTFONTSIZE)
 
 fig.subplots_adjust(bottom=0.1, wspace=0.5, hspace=0.5, left=0.05, right=0.9)
 #fig.tight_layout()
