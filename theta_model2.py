@@ -27,8 +27,8 @@ def get_params():
 
 
     # #!!!!!!
-    change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
-                      'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
+    # change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
+    #                   'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
 
     # copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Interneuron Specific R-O'].values[0]
     # tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar'].values[0]
@@ -129,7 +129,11 @@ def get_params():
             if pre_type == "LEC_generator":
                 pre_type = 'EC LIII Pyramidal'
 
+            if 'CA1 Pyramidal' in pre_type:
+                pre_type = 'CA1 Pyramidal'
 
+            if 'CA1 Pyramidal' in post_type:
+                post_type = 'CA1 Pyramidal'
 
             syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == pre_type) & (
                     synapses_params['Postsynaptic Neuron Type'] == post_type)]
@@ -144,10 +148,13 @@ def get_params():
             tau_f = syn['tau_f'].values[0]
             tau_d = syn['tau_d'].values[0]
 
-            if neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "e":
+            if pre_type == 'CA1 Pyramidal':
                 Erev = 0
-            elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
-                Erev = -75.0
+            else:
+                if neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "e":
+                    Erev = 0
+                elif neurons_params[neurons_params['Neuron Type'] == pre_type]['E/I'].values[0] == "i":
+                    Erev = -75.0
 
             gsyn_max = syn['gsyn_max'].values[0]
 
@@ -179,6 +186,8 @@ def get_params():
     populations['ThetaFreq'] = myconfig.ThetaFreq
 
     target_params = populations[~populations['type'].astype(str).str.contains('generator')]
+
+
 
     return params, generators_params, target_params
 ########################################################################
@@ -223,6 +232,7 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 batch_len = 12000
 nbatches = 20
 params, generators_params, target_params = get_params()
+
 
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
