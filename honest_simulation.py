@@ -28,7 +28,7 @@ class HonestNetwork:
         self.b = np.asarray( params['Izh b'], dtype=myconfig.DTYPE )
         self.w_jump = np.asarray( params['Izh d'], dtype=myconfig.DTYPE )
 
-        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )*2.5
+        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )#*2.5
         self.sigma = params['sigma']
         
         self.v_tr = np.asarray( params['Izh Vt'], dtype=myconfig.DTYPE )
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     NN = len(params_list['net_params']['I_ext'])
     net_params = params_list['net_params']
     Ninps = 2
-    pop_size = 1000 # Количество нейронов в каждой популяции
+    pop_size = 10000 # Количество нейронов в каждой популяции
     gen_pop_size = 100000
 
 
@@ -335,11 +335,13 @@ if __name__ == '__main__':
         "Delta_eta": net_params['Delta_eta']
     }
 
+    print('Delta pre', izh_params['Delta_eta'])
+
 
     #'''
     for key, val in izh_params.items():
         # не изменяемые параметры, из таблицы
-        if key not in ('Delta_eta', 'sigma'):
+        if key not in ('sigma'):
 
             izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32) 
             if key == 'Izh C': izh_params[key] = np.ones((NN, pop_size), dtype=np.float32) # емкости где нет связи - единицы
@@ -350,17 +352,18 @@ if __name__ == '__main__':
                 neuron_param = neuron_types[neuron_types['Neuron Type'] == type]
 
                 if not neuron_param.empty:
-                    if key == 'Iext':
+                    if key in ('Iext', 'Delta_eta'):
                         I = val[i]
                         k = neuron_param['Izh k'].iloc[0]
                         V_R = neuron_param['Izh Vr'].iloc[0]
                         Idim = I*(k * abs(V_R)**2) #izhs_lib.anti_transform_I(I[i,:], k, V_R)
-                        izh_params[key][i,:] = Idim
+                        izh_params[key][i] = Idim
                     else:
                         izh_params[key][i] = neuron_param[key].iloc[0]
 
 
     print(izh_params['Iext'])
+    print(izh_params['Delta_eta'])
 
     ## synaptic variables
     syn_params = {
@@ -493,7 +496,7 @@ if __name__ == '__main__':
     # one_step = model.call(firings_inputs[:,0], init_states)
 
     #
-    rates = model.predict(firings_inputs) # , hist_states
+    # rates = model.predict(firings_inputs) # , hist_states
 
 
     #'''
@@ -502,35 +505,46 @@ if __name__ == '__main__':
         num_groups = f['v'].shape[1]
         num_neurons = f['v'].shape[2]
             
-        voltages = np.zeros((num_steps, num_groups, num_neurons))
+        #voltages = f['v'][:, :, :] #np.zeros((num_steps, num_groups, num_neurons))
+        rates = f['rate'][:,:]
         
         # Чтение конкретного нейрона 
-        group_idx = 3
-        neuron_idx = 32
-        v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
-        firing_rate = f['rate'][:, group_idx]
+        
+        # group_idx = 0
+        # neuron_idx = 32
+        # v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
+        # firing_rate = f['rate'][:, group_idx]
         
 
     t = t.ravel()
 
     from scipy.ndimage import gaussian_filter1d
 
-    smoothed_rate = gaussian_filter1d(firing_rate, sigma=60)
+    for i in range(NN):
+        type = types_from_table[i]
+        firing_rate = rates[:,i]
+        smoothed_rate = gaussian_filter1d(firing_rate, sigma=60)
+        plt.plot(t, smoothed_rate    ) # 
+        #plt.plot(t, v_single    )
+        plt.title(f"{type}, Частота разрядов")
+        plt.xlabel("Время (мс)")
+        plt.show()
+
 
 
     # fig, axes = plt.subplots(nrows=1)
     # axes[0].plot(t, firing_rate)
     # axes[0].set_title(f"Group {group_idx}, Частота разрядов")
 
-    plt.plot(t, smoothed_rate    ) # 
-    #plt.plot(t, v_single    )
-    plt.title(f"Group {group_idx}, Частота разрядов")
+    # plt.plot(t, smoothed_rate    ) # 
+    # #plt.plot(t, v_single    )
+    # plt.title(f"Group {group_idx}, Частота разрядов")
 
-    # axes[1].plot(t, v_single)
-    # axes[1].set_title (f"Neuron {neuron_idx}, Мембранный потенциал")
+    # # axes[1].plot(t, v_single)
+    # # axes[1].set_title (f"Neuron {neuron_idx}, Мембранный потенциал")
     
-    plt.xlabel("Время (мс)")
+    # plt.xlabel("Время (мс)")
 
-    plt.show()
+    # plt.show()
 
     # '''
