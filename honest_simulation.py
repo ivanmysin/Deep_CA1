@@ -318,19 +318,19 @@ if __name__ == '__main__':
     pop_size = 1000 # Количество нейронов в каждой популяции
     gen_pop_size = 100000
 
+
     izh_params = {
         # фиксированные параметры, заменяются на соответствующие типам
         "Izh C": 114,  # * pF,
         "Izh Vr": -57.63,  # * mV,
         "Izh Vt": -35.53,  # *mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
         "Izh Vpeak": 21.72,  # * mV,
+        "Izh a": 0, #np.zeros((NN, pop_size), dtype=np.float32),# + net_params['a'][:, np.newaxis], # 0.005,  # * ms ** -1,
+        "Izh b": 0, #np.zeros((NN, pop_size), dtype=np.float32),# + net_params['b'][:, np.newaxis], # 0.22,  # * mS,
+        "Izh d": 0, #np.zeros((NN, pop_size), dtype=np.float32),# + net_params['w_jump'][:, np.newaxis], # 2,  # * pA,
+        "Izh k": 0, #np.zeros((NN, pop_size), dtype=np.float32),# + net_params['alpha'][:, np.newaxis], # 1.0,
 
-        # Оптимизируемы параметры
-        "Izh a": np.zeros((NN, pop_size), dtype=np.float32) + net_params['a'][:, np.newaxis], # 0.005,  # * ms ** -1,
-        "Izh b": np.zeros((NN, pop_size), dtype=np.float32) + net_params['b'][:, np.newaxis], # 0.22,  # * mS,
-        "Izh d": np.zeros((NN, pop_size), dtype=np.float32) + net_params['w_jump'][:, np.newaxis], # 2,  # * pA,
-        "Izh k": np.zeros((NN, pop_size), dtype=np.float32) + net_params['alpha'][:, np.newaxis], # 1.0,
-        "Iext": np.zeros((NN, pop_size), dtype=np.float32) + net_params['I_ext'][:, np.newaxis],  # pA
+        "Iext": np.zeros((NN, pop_size), dtype=np.float32) + net_params['I_ext'][:, np.newaxis], # pA
         "sigma": 1,
         "Delta_eta": net_params['Delta_eta']
     }
@@ -339,7 +339,7 @@ if __name__ == '__main__':
     #'''
     for key, val in izh_params.items():
         # не изменяемые параметры, из таблицы
-        if key in ('Izh C', "Izh Vr", "Izh Vt", "Izh Vpeak"):
+        if key not in ('Delta_eta', 'sigma'):
 
             izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32) 
             if key == 'Izh C': izh_params[key] = np.ones((NN, pop_size), dtype=np.float32) # емкости где нет связи - единицы
@@ -350,9 +350,17 @@ if __name__ == '__main__':
                 neuron_param = neuron_types[neuron_types['Neuron Type'] == type]
 
                 if not neuron_param.empty:
-                    izh_params[key][i] = neuron_param[key].iloc[0]
+                    if key == 'Iext':
+                        I = val[i]
+                        k = neuron_param['Izh k'].iloc[0]
+                        V_R = neuron_param['Izh Vr'].iloc[0]
+                        Idim = I*(k * abs(V_R)**2) #izhs_lib.anti_transform_I(I[i,:], k, V_R)
+                        izh_params[key][i,:] = Idim
+                    else:
+                        izh_params[key][i] = neuron_param[key].iloc[0]
 
 
+    print(izh_params['Iext'])
 
     ## synaptic variables
     syn_params = {
