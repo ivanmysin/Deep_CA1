@@ -28,7 +28,7 @@ class HonestNetwork:
         self.b = np.asarray( params['Izh b'], dtype=myconfig.DTYPE )
         self.w_jump = np.asarray( params['Izh d'], dtype=myconfig.DTYPE )
 
-        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )
+        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )*2.5
         self.sigma = params['sigma']
         
         self.v_tr = np.asarray( params['Izh Vt'], dtype=myconfig.DTYPE )
@@ -44,7 +44,7 @@ class HonestNetwork:
 
         # Применяем матрицу плотности связей
         self.pconn = np.asarray(params['pconn'])
-        self.gsyn_max = np.where(np.random.uniform(0, 1, (NN+Ninps, NN))<self.pconn, self.gsyn_max, 0)
+        self.gsyn_max = np.where(np.random.uniform(0, 1, (NN+Ninps, NN, pop_size)) < self.pconn, self.gsyn_max, 0)
 
         self.aI = params['Izh k'] # 1
         self.bI = params['Izh k']*(-params['Izh Vr'] - params['Izh Vt']) # 98
@@ -95,7 +95,7 @@ class HonestNetwork:
         
 
         g_syn = self.gsyn_max * A
-        Isyn = np.sum(g_syn[:,:,np.newaxis] * (self.e_r - v), axis=0)
+        Isyn = np.sum(g_syn * (self.e_r - v), axis=0) # [:,:,np.newaxis]
         # print('Isyn.shape', Isyn.shape)
 
         # Ar = np.sum(np.mean(A, axis=2), axis = 0)
@@ -123,7 +123,7 @@ class HonestNetwork:
         # print('gen_rates.shape', gen_rates.shape)
 
         rates = np.hstack((rates, gen_rates))
-        firing_prob = rates[:, np.newaxis]*dt_dim # [:, np.newaxis, np.newaxis]
+        firing_prob = rates[:, np.newaxis, np.newaxis]*dt_dim # [:, np.newaxis, np.newaxis]
 
 
         #rates, v, w = self.runge_kutta_step(rates, v, w, g)
@@ -177,10 +177,10 @@ class HonestNetwork:
 
             hf.create_dataset('v', (num_steps, NN, pop_size), maxshape=(None, NN, pop_size), dtype=np.float32)
             hf.create_dataset('rate', (num_steps, NN+Ninps), maxshape=(None, NN+Ninps), dtype=np.float32)
-            hf.create_dataset('w', (num_steps, NN, pop_size), maxshape=(None, NN, pop_size), dtype=np.float32)
-            hf.create_dataset('R', (num_steps, NN+Ninps, NN), maxshape=(None, NN+Ninps, NN), dtype=np.float32) #, pop_size
-            hf.create_dataset('U', (num_steps, NN+Ninps, NN), maxshape=(None, NN+Ninps, NN), dtype=np.float32)
-            hf.create_dataset('A', (num_steps, NN+Ninps, NN), maxshape=(None, NN+Ninps, NN), dtype=np.float32)
+            # hf.create_dataset('w', (num_steps, NN, pop_size), maxshape=(None, NN, pop_size), dtype=np.float32)
+            # hf.create_dataset('R', (num_steps, NN+Ninps, NN, pop_size), maxshape=(None, NN+Ninps, NN, pop_size), dtype=np.float32) #, pop_size
+            # hf.create_dataset('U', (num_steps, NN+Ninps, NN, pop_size), maxshape=(None, NN+Ninps, NN, pop_size), dtype=np.float32)
+            # hf.create_dataset('A', (num_steps, NN+Ninps, NN, pop_size), maxshape=(None, NN+Ninps, NN, pop_size), dtype=np.float32)
             
             for i in range(0, inputs.shape[1], batch_size):
                 batch = inputs[:, i:i+batch_size]
@@ -195,10 +195,10 @@ class HonestNetwork:
 
                     hf['rate'][step] = hist_states[0]  # rates (NN)
                     hf['v'][step] = hist_states[1]
-                    hf['w'][step] = hist_states[2]      # w (NN x pop_size)
-                    hf['R'][step] = hist_states[3]      # R (NN x NN x pop_size)
-                    hf['U'][step] = hist_states[4]      # U
-                    hf['A'][step] = hist_states[5]      # A
+                    # hf['w'][step] = hist_states[2]      # w (NN x pop_size)
+                    # hf['R'][step] = hist_states[3]      # R (NN x NN x pop_size)
+                    # hf['U'][step] = hist_states[4]      # U
+                    # hf['A'][step] = hist_states[5]      # A
 
                     states = hist_states
                     
@@ -206,7 +206,7 @@ class HonestNetwork:
                     del output
                     del hist_states
                     bar.next()
-                    time.sleep(1)
+                    # time.sleep()
                     
                 # принудительная запись на диск
                 hf.flush()
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     NN = len(params_list['net_params']['I_ext'])
     net_params = params_list['net_params']
     Ninps = 2
-    pop_size = 10000 # Количество нейронов в каждой популяции
+    pop_size = 1000 # Количество нейронов в каждой популяции
     gen_pop_size = 100000
 
     izh_params = {
@@ -356,13 +356,13 @@ if __name__ == '__main__':
 
     ## synaptic variables
     syn_params = {
-        'g': net_params['gsyn_max'], #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['gsyn_max'][:,:, np.newaxis], # 200.0,
-        'tau_d': net_params['tau_d'], #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_d'][:,:, np.newaxis], # 6.02,
-        'tau_r': net_params['tau_r'], #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_r'][:,:, np.newaxis], # 359.8,
-        'tau_f': net_params['tau_f'], #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_f'][:,:, np.newaxis], # 21.0,
-        'u': net_params['Uinc'], #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['Uinc'][:,:, np.newaxis], # 0.25,
+        'g': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['gsyn_max'][:,:, np.newaxis], # 200.0,
+        'tau_d': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_d'][:,:, np.newaxis], # 6.02,
+        'tau_r': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_r'][:,:, np.newaxis], # 359.8,
+        'tau_f': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['tau_f'][:,:, np.newaxis], # 21.0,
+        'u': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['Uinc'][:,:, np.newaxis], # 0.25,
         'e_r': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['e_r'][:,:, np.newaxis], # 0.0 net_params['e_r'], #
-        'pconn': net_params['pconn'] #np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + [:,:, np.newaxis]
+        'pconn': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['pconn'][:,:, np.newaxis]
     }
 
     print(net_params['gsyn_max'].shape)
@@ -451,8 +451,8 @@ if __name__ == '__main__':
 
     # Запуск
 
-    with h5py.File('results.h5', 'w') as f:
-        pass
+    # with h5py.File('results.h5', 'w') as f:
+    #     pass
 
     #'''
 
@@ -497,9 +497,9 @@ if __name__ == '__main__':
         voltages = np.zeros((num_steps, num_groups, num_neurons))
         
         # Чтение конкретного нейрона 
-        group_idx = 0
-        neuron_idx = 0 
-        #v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
+        group_idx = 3
+        neuron_idx = 32
+        v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
         firing_rate = f['rate'][:, group_idx]
         
 
@@ -514,7 +514,8 @@ if __name__ == '__main__':
     # axes[0].plot(t, firing_rate)
     # axes[0].set_title(f"Group {group_idx}, Частота разрядов")
 
-    plt.plot(t, smoothed_rate)
+    plt.plot(t, smoothed_rate    ) # 
+    #plt.plot(t, v_single    )
     plt.title(f"Group {group_idx}, Частота разрядов")
 
     # axes[1].plot(t, v_single)
