@@ -38,7 +38,7 @@ def get_params():
 
         neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
 
-    ## neurons_params.to_csv('/home/ivan/Projects/neurons.csv')
+    neurons_params.to_csv('/home/ivan/Projects/neurons.csv')
     # # !!!!!!
 
 
