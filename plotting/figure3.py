@@ -17,11 +17,11 @@ TEXTFONTSIZE = 'xx-large'
 dt = 0.01
 duration = 2400
 
-fig_name = 'fig3.2'
+fig_name = 'fig3'
 
-neurons_order = plotting_colors["neurons_order"][7 : ]
+neurons_order = plotting_colors["neurons_order"]
 
-path = '../outputs/firings/2_output.h5'
+path = '../outputs/firings/output.h5'
 hf = h5py.File(path, 'r')
 
 t = np.linspace(0, duration, 240000 )
@@ -30,21 +30,23 @@ sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)
 
 
 gridspec_kw = {
-    "width_ratios" : [0.15, ] + [0.1, ] * 4 + [0.15, ]
+    "width_ratios" : [0.15, ] + [0.1, ] * 4 + [0.1, ]
 }
 
-
-fig, axes = plt.subplots(nrows=4, ncols=6, figsize=(20, 15), gridspec_kw=gridspec_kw)
+nrows = 6
+fig, axes = plt.subplots(nrows=nrows, ncols=6, figsize=(20, 15), gridspec_kw=gridspec_kw)
 
 
 for neuron_idx, neuron_name in enumerate(neurons_order):
 
-    if neuron_idx < 4:
+    plot_idx = neuron_idx%4 + 1
+
+    row_idx = 2 * int(neuron_idx / 4)
+
+    if neuron_idx == len(neurons_order) - 1:
         row_idx = 0
-        plot_idx = neuron_idx + 1
-    else:
-        row_idx = 2
-        plot_idx = neuron_idx + 1 - 4
+        plot_idx = 5
+
 
     neuron_name_title = neuron_name
     if len(neuron_name_title) > 17:
@@ -53,14 +55,16 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
     axes[row_idx, plot_idx].set_title(neuron_name_title)
 
-    if neuron_idx == 0 or neuron_idx == 4:
-        axes[row_idx, plot_idx].set_ylabel(r"")
-        axes[row_idx+1, plot_idx].set_ylabel(r"")
+    # if neuron_idx == 0 or neuron_idx == 4:
+    #     axes[row_idx, plot_idx].set_ylabel(r"")
+    #     axes[row_idx+1, plot_idx].set_ylabel(r"")
 
-    if row_idx == 2 or plot_idx == 4:
+    if row_idx == (nrows - 2) or neuron_idx == len(neurons_order) - 1:
         axes[row_idx+1, plot_idx].set_xlabel("Время (мс)")
     else:
         axes[row_idx+1, plot_idx].xaxis.set_ticklabels([])
+
+    axes[row_idx, plot_idx].xaxis.set_ticklabels([])
 
 
 
@@ -105,19 +109,19 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
     axes[row_idx, plot_idx].set_ylim(0.0, 1.1*np.max(exc_g[10000:]))
     axes[row_idx+1, plot_idx].set_ylim(0.0, 1.1*np.max(inh_g[10000:]))
 
-for ax1 in axes:
+for ax1 in axes[:, 1:]:
     for ax in ax1:
         ax.set_xlim(800, 1200)
 
 lines = []
 labels = ['sum exc', 'sum inh'] +  plotting_colors["neurons_order"] +  plotting_colors["generators_order"]
 
-gs = axes[0, -1].get_gridspec()
+gs = axes[2, -1].get_gridspec()
 
-for ax in axes[:, -1]:
+for ax in axes[2:, -1]:
     ax.remove()
 
-legend_axes = fig.add_subplot(gs[:, -1])
+legend_axes = fig.add_subplot(gs[2:, -1])
 
 for label in labels:
     for ax in fig.axes:
@@ -130,32 +134,18 @@ for label in labels:
         except ValueError:
             continue
 
-legend_axes.legend(lines, labels,  ncol=1, loc='upper left') # , bbox_to_anchor =(0.15, 0.1),
+legend_axes.legend(lines, labels,  ncol=1, loc='upper left', bbox_to_anchor=(-0.3, 1.0) ) #
 legend_axes.axis('off')
 
-ax0 = axes[0, 0]
-ax0.axis("off")
-ax0.set_xlim(0, 1)
-ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Возбуждающие \n проводимости", fontsize=TEXTFONTSIZE)
+for ax0_idx, ax0 in enumerate(axes[:, 0]):
+    ax0.axis("off")
+    ax0.set_xlim(0, 1)
+    ax0.set_ylim(0, 1)
 
-ax0 = axes[1, 0]
-ax0.axis("off")
-ax0.set_xlim(0, 1)
-ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Тормозные \n проводимости", fontsize=TEXTFONTSIZE)
-
-ax0 = axes[2, 0]
-ax0.axis("off")
-ax0.set_xlim(0, 1)
-ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Возбуждающие \n проводимости", fontsize=TEXTFONTSIZE)
-
-ax0 = axes[3, 0]
-ax0.axis("off")
-ax0.set_xlim(0, 1)
-ax0.set_ylim(0, 1)
-ax0.text(0.0, 0.5, " Тормозные \n проводимости", fontsize=TEXTFONTSIZE)
+    if ax0_idx%2 == 0:
+        ax0.text(0.0, 0.5, " Возбуждающие \n проводимости", fontsize=TEXTFONTSIZE)
+    else:
+        ax0.text(0.0, 0.5, " Тормозные \n проводимости", fontsize=TEXTFONTSIZE)
 
 fig.subplots_adjust(bottom=0.1, wspace=0.5, hspace=0.5, left=0.05, right=0.9)
 #fig.tight_layout()
