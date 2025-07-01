@@ -26,20 +26,20 @@ def get_params():
          'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
 
 
-    #!!!!!!
-    change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
-                      'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
-
-    copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Interneuron Specific R-O'].values[0]
-    tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar'].values[0]
-
-    for col in change_columns:
-        print(neurons_params.loc[copyed_indx, col])
-
-        neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
-
-    neurons_params.to_csv('/home/ivan/Projects/neurons.csv')
-    # # !!!!!!
+    # #!!!!!!
+    # change_columns = {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b',
+    #                   'Izh d': 'd', 'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}.values()
+    #
+    # copyed_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Interneuron Specific R-O'].values[0]
+    # tril_indx = neurons_params.index[neurons_params['Neuron Type'] == 'CA1 Trilaminar'].values[0]
+    #
+    # for col in change_columns:
+    #     print(neurons_params.loc[copyed_indx, col])
+    #
+    #     neurons_params.loc[tril_indx, col] = neurons_params.loc[copyed_indx, col]
+    #
+    # neurons_params.to_csv('/home/ivan/Projects/neurons.csv')
+    # # # !!!!!!
 
 
 
@@ -243,8 +243,8 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
 
 model = get_model(params, generators_params, myconfig.DT)
 
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'tril_change_big_model_{epoch:02d}.keras'
-filename_template = 'tril_change_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'base_big_model_{epoch:02d}.keras'
+filename_template = 'base_firings_{epoch:02d}.h5'
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
@@ -269,7 +269,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'tril_change_history.h5', mode='w') as dfile:
+with h5py.File(myconfig.OUTPUTSPATH + 'history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
 
