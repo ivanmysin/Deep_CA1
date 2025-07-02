@@ -26,7 +26,7 @@ initial_states = [s[-1] for s in states]
 
 model.v_threshold = 10000
 
-for theta_freq in range(4, 12):
+for theta_freq in range(4, 13):
     generators.set_theta_freq(theta_freq)
     npfirings, states = model.predict(generators_firings, initial_states=initial_states)
     npfirings = npfirings.reshape(-1, npfirings.shape[-1])
