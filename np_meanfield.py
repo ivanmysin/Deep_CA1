@@ -267,6 +267,13 @@ class SpatialThetaGenerators:
         I0 = bessel_i0(self.kappa)
         self.normalizator = self.OutPlaceFiringRate / I0
 
+
+    def set_theta_freq(self, ThetaFreq):
+        self.ThetaFreq = ThetaFreq
+        self.mult4time = 2 * np.pi * self.ThetaFreq * 0.001
+
+
+
     def r2kappa(self, R):
         """
         Recalculate kappa from R for Von Mises distribution using vectorized operations with NumPy arrays.
