@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.special import i0 as bessel_i0
+
 import izhs_lib
 # import h5py
 #
 import sys
-sys.path.append('../')
+sys.path.append('/')
 import myconfig
 
 class MeanFieldNetwork:
@@ -36,6 +38,12 @@ class MeanFieldNetwork:
 
 
         synaptic_matrix_shapes = self.gsyn_max.shape
+
+        self.tau1r = np.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
+
+        self.exp_tau_d = np.exp(-self.dt_dim / self.tau_d)
+        self.exp_tau_f = np.exp(-self.dt_dim / self.tau_f)
+        self.exp_tau_r = np.exp(-self.dt_dim / self.tau_r)
 
         self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
 
@@ -142,16 +150,12 @@ class MeanFieldNetwork:
 
         FRpre_normed = self.pconn *  firing_probs
 
-        tau1r = np.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-
-        exp_tau_d = np.exp(-self.dt_dim / self.tau_d)
-        exp_tau_f = np.exp(-self.dt_dim / self.tau_f)
-        exp_tau_r = np.exp(-self.dt_dim / self.tau_r)
 
 
-        a_ = A * exp_tau_d
-        r_ = 1 + (R - 1 + tau1r * A) * exp_tau_r  - tau1r * A
-        u_ = U * exp_tau_f
+
+        a_ = A * self.exp_tau_d
+        r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
+        u_ = U * self.exp_tau_f
 
         U = u_ + self.Uinc * (1 - u_) * FRpre_normed
         A = a_ + U * r_ * FRpre_normed
@@ -192,6 +196,133 @@ class MeanFieldNetwork:
 
             h_states.append(s)
         return outputs, h_states
+
+class SpatialThetaGenerators:
+    def __init__(self, params, **kwargs):
+
+        self.ALPHA = 5.0
+
+        if type(params) == list:
+
+            ThetaFreq = []
+
+            OutPlaceFiringRate = []
+            OutPlaceThetaPhase = []
+            InPlacePeakRate = []
+            CenterPlaceField = []
+            Rs = []
+            SigmaPlaceField = []
+            SlopePhasePrecession = []
+            PrecessionOnset = []
+
+            self.n_outs = len(params)
+
+
+            for p in params:
+                OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
+                OutPlaceThetaPhase.append( p["OutPlaceThetaPhase"] )
+                InPlacePeakRate.append( p["InPlacePeakRate"] )
+                Rs.append(p["R"]),
+
+                CenterPlaceField.append(p["CenterPlaceField"])
+
+                SigmaPlaceField.append(p["SigmaPlaceField"])
+                SlopePhasePrecession.append(p["SlopePhasePrecession"])
+                PrecessionOnset.append(p["PrecessionOnset"])
+
+
+                ThetaFreq.append( p["ThetaFreq"] )
+        else:
+            ThetaFreq = params['ThetaFreq']
+
+            OutPlaceFiringRate = params['OutPlaceFiringRate']
+            OutPlaceThetaPhase = params['OutPlaceThetaPhase']
+            InPlacePeakRate = params['InPlacePeakRate']
+            CenterPlaceField = params['CenterPlaceField']
+            Rs = params['R']
+            SigmaPlaceField = params['SigmaPlaceField']
+            SlopePhasePrecession = params['SlopePhasePrecession']
+            PrecessionOnset = params['PrecessionOnset']
+
+            self.n_outs = len(OutPlaceFiringRate)
+
+        self.ThetaFreq = np.asarray(ThetaFreq, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.OutPlaceFiringRate = np.asarray(OutPlaceFiringRate, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.OutPlaceThetaPhase = np.asarray(OutPlaceThetaPhase, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.R = np.asarray(Rs, dtype=myconfig.DTYPE).reshape( [1, -1])
+        self.InPlacePeakRate = np.asarray(InPlacePeakRate, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.CenterPlaceField = np.asarray(CenterPlaceField, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.SigmaPlaceField = np.asarray(SigmaPlaceField, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.SlopePhasePrecession = np.asarray(SlopePhasePrecession, dtype=myconfig.DTYPE).reshape([1, -1])
+        self.PrecessionOnset = np.asarray(PrecessionOnset, dtype=myconfig.DTYPE).reshape([1, -1])
+
+        Mask = np.isnan(self.PrecessionOnset)
+        self.PrecessionOnset = np.where(Mask, 0., self.PrecessionOnset )
+        self.PhaseOnsetMask = Mask.astype(dtype=myconfig.DTYPE) - 1.0
+
+        self.kappa = self.r2kappa(self.R)
+
+        self.mult4time = 2 * np.pi * self.ThetaFreq * 0.001  # tf.constant(tmp, dtype=myconfig.DTYPE)
+
+        I0 = bessel_i0(self.kappa)
+        self.normalizator = self.OutPlaceFiringRate / I0
+
+    def r2kappa(self, R):
+        """
+        Recalculate kappa from R for Von Mises distribution using vectorized operations with NumPy arrays.
+
+        Parameters:
+        -----------
+        R : array-like
+            Input values of correlation coefficient or concentration parameter.
+
+        Returns:
+        --------
+        kappa : ndarray
+            Transformed kappa values corresponding to input R values.
+        """
+        # Ensure that the input is a NumPy array
+        R = np.asarray(R)
+
+        # Create masks based on conditions
+        mask1 = R < 0.53
+        mask2 = (R >= 0.53) & (R < 0.85)
+        mask3 = R >= 0.85
+
+        # Initialize an empty result array
+        kappa = np.empty_like(R)
+
+        # Apply formulas conditionally
+        kappa[mask1] = 2 * R[mask1] + R[mask1] ** 3 + 5 / 6 * R[mask1] ** 5
+        kappa[mask2] = -0.4 + 1.39 * R[mask2] + 0.43 / (1 - R[mask2])
+        kappa[mask3] = 1 / (3 * R[mask3] - 4 * R[mask3] ** 2 + R[mask3] ** 3)
+
+        return kappa
+
+
+    def call(self, t):
+        ampl4gauss = 2 * (self.InPlacePeakRate - self.OutPlaceFiringRate) / (self.OutPlaceFiringRate + 1)
+        multip = (1 + ampl4gauss * np.exp(-0.5 * ((t - self.CenterPlaceField) / self.SigmaPlaceField) ** 2))
+
+        start_place = t - self.CenterPlaceField - 3 * self.SigmaPlaceField
+        end_place = t - self.CenterPlaceField + 3 * self.SigmaPlaceField
+
+
+
+        inplace = 0.25 * (1.0 - (start_place / (self.ALPHA + np.abs(start_place)))) * (
+                1.0 + end_place / (self.ALPHA + abs(end_place)))
+
+        precession = self.SlopePhasePrecession * inplace
+        phases = self.OutPlaceThetaPhase * (1 - inplace * self.PhaseOnsetMask ) + self.PrecessionOnset * inplace * self.PhaseOnsetMask
+
+
+        firings = self.normalizator * np.exp(self.kappa * np.cos((self.mult4time + precession) * t - phases))
+
+        firings = multip * firings  # / (0.001 * dt)
+        firings = firings.reshape( [1, firings.shape[1], firings.shape[2]] )
+
+        return firings
+
 
 
 ######################################################################
