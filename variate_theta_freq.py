@@ -29,7 +29,7 @@ model.v_threshold = 10000
 for theta_freq in range(4, 13):
     generators.set_theta_freq(theta_freq)
     npfirings, states = model.predict(generators_firings, initial_states=initial_states)
-    npfirings = npfirings.reshape(-1, npfirings.shape[-1])
+    npfirings = npfirings[0, :, :]
 
     theta_freq_group = firing_file.create_group(str(theta_freq))
 
