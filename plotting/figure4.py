@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from plots_config import plotting_colors
 import h5py
 
@@ -16,26 +18,50 @@ TEXTFONTSIZE = 'xx-large'
 fig_name = 'fig4'
 
 
+neuron_idx_in_sols = []
 
-T_st_idx = 1000 # start of t
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='theta_model')
+neurons_params = neurons_params[neurons_params['Npops'] == 1]['neurons'].to_list()
+for neuron_name in plotting_colors["neurons_order"]:
+    neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
-hf = h5py.File('../outputs/firings/theta_freq_variation.h5', mode='r')
 
-theta_freqs = sorted( hf.keys(),  key=lambda x: float(x) )
+T_st_idx = 0 # start of t
+
+source_hfile = h5py.File('../outputs/firings/theta_freq_variation.h5', mode='r')
+
+theta_freqs = sorted( source_hfile.keys(),  key=lambda x: float(x) )
 theta_phases4plots = np.linspace(-np.pi, np.pi, 100)
 sine = 0.5 * (np.cos(theta_phases4plots) + 1)
+
+duration = 1600
+DT = 0.01
 
 fig, axes = plt.subplots(nrows=len(plotting_colors["neurons_order"]), ncols=len(theta_freqs)+1, \
                         constrained_layout=True, figsize=(15, 10)  )
 
 for freq_idx, freq in enumerate( theta_freqs ):
-    full_firings = hf[freq]['firings'][:]
-    t = np.linspace(0, 1600, full_firings.shape[0])[T_st_idx:]
+    print(freq)
+    full_firings = source_hfile[freq]['firings'][:]
+
+    t = np.linspace(0, duration, full_firings.shape[0]) #[T_st_idx:]
 
     freq = float(freq)
-
     theta_phases = (2 * np.pi * 0.001 * t * freq) % (2 * np.pi)
     theta_phases[theta_phases > np.pi] -= 2 * np.pi
+
+    # firings = full_firings
+    #
+    # cos_ref = np.max(firings) * 0.5 * (np.cos(theta_phases) + 1)
+    #
+    # fig2, axes2 = plt.subplots(nrows=2)
+    # axes2[0].plot(t, firings)
+    # axes2[0].plot(t, cos_ref)
+    #
+    # #axes2[1].plot(firings_bins, firings_hist)
+    # plt.show()
+    #
+    # continue
 
     for neuron_idx, neuron_name in enumerate(plotting_colors["neurons_order"]):
 
@@ -57,10 +83,12 @@ for freq_idx, freq in enumerate( theta_freqs ):
             ax.yaxis.set_ticklabels([])
 
 
-        firings = full_firings[T_st_idx:, neuron_idx]
+        firings = full_firings[T_st_idx:, neuron_idx_in_sols[neuron_idx]]
+
         firings_hist, firings_bins = np.histogram(theta_phases, bins=20, weights=firings, density=True, range=[-np.pi, np.pi])
         firings_bins = 0.5*(firings_bins[:-1] + firings_bins[1:])
-        ax.plot(firings_bins, firings_hist, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, label="CBRD")
+        ax.plot(firings_bins, firings_hist, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, label="Симуляция")
+
 
 
         sine_ampls = sine * 0.7 * np.max(firings_hist)
@@ -77,6 +105,6 @@ for ax2, neuron_name in zip(axes[:, 0], plotting_colors["neurons_order"]):
     ax2.set_ylim(0, 1)
     ax2.text(0.0, 0.5, neuron_name, fontsize=TEXTFONTSIZE)
 
-hf.close()
+source_hfile.close()
 fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=500)
 plt.show()

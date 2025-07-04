@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+
+# import sys
+# sys.path.append('/')
 from plots_config import plotting_colors
 
 import h5py
@@ -21,12 +24,21 @@ duration = 2400
 
 fig_name = 'fig2'
 
+neuron_idx_in_sols = []
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='theta_model')
+neurons_params = neurons_params[neurons_params['Npops'] == 1]['neurons'].to_list()
+for neuron_name in plotting_colors["neurons_order"]:
+    neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
+
+
 neurons_order = plotting_colors["neurons_order"]
-path = '../outputs/firings/base_output.h5'
+path = '../outputs/firings/theta_freq_variation.h5'
+
+freq = '12'
 
 hf = h5py.File(path, 'r')
-t = np.linspace(0, duration, 240000 )
-sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)
+t = np.linspace(0, duration, 160000 )
+sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * float(freq)) + 1)
 
 gridspec_kw = {
     "width_ratios" : [1.0, 0.9, 1.0, 0.9],
@@ -77,12 +89,12 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
      print(neuron_name)
 
-     firings = hf[neuron_name]['firings'][:]
-     target = hf[neuron_name]['target_firing'][:]
+     firings = hf[freq]['firings'][:,  neuron_idx_in_sols[neuron_idx] ]
+     # target = hf['4']['target_firing'][: neuron_idx_in_sols[neuron_idx] ]
 
      # print("target", target.shape)
      # print("firings", firings.shape)
-     ax.plot(t, target, label = "Целевая частота", color='black', linewidth=4)
+     # ax.plot(t, target, label = "Целевая частота", color='black', linewidth=4)
      ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=5, label="Симуляция")
 #     neurons_indexes = montecarlofile[neuron_name + "_indexes"][:]
 #     neurons_times = montecarlofile[neuron_name + "_times"][:]
@@ -92,10 +104,10 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 #     montecarlofirings = np.convolve(montecarlofirings, Parzen, mode='same')
 #
 #     #ax.plot(t[:-1], montecarlofirings, linestyle="--", color=plotting_colors["neuron_colors"][neuron_name], label="Monte-Carlo")
-     sine_ampls = sine * 0.7*np.max(target)
+     sine_ampls = sine * 0.7*np.max(firings)
      ax.plot(t, sine_ampls, linestyle="--", label = "cos", color='black')
 
-     ax.set_ylim(0, 1.1*max( [np.max(firings[8000:]), np.max(target)]) )
+     #ax.set_ylim(0, 1.1*max( [np.max(firings[8000:]), np.max(target)]) )
 
 
 
@@ -108,7 +120,7 @@ if len(neurons_order)%2 != 0:
 
 
 
-fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=200)
+#fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=200)
 hf.close()
 
 plt.show()
