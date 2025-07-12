@@ -11,6 +11,8 @@ from scipy.special import i0 as bessel_i0
 from scipy.stats import cauchy
 import time
 from progress.bar import IncrementalBar
+from pprint import pprint
+
 
 
 
@@ -20,16 +22,13 @@ class HonestNetwork:
 
         self.dt = dt_dim
         self.use_input = use_input
-        # self.pop_size = params('pop_size')
-
 
         self.units = len(params['Izh Vr'])
         self.a = np.asarray( params['Izh a'], dtype=myconfig.DTYPE )
         self.b = np.asarray( params['Izh b'], dtype=myconfig.DTYPE )
         self.w_jump = np.asarray( params['Izh d'], dtype=myconfig.DTYPE )
 
-        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )*2.5
-        self.sigma = params['sigma']
+        self.Iext = np.asarray( params['Iext'], dtype=myconfig.DTYPE )
         
         self.v_tr = np.asarray( params['Izh Vt'], dtype=myconfig.DTYPE )
         self.v_rest = np.asarray( params['Izh Vr'], dtype=myconfig.DTYPE )
@@ -76,7 +75,7 @@ class HonestNetwork:
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
-        R = np.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        R = np.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE) # ones
         U = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
@@ -94,70 +93,44 @@ class HonestNetwork:
         A = states[5]
         
 
-        g_syn = self.gsyn_max * A
-        Isyn = np.sum(g_syn * (self.e_r - v), axis=0) # [:,:,np.newaxis]
-        # print('Isyn.shape', Isyn.shape)
-
-        # Ar = np.sum(np.mean(A, axis=2), axis = 0)
-        # Rr = np.sum(np.mean(R, axis=2), axis = 0)
-        # Ur = np.sum(np.mean(U, axis=2), axis = 0)
+        g_syn = self.gsyn_max * A 
+        Isyn = np.sum(g_syn * (self.e_r - v), axis=0) 
         
         v_prev = v
-        # noise = self.sigma*np.sqrt(self.dt)*np.random.randn(NN, pop_size)
-        # print('v_prev ', v[0])
-        v = v + self.dt*(self.aI*v**2 + self.bI*v + self.cI - w + self.Icauchy + Isyn + self.Iext)/self.Cm #+ noise
-        # print('v', v[0])
-        w = w + self.dt * (self.a*(self.b*(v + 58.0) - w))
+        v = v + self.dt*(self.aI*v**2 + self.bI*v + self.cI - w + self.Icauchy + Isyn + self.Iext)/self.Cm 
+        w = w + self.dt * (self.a*(self.b*(v - self.v_rest) - w))
         
 
-        fired = (v_prev < self.v_peak) & (v >= self.v_peak)
+        fired = (v >= self.v_peak) & (v_prev < self.v_peak)
         v = np.where(fired, self.v_rest, v)
         w = np.where(fired, w + self.w_jump, w)
+
         rates = np.mean(fired, axis=1)/dt_dim
 
-        # print('rates.shape', rates.shape)
-
-        gen_rates = np.hstack((inputs[:,0], inputs[:,1]))
-
-        # print('mec.shape',inputs[:,0].shape )
-        # print('gen_rates.shape', gen_rates.shape)
+        gen_rates = np.hstack((inputs[:,0], inputs[:,1])) 
 
         rates = np.hstack((rates, gen_rates))
-        firing_prob = rates[:, np.newaxis, np.newaxis]*dt_dim # [:, np.newaxis, np.newaxis]
+        firing_prob = rates[:, np.newaxis, np.newaxis]*dt_dim
 
 
         #rates, v, w = self.runge_kutta_step(rates, v, w, g)
-
-        # if self.use_input:
-        #     inputs = inputs.T * 0.001 * self.dt
-        #     firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
-
-
-        # print('rates.shape', rates.shape)
-        # print('fired.shape', fired.shape)
-
 
         a_ = A * self.exp_tau_d
         r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
         u_ = U * self.exp_tau_f
 
-        # print('r_.shape', r_.shape)
-        # print('firing_prob.shape', firing_prob.shape)
-        # print('U.shape', U.shape)
-
         released_mediator = U * r_ * firing_prob
-
-        # print('released_mediator', released_mediator.shape)
 
         U = u_ + self.Uinc * (1 - u_) * firing_prob
         A = a_ + released_mediator
         R = r_ - released_mediator
 
-        # print('R.shape', R.shape)
+        output = rates /self.dt  
 
-        output = rates /self.dt  # v
+        Isyn_group = np.mean(Isyn, axis=1)
+        Amean = np.mean(np.mean(A, axis = 2), axis=0)
 
-        return output, [rates, v, w, R, U, A]
+        return output, [rates, v, w, R, U, A, Amean, Isyn_group]
     
 
     def predict(self, inputs, initial_states=None, batch_size=1000):
@@ -173,10 +146,12 @@ class HonestNetwork:
 
         # Состояния не возвращаются, а записываются в h5 батчами
         
-        with h5py.File('results.h5', 'w') as hf:
+        with h5py.File('results_default.h5', 'w') as hf:
 
             hf.create_dataset('v', (num_steps, NN, pop_size), maxshape=(None, NN, pop_size), dtype=np.float32)
             hf.create_dataset('rate', (num_steps, NN+Ninps), maxshape=(None, NN+Ninps), dtype=np.float32)
+            hf.create_dataset('Isyn', (num_steps, NN), maxshape=(None, NN), dtype=np.float32)
+            hf.create_dataset('Amean', (num_steps, NN), maxshape=(None, NN), dtype=np.float32)
             # hf.create_dataset('w', (num_steps, NN, pop_size), maxshape=(None, NN, pop_size), dtype=np.float32)
             # hf.create_dataset('R', (num_steps, NN+Ninps, NN, pop_size), maxshape=(None, NN+Ninps, NN, pop_size), dtype=np.float32) #, pop_size
             # hf.create_dataset('U', (num_steps, NN+Ninps, NN, pop_size), maxshape=(None, NN+Ninps, NN, pop_size), dtype=np.float32)
@@ -195,6 +170,9 @@ class HonestNetwork:
 
                     hf['rate'][step] = hist_states[0]  # rates (NN)
                     hf['v'][step] = hist_states[1]
+                    hf['Isyn'][step] = hist_states[7]
+                    hf['Amean'][step] = hist_states[6]
+
                     # hf['w'][step] = hist_states[2]      # w (NN x pop_size)
                     # hf['R'][step] = hist_states[3]      # R (NN x NN x pop_size)
                     # hf['U'][step] = hist_states[4]      # U
@@ -265,8 +243,6 @@ if __name__ == '__main__':
             except EOFError:
                 break
 
-    from pprint import pprint
-
     pprint(params_list)
 
     types_from_table = {
@@ -277,7 +253,7 @@ if __name__ == '__main__':
         4: 'CA1 Basket CCK+',
         5: 'CA1 Bistratified',
         6: 'CA1 Ivy',
-        7: 'CA1 Neuragliaform',
+        7: 'CA1 Neurogliaform',
         8: 'CA1 O-LM',
         9: 'CA1 Perforant Path-Associated',
         10: 'CA1 Interneuron Specific R-O',
@@ -286,73 +262,59 @@ if __name__ == '__main__':
     }
 
 
-    #''' если нужно попробовать на случайной меньшей сети
-
-    # Nneur = 200
-    # Nsyn = 1000 # 0.05 of all possible
-
-    # neurons_list = [] 
-    # for n in range(Nneur):
-    #     i = np.random.randint(len(Types))
-    #     _type = Types[i]
-    #     neurons_list.append({'type': _type})
-
-    # print(neurons_list[0]['type'])
-
-
-    # synapses_list = []
-    # for n in range(Nsyn):
-    #     idx1 = np.random.randint(0, Nneur) # choosing random indexes of neurons to connect
-    #     idx2 = np.random.randint(0, Nneur)
-    #     synapses_list.append({'post_idx': idx2, 'pre_idx': idx1, 'post_type': neurons_list[idx2]['type'], 'pre_type': neurons_list[idx1]['type']})
-    
-    
-
-    # print(len(neurons_list), len(synapses_list))
-
-
 
     NN = len(params_list['net_params']['I_ext'])
     net_params = params_list['net_params']
     Ninps = 2
-    pop_size = 1000 # Количество нейронов в каждой популяции
-    gen_pop_size = 100000
+    pop_size = 10000 # Количество нейронов в каждой популяции
+
 
     izh_params = {
         # фиксированные параметры, заменяются на соответствующие типам
         "Izh C": 114,  # * pF,
         "Izh Vr": -57.63,  # * mV,
-        "Izh Vt": -35.53,  # *mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+        "Izh Vt": -35.53,  # *mV, 
         "Izh Vpeak": 21.72,  # * mV,
+        "Izh a": 0, 
+        "Izh b": 0, 
+        "Izh d": 0, 
+        "Izh k": 0, 
 
-        # Оптимизируемы параметры
-        "Izh a": np.zeros((NN, pop_size), dtype=np.float32) + net_params['a'][:, np.newaxis], # 0.005,  # * ms ** -1,
-        "Izh b": np.zeros((NN, pop_size), dtype=np.float32) + net_params['b'][:, np.newaxis], # 0.22,  # * mS,
-        "Izh d": np.zeros((NN, pop_size), dtype=np.float32) + net_params['w_jump'][:, np.newaxis], # 2,  # * pA,
-        "Izh k": np.zeros((NN, pop_size), dtype=np.float32) + net_params['alpha'][:, np.newaxis], # 1.0,
-        "Iext": np.zeros((NN, pop_size), dtype=np.float32) + net_params['I_ext'][:, np.newaxis],  # pA
-        "sigma": 1,
+        # оптимизируемые, из net_params
+        "Iext": np.zeros((NN, pop_size), dtype=np.float32) + net_params['I_ext'][:, np.newaxis], # pA
         "Delta_eta": net_params['Delta_eta']
     }
+
+    print('Delta pre', izh_params['Delta_eta'])
 
 
     #'''
     for key, val in izh_params.items():
         # не изменяемые параметры, из таблицы
-        if key in ('Izh C', "Izh Vr", "Izh Vt", "Izh Vpeak"):
 
-            izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32) 
-            if key == 'Izh C': izh_params[key] = np.ones((NN, pop_size), dtype=np.float32) # емкости где нет связи - единицы
-            # if key == 'sigma': izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32)+0.1
+        izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32) 
+        if key == 'Izh C': izh_params[key] = np.ones((NN, pop_size), dtype=np.float32) # емкости где нет связи - единицы
 
-            for i in range(NN):
-                type = types_from_table[i] #neurons_list[i]['type']
-                neuron_param = neuron_types[neuron_types['Neuron Type'] == type]
+        for i in range(NN):
+            type = types_from_table[i] 
+            neuron_param = neuron_types[neuron_types['Neuron Type'] == type]
 
-                if not neuron_param.empty:
+            if not neuron_param.empty:
+                # оптимизированные просто переводим в размерные из безразмерных
+                if key in ('Iext', 'Delta_eta'):
+                    I = val[i]
+                    k = neuron_param['Izh k'].iloc[0]
+                    V_R = neuron_param['Izh Vr'].iloc[0]
+                    Idim = I*(k * abs(V_R)**2) #izhs_lib.anti_transform_I(I[i,:], k, V_R)
+                    izh_params[key][i] = Idim
+
+                # остальные из таблицы
+                else:
                     izh_params[key][i] = neuron_param[key].iloc[0]
 
 
+    print('Iext: ', izh_params['Iext'])
+    print('Delta_eta', izh_params['Delta_eta'], '\n')
 
     ## synaptic variables
     syn_params = {
@@ -365,8 +327,6 @@ if __name__ == '__main__':
         'pconn': np.zeros((NN+Ninps, NN, pop_size), dtype=np.float32) + net_params['pconn'][:,:, np.newaxis]
     }
 
-    print(net_params['gsyn_max'].shape)
-    print(net_params['I_ext'].shape)
 
 
     gen_params = {'mec': params_list['generator_params'][0],
@@ -430,8 +390,8 @@ if __name__ == '__main__':
 
     def generators_inputs(gen_params, dt):
 
-        mec = np.zeros(shape=(t.size, gen_pop_size), dtype=np.float32)
-        lec = np.zeros(shape=(t.size, gen_pop_size), dtype=np.float32)
+        # mec = np.zeros(shape=(t.size, gen_pop_size), dtype=np.float32)
+        # lec = np.zeros(shape=(t.size, gen_pop_size), dtype=np.float32)
 
         mec_mean = np.zeros(t.size, dtype=np.float32)
         lec_mean = np.zeros(t.size, dtype=np.float32)
@@ -464,15 +424,10 @@ if __name__ == '__main__':
 
 
     firings_inputs = np.zeros(shape=(1, t.size, Ninps), dtype=np.float32)
-
     mec_inputs, lec_inputs = generators_inputs(gen_params, dt_dim)
-
-    # mec_inputs_mean = np.mean(mec_inputs, axis=1)
-
     firings_inputs[:,:,0] = mec_inputs
     firings_inputs[:,:,1] = lec_inputs
 
-    # print(mec_inputs.shape)
 
     # plt.plot(t, mec_inputs_mean)
     # plt.show()
@@ -484,45 +439,66 @@ if __name__ == '__main__':
     # init_states = model.get_initial_state()
     # one_step = model.call(firings_inputs[:,0], init_states)
 
-    #
+    
     rates = model.predict(firings_inputs) # , hist_states
 
 
     #'''
-    with h5py.File('results.h5', 'r') as f:
+    with h5py.File('results_default.h5', 'r') as f:
         num_steps = f['v'].shape[0]
         num_groups = f['v'].shape[1]
         num_neurons = f['v'].shape[2]
             
-        voltages = np.zeros((num_steps, num_groups, num_neurons))
+        #voltages = f['v'][:, :, :] #np.zeros((num_steps, num_groups, num_neurons))
+        rates = f['rate'][:,:]
+        Isyn = f['Isyn'][:,:]
+        Amean = f['Amean'][:,:]
         
         # Чтение конкретного нейрона 
-        group_idx = 3
-        neuron_idx = 32
-        v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
-        firing_rate = f['rate'][:, group_idx]
+        
+        # group_idx = 0
+        # neuron_idx = 32
+        # v_single = f['v'][:, group_idx, neuron_idx]  # Читаем только один нейрон
+        # firing_rate = f['rate'][:, group_idx]
         
 
     t = t.ravel()
 
     from scipy.ndimage import gaussian_filter1d
 
-    smoothed_rate = gaussian_filter1d(firing_rate, sigma=60)
+    for i in range(NN):
+        if i < NN:
+            type = types_from_table[i]
+        else: type = 'generator'
+
+        firing_rate = rates[:,i]
+        syn = Isyn[:, i]
+        a_mean = Amean[:, i]
+
+        smoothed_rate = gaussian_filter1d(firing_rate, sigma=60)
+        plt.plot(t, smoothed_rate, label='rate')
+        # plt.plot(t, syn, label='Isyn') 
+        # plt.plot(t, a_mean, label='Amean, %')
+        plt.legend() 
+        plt.title(f"{type}, Частота разрядов")
+        plt.xlabel("Время (мс)")
+        plt.show()
+
 
 
     # fig, axes = plt.subplots(nrows=1)
     # axes[0].plot(t, firing_rate)
     # axes[0].set_title(f"Group {group_idx}, Частота разрядов")
 
-    plt.plot(t, smoothed_rate    ) # 
-    #plt.plot(t, v_single    )
-    plt.title(f"Group {group_idx}, Частота разрядов")
+    # plt.plot(t, smoothed_rate    ) # 
+    # #plt.plot(t, v_single    )
+    # plt.title(f"Group {group_idx}, Частота разрядов")
 
-    # axes[1].plot(t, v_single)
-    # axes[1].set_title (f"Neuron {neuron_idx}, Мембранный потенциал")
+    # # axes[1].plot(t, v_single)
+    # # axes[1].set_title (f"Neuron {neuron_idx}, Мембранный потенциал")
     
-    plt.xlabel("Время (мс)")
+    # plt.xlabel("Время (мс)")
 
-    plt.show()
+    # plt.show()
 
     # '''
