@@ -230,35 +230,38 @@ Ytrain = [Ytrain, Ytrain_R]
 
 model = get_model(params, generators_params, myconfig.DT, output_masks)
 
+Ypred = model.predict(Xtrain)
 
+print(Ypred[0].shape)
+print(Ypred[1].shape)
 
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
-filename_template = 'verified_theta_firings_{epoch:02d}.h5'
-
-Nepoches4modelsaving = 2 * len(Xtrain) + 1
-
-
-callbacks = [
-        ModelCheckpoint(filepath=checkpoint_filepath,
-            save_weights_only=False,
-            monitor='loss',
-            mode='auto',
-            save_best_only=False,
-            save_freq = 'epoch'),
-
-        SaveFirings( firing_model=model,
-                     t_full=Xtrain.reshape(1, -1, 1),
-                     path=myconfig.OUTPUTSPATH_FIRINGS,
-                     filename_template=filename_template,
-                     save_freq = 10),
-
-        TerminateOnNaN(),
-]
-
-history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
-
-#Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
-    dfile.create_dataset('loss', data=history.history['loss'])
+# checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
+# filename_template = 'verified_theta_firings_{epoch:02d}.h5'
+#
+# Nepoches4modelsaving = 2 * len(Xtrain) + 1
+#
+#
+# callbacks = [
+#         ModelCheckpoint(filepath=checkpoint_filepath,
+#             save_weights_only=False,
+#             monitor='loss',
+#             mode='auto',
+#             save_best_only=False,
+#             save_freq = 'epoch'),
+#
+#         SaveFirings( firing_model=model,
+#                      t_full=Xtrain.reshape(1, -1, 1),
+#                      path=myconfig.OUTPUTSPATH_FIRINGS,
+#                      filename_template=filename_template,
+#                      save_freq = 10),
+#
+#         TerminateOnNaN(),
+# ]
+#
+# history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
+#
+# #Ypred = model.predict(Xtrain, batch_size=1)
+# with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
+#     dfile.create_dataset('loss', data=history.history['loss'])
 
 
