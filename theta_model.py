@@ -233,7 +233,10 @@ model = get_model(params, generators_params, myconfig.DT, output_masks)
 Ypred = model.predict(Xtrain, batch_size=1)
 
 print(Ypred[0].shape)
+print(Ytrain[0].shape)
+print('######################################')
 print(Ypred[1].shape)
+print(Ytrain[1].shape)
 
 # checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
 # filename_template = 'verified_theta_firings_{epoch:02d}.h5'
