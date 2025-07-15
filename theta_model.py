@@ -230,7 +230,7 @@ Ytrain = [Ytrain, Ytrain_R]
 
 model = get_model(params, generators_params, myconfig.DT, output_masks)
 
-Ypred = model.predict(Xtrain)
+Ypred = model.predict(Xtrain, batch_size=1)
 
 print(Ypred[0].shape)
 print(Ypred[1].shape)
