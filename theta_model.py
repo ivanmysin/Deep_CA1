@@ -50,8 +50,6 @@ def get_params():
 
     generators_params = []
 
-    print(populations.columns)
-
     for pop_idx, pop in populations.iterrows():
 
         if pop['Simulated_Type'] == 'generator':
@@ -125,7 +123,7 @@ def get_params():
                     synapses_params['Postsynaptic Neuron Type'] == post_type)]
 
             if len(syn) == 0:
-                print("Connection from ", pre_type, "to", post_type, "not finded!")
+                # print("Connection from ", pre_type, "to", post_type, "not finded!")
                 continue
 
             params['pconn'][pre_idx, post_idx] = 1 # syn['pconn'].values[0]
@@ -184,7 +182,7 @@ def get_model(params, generators_params, dt, output_masks):
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                     name='only_modulation_output')(net_layer)
 
-    #outputs = net_layer  # generators #
+    # outputs = generators # net_layer  #
     outputs = [full_target_output, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
@@ -218,7 +216,7 @@ batch_len = 12000
 nbatches = 20
 params, generators_params, target_params, output_masks = get_params()
 
-print(len(target_params))
+# pprint( generators_params )
 
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
@@ -231,6 +229,8 @@ Ytrain_R = np.zeros(shape=(nbatches, 1, 1), dtype=myconfig.DTYPE) + 0.3
 Ytrain = [Ytrain, Ytrain_R]
 
 model = get_model(params, generators_params, myconfig.DT, output_masks)
+
+
 
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
 filename_template = 'verified_theta_firings_{epoch:02d}.h5'
