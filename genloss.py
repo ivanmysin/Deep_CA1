@@ -315,6 +315,10 @@ class SpatialThetaGenerators(CommonGenerator):
 ##### Output processing classes #########################################
 
 class CommonOutProcessing(tf.keras.layers.Layer):
+    '''
+    Класс просто делает выбор из входного тензора и возвращает значения без модификаций
+    '''
+
     def __init__(self, mask, **kwargs):
         super(CommonOutProcessing, self).__init__(**kwargs)
         #
@@ -421,6 +425,16 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 #########################################################################
 class PhaseLockingOutput(CommonOutProcessing):
     def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
+        '''
+        Класс возращает  степень фазовой модуляции по заданной выборке переменных
+
+        :param mask:
+        :param ThetaFreq:
+        :param dt:
+        :param kwargs:
+        '''
+
+
         super(PhaseLockingOutput, self).__init__(mask, **kwargs)
 
 

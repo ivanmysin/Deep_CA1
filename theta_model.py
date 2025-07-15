@@ -14,11 +14,20 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput
+# from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
+
 import myconfig
 
 
 def get_params():
+
+    TestPopulation = 'CA1 O-LM'
+    output_masks = {
+        'full_target' : [],
+        'only_R' : [],
+    }
+
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
     neurons_params.rename(
@@ -28,8 +37,8 @@ def get_params():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
-    populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='theta_model')
-    populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
+    populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
+    # populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
     populations = populations[populations['Npops'] > 0]
 
     params = {}
@@ -41,14 +50,29 @@ def get_params():
 
     generators_params = []
 
+    print(populations.columns)
+
     for pop_idx, pop in populations.iterrows():
 
-        pop_type = pop['type']
-        if 'generator' in pop_type:
+        if pop['Simulated_Type'] == 'generator':
             generators_params.append(pop.to_dict())
             continue
 
-        p = neurons_params[neurons_params["Neuron Type"] == pop_type]
+        hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
+
+        for m in output_masks.values():
+            m.append(False)
+
+        if hippocampome_pop_type == TestPopulation:
+            output_masks['only_R'][-1] = True
+            output_masks['full_target'][-1] = False
+        else:
+            output_masks['only_R'][-1] = False
+            output_masks['full_target'][-1] = True
+
+
+
+        p = neurons_params[neurons_params["Neuron Type"] == hippocampome_pop_type]
 
         try:
             dimpopparams['I_ext'].append(pop['I_ext'])
@@ -91,25 +115,11 @@ def get_params():
 
     for pre_idx, (_, pre_pop) in enumerate(populations.iterrows()):
         for post_idx, (_, post_pop) in enumerate(populations.iterrows()):
-            if 'generator' in post_pop['type']:
+            if post_pop['Simulated_Type'] == 'generator':
                 continue
 
-            pre_type = pre_pop['type']
-            post_type = post_pop['type']
-
-            if pre_type == "CA3_generator":
-                pre_type = 'CA3 Pyramidal'
-
-            if pre_type == "CA1 Pyramidal_generator":
-                pre_type = 'CA1 Pyramidal'
-
-            if pre_type == "MEC_generator":
-                pre_type = 'EC LIII Pyramidal'
-
-            if pre_type == "LEC_generator":
-                pre_type = 'EC LIII Pyramidal'
-
-
+            pre_type = pre_pop['Hippocampome_Neurons_Names']
+            post_type = post_pop['Hippocampome_Neurons_Names']
 
             syn = synapses_params[(synapses_params['Presynaptic Neuron Type'] == pre_type) & (
                     synapses_params['Postsynaptic Neuron Type'] == post_type)]
@@ -148,11 +158,14 @@ def get_params():
 
     populations['ThetaFreq'] = myconfig.ThetaFreq
 
-    target_params = populations[~populations['type'].astype(str).str.contains('generator')]
+    target_selectors = output_masks['full_target'] + [False, ]* len(generators_params)
+    target_selectors = np.asarray(target_selectors, dtype='bool')
 
-    return params, generators_params, target_params
+    target_params = populations[ (populations['Simulated_Type'] == 'simulated') & target_selectors ]
+
+    return params, generators_params, target_params, output_masks
 ########################################################################
-def get_model(params, generators_params, dt):
+def get_model(params, generators_params, dt, output_masks):
     input = Input(shape=(None, 1), batch_size=1)
 
     generators = SpatialThetaGenerators(generators_params)(input)
@@ -160,13 +173,24 @@ def get_model(params, generators_params, dt):
                     return_sequences=True, stateful=True,
                     name="firings_outputs")(generators)
 
+    # output_masks = {
+    #     'full_target' : [],
+    #     'only_R' : [],
+    # }
+    # CommonOutProcessing, PhaseLockingOutput
+    full_target_output = CommonOutProcessing(output_masks['full_target'], name='full_target_output')(net_layer)
+    only_modulation_output = PhaseLockingOutput(
+                                    mask=output_masks['only_R'],
+                                    ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
+                                    name='only_modulation_output')(net_layer)
 
-    outputs = net_layer  # generators #
+    #outputs = net_layer  # generators #
+    outputs = [full_target_output, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = tf.keras.losses.MeanSquaredLogarithmicError(),
+        loss = [tf.keras.losses.MeanSquaredLogarithmicError(), tf.keras.losses.MeanSquaredError()],
     )
 
     return big_model
@@ -192,18 +216,24 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 ########################################################################
 batch_len = 12000
 nbatches = 20
-params, generators_params, target_params = get_params()
+params, generators_params, target_params, output_masks = get_params()
+
+print(len(target_params))
+
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
 with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Xtrain', data=Xtrain)
     dfile.create_dataset('Ytrain', data=Ytrain)
 
+Ytrain_R = np.zeros(shape=(nbatches, 1, 1), dtype=myconfig.DTYPE) + 0.3
 
-model = get_model(params, generators_params, myconfig.DT)
+Ytrain = [Ytrain, Ytrain_R]
 
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'big_model_{epoch:02d}.keras'
-filename_template = 'firings_{epoch:02d}.h5'
+model = get_model(params, generators_params, myconfig.DT, output_masks)
+
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
+filename_template = 'verified_theta_firings_{epoch:02d}.h5'
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
@@ -228,7 +258,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'history.h5', mode='w') as dfile:
+with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
 

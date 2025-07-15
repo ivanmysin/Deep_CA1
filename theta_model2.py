@@ -66,6 +66,9 @@ def get_params():
             generators_params.append(pop.to_dict())
             continue
 
+        if 'CA1 Pyramidal' in pop_type:
+            pop_type = 'CA1 Pyramidal'
+
         p = neurons_params[neurons_params["Neuron Type"] == pop_type]
 
         try:
