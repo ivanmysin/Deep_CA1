@@ -212,7 +212,7 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 
 ########################################################################
-batch_len = 12000
+batch_len = 12500
 nbatches = 20
 params, generators_params, target_params, output_masks = get_params()
 
