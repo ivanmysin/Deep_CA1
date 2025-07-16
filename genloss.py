@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import myconfig
 
+from tensorflow.keras import ops
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 bessel_i0 = tf.math.bessel_i0
@@ -19,6 +20,48 @@ argmax = tf.math.argmax
 
 PI = np.pi
 
+
+class WeightedMSE(tf.keras.Loss):
+    def __init__(self, weights, **kwargs):
+        super(WeightedMSE, self).__init__(**kwargs)
+        self.weights = tf.constant(weights, dtype=myconfig.DTYPE)
+
+        self.weights = tf.reshape(self.weights, shape=(1, 1, -1))
+
+    def call(self, y_true, y_pred):
+
+        d = ops.square(y_pred - y_true) * self.weights
+
+        loss = ops.mean(d, axis=-1)
+
+        return loss
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'weights': self.weights,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        weights = config['weights']
+
+        return cls(weights, **config)
+
+
+class WeightedLMSE(WeightedMSE):
+    def call(self, y_true, y_pred):
+
+        d = ops.square( ops.log(y_pred + 1.0) - ops.log(y_true + 1.0) ) * self.weights
+
+        loss = ops.mean(d, axis=-1)
+
+        return loss
+
+
+
+#####################################################################
 
 class SimplestKeepLayer(tf.keras.layers.Layer):
     def __init__(self, params):
@@ -462,7 +505,7 @@ class PhaseLockingOutput(CommonOutProcessing):
         return real_sim, imag_sim
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+        selected_firings = simulated_firings #   tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
         Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))

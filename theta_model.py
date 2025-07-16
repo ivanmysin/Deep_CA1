@@ -14,7 +14,7 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput,  WeightedMSE, WeightedLMSE
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 
 import myconfig
@@ -156,10 +156,10 @@ def get_params():
 
     populations['ThetaFreq'] = myconfig.ThetaFreq
 
-    target_selectors = output_masks['full_target'] + [False, ]* len(generators_params)
-    target_selectors = np.asarray(target_selectors, dtype='bool')
+    # target_selectors = output_masks['full_target'] + [False, ]* len(generators_params)
+    # target_selectors = np.asarray(target_selectors, dtype='bool')
 
-    target_params = populations[ (populations['Simulated_Type'] == 'simulated') & target_selectors ]
+    target_params = populations[ (populations['Simulated_Type'] == 'simulated')  ] # & target_selectors
 
     return params, generators_params, target_params, output_masks
 ########################################################################
@@ -171,24 +171,21 @@ def get_model(params, generators_params, dt, output_masks):
                     return_sequences=True, stateful=True,
                     name="firings_outputs")(generators)
 
-    # output_masks = {
-    #     'full_target' : [],
-    #     'only_R' : [],
-    # }
-    # CommonOutProcessing, PhaseLockingOutput
-    full_target_output = CommonOutProcessing(output_masks['full_target'], name='full_target_output')(net_layer)
     only_modulation_output = PhaseLockingOutput(
                                     mask=output_masks['only_R'],
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                     name='only_modulation_output')(net_layer)
 
     # outputs = generators # net_layer  #
-    outputs = [full_target_output, only_modulation_output]  # generators #
+    outputs = [net_layer, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
+
+    lmse_loss = WeightedLMSE(output_masks['full_target'])
+    mse_loss = WeightedLMSE(output_masks['only_R'])
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [tf.keras.losses.MeanSquaredLogarithmicError(), tf.keras.losses.MeanSquaredError()],
+        loss = [lmse_loss, mse_loss],
     )
 
     return big_model
@@ -224,7 +221,7 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Xtrain', data=Xtrain)
     dfile.create_dataset('Ytrain', data=Ytrain)
 
-Ytrain_R = np.zeros(shape=(nbatches, 1, 1), dtype=myconfig.DTYPE) + 0.3
+Ytrain_R = np.zeros(shape=(nbatches, 1, Ytrain.shape[-1]), dtype=myconfig.DTYPE) + 0.3
 
 Ytrain = [Ytrain, Ytrain_R]
 
