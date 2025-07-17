@@ -14,7 +14,7 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput,  WeightedMSE, WeightedLMSE
+from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput,  WeightedMSE, WeightedLMSE, FiringsMeanOutRanger
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 
 import myconfig
@@ -169,6 +169,7 @@ def get_model(params, generators_params, dt, output_masks):
     generators = SpatialThetaGenerators(generators_params)(input)
     net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
                     return_sequences=True, stateful=True,
+                    activity_regularizer=FiringsMeanOutRanger(HighFiringRateBound=40.0),
                     name="firings_outputs")(generators)
 
     only_modulation_output = PhaseLockingOutput(
@@ -180,15 +181,18 @@ def get_model(params, generators_params, dt, output_masks):
     outputs = [net_layer, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
+    firing_model = Model(inputs=input, outputs=net_layer)
+
     lmse_loss = WeightedLMSE(output_masks['full_target'])
-    mse_loss = WeightedLMSE(output_masks['only_R'])
+    mse_loss = WeightedMSE(output_masks['only_R'])
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
         loss = [lmse_loss, mse_loss],
+        loss_weights = [1.0, 2.0],
     )
 
-    return big_model
+    return big_model, firing_model
 
 def get_dataset(target_params, dt, batch_len, nbatches):
     duration = int(batch_len * nbatches * dt)
@@ -225,15 +229,8 @@ Ytrain_R = np.zeros(shape=(nbatches, 1, Ytrain.shape[-1]), dtype=myconfig.DTYPE)
 
 Ytrain = [Ytrain, Ytrain_R]
 
-model = get_model(params, generators_params, myconfig.DT, output_masks)
+model, firing_model = get_model(params, generators_params, myconfig.DT, output_masks)
 
-# Ypred = model.predict(Xtrain, batch_size=1)
-#
-# print(Ypred[0].shape)
-# print(Ytrain[0].shape)
-# print('######################################')
-# print(Ypred[1].shape)
-# print(Ytrain[1].shape)
 
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
 filename_template = 'verified_theta_firings_{epoch:02d}.h5'
@@ -249,11 +246,11 @@ callbacks = [
             save_best_only=False,
             save_freq = 'epoch'),
 
-        # SaveFirings( firing_model=model,
-        #              t_full=Xtrain.reshape(1, -1, 1),
-        #              path=myconfig.OUTPUTSPATH_FIRINGS,
-        #              filename_template=filename_template,
-        #              save_freq = 10),
+        SaveFirings( firing_model=firing_model,
+                     t_full=Xtrain.reshape(1, -1, 1),
+                     path=myconfig.OUTPUTSPATH_FIRINGS,
+                     filename_template=filename_template,
+                     save_freq = 10),
 
         TerminateOnNaN(),
 ]
