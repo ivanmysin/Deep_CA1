@@ -189,7 +189,7 @@ def get_model(params, generators_params, dt, output_masks):
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
         loss = [lmse_loss, mse_loss],
-        loss_weights = [1.0, 10.0],
+        loss_weights = [1.0, 30.0],
     )
 
     return big_model, firing_model
