@@ -59,14 +59,14 @@ def get_params():
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
 
         for m in output_masks.values():
-            m.append(False)
+            m.append(True)
 
-        if hippocampome_pop_type == TestPopulation:
-            output_masks['only_R'][-1] = True
-            output_masks['full_target'][-1] = False
-        else:
-            output_masks['only_R'][-1] = False
-            output_masks['full_target'][-1] = True
+        # if hippocampome_pop_type == TestPopulation:
+        #     output_masks['only_R'][-1] = True
+        #     output_masks['full_target'][-1] = False
+        # else:
+        #     output_masks['only_R'][-1] = False
+        #     output_masks['full_target'][-1] = True
 
 
 
@@ -161,6 +161,9 @@ def get_params():
 
     target_params = populations[ (populations['Simulated_Type'] == 'simulated')  ] # & target_selectors
 
+    #test_idx = target_params[target_params['Hippocampome_Neurons_Names'] == TestPopulation].index[0]
+    target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
+
     return params, generators_params, target_params, output_masks
 ########################################################################
 def get_model(params, generators_params, dt, output_masks):
@@ -217,7 +220,7 @@ batch_len = 12500
 nbatches = 20
 params, generators_params, target_params, output_masks = get_params()
 
-# pprint( generators_params )
+#pprint( target_params['R'] )
 
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
