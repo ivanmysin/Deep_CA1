@@ -61,9 +61,9 @@ def get_params():
         for m in output_masks.values():
             m.append(True)
 
-        # if hippocampome_pop_type == TestPopulation:
-        #     output_masks['only_R'][-1] = True
-        #     output_masks['full_target'][-1] = False
+        if hippocampome_pop_type == TestPopulation:
+            # output_masks['only_R'][-1] = True
+            output_masks['full_target'][-1] = False
         # else:
         #     output_masks['only_R'][-1] = False
         #     output_masks['full_target'][-1] = True
