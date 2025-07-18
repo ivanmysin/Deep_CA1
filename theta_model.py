@@ -213,7 +213,7 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 
     Rs =  target_params['R'].values.astype(myconfig.DTYPE).reshape(1, 1, Y.shape[-1])
-    Ytrain_R = np.zeros(shape=(nbatches, 1, Ytrain.shape[-1]), dtype=myconfig.DTYPE) + Rs
+    Ytrain_R = np.zeros(shape=(nbatches, 1, Y.shape[-1]), dtype=myconfig.DTYPE) + Rs
 
     Y = [Y, Ytrain_R]
 
