@@ -156,12 +156,9 @@ def get_params():
 
     populations['ThetaFreq'] = myconfig.ThetaFreq
 
-    # target_selectors = output_masks['full_target'] + [False, ]* len(generators_params)
-    # target_selectors = np.asarray(target_selectors, dtype='bool')
+    target_params = populations[ (populations['Simulated_Type'] == 'simulated')  ]
 
-    target_params = populations[ (populations['Simulated_Type'] == 'simulated')  ] # & target_selectors
 
-    #test_idx = target_params[target_params['Hippocampome_Neurons_Names'] == TestPopulation].index[0]
     # target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
 
     return params, generators_params, target_params, output_masks
@@ -186,8 +183,8 @@ def get_model(params, generators_params, dt, output_masks):
 
     firing_model = Model(inputs=input, outputs=net_layer)
 
-    lmse_loss = WeightedLMSE(output_masks['full_target'])
-    mse_loss = WeightedMSE(output_masks['only_R'])
+    lmse_loss = tf.keras.losses.MeanSquaredLogarithmicError()   # # WeightedLMSE(output_masks['full_target'])
+    mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
@@ -240,8 +237,9 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
 model, firing_model = get_model(params, generators_params, myconfig.DT, output_masks)
 
 
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'verified_theta_model_{epoch:02d}.keras'
-filename_template = 'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
+filename_template = 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
 
