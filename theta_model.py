@@ -162,7 +162,7 @@ def get_params():
     target_params = populations[ (populations['Simulated_Type'] == 'simulated')  ] # & target_selectors
 
     #test_idx = target_params[target_params['Hippocampome_Neurons_Names'] == TestPopulation].index[0]
-    target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
+    # target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
 
     return params, generators_params, target_params, output_masks
 ########################################################################
@@ -210,6 +210,13 @@ def get_dataset(target_params, dt, batch_len, nbatches):
     X = t.numpy().reshape(nbatches, batch_len, 1)
     Y = target_firings.numpy().reshape(nbatches, batch_len, -1)
 
+
+
+    Rs =  target_params['R'].values.astype(myconfig.DTYPE).reshape(1, 1, Y.shape[-1])
+    Ytrain_R = np.zeros(shape=(nbatches, 1, Ytrain.shape[-1]), dtype=myconfig.DTYPE) + Rs
+
+    Y = [Y, Ytrain_R]
+
     return X, Y
 
 
@@ -220,17 +227,15 @@ batch_len = 12500
 nbatches = 20
 params, generators_params, target_params, output_masks = get_params()
 
-#pprint( target_params['R'] )
+
 
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
 with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Xtrain', data=Xtrain)
-    dfile.create_dataset('Ytrain', data=Ytrain)
+    dfile.create_dataset('Ytrain', data=Ytrain[0])
+    dfile.create_dataset('Ytrain_R', data=Ytrain[1])
 
-Ytrain_R = np.zeros(shape=(nbatches, 1, Ytrain.shape[-1]), dtype=myconfig.DTYPE) + 0.3
-
-Ytrain = [Ytrain, Ytrain_R]
 
 model, firing_model = get_model(params, generators_params, myconfig.DT, output_masks)
 
