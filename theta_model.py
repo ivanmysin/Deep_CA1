@@ -163,8 +163,10 @@ def get_params():
 
     return params, generators_params, target_params, output_masks
 ########################################################################
-def get_model(params, generators_params, dt, output_masks):
+def get_model(params, generators_params, dt, target_params):
     input = Input(shape=(None, 1), batch_size=1)
+
+    mean_firings_rates = [fr for fr in target_params['OutPlaceFiringRate'] ]
 
     generators = SpatialThetaGenerators(generators_params)(input)
     net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
@@ -173,7 +175,7 @@ def get_model(params, generators_params, dt, output_masks):
                     name="firings_outputs")(generators)
 
     only_modulation_output = PhaseLockingOutput(
-                                    mask=output_masks['only_R'],
+                                    mean_firings_rates,
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                     name='only_modulation_output')(net_layer)
 
@@ -234,7 +236,7 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Ytrain_R', data=Ytrain[1])
 
 
-model, firing_model = get_model(params, generators_params, myconfig.DT, output_masks)
+model, firing_model = get_model(params, generators_params, myconfig.DT, target_params)
 
 
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'

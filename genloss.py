@@ -467,8 +467,8 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 #         return filtered_firings
 
 #########################################################################
-class PhaseLockingOutput(CommonOutProcessing):
-    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
+class PhaseLockingOutput(tf.keras.layers.Layer):
+    def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
         '''
         Класс возращает  степень фазовой модуляции по заданной выборке переменных
 
@@ -479,10 +479,11 @@ class PhaseLockingOutput(CommonOutProcessing):
         '''
 
 
-        super(PhaseLockingOutput, self).__init__(mask, **kwargs)
+        super(PhaseLockingOutput, self).__init__(**kwargs)
 
 
         self.ThetaFreq = tf.constant(ThetaFreq, dtype=myconfig.DTYPE)
+        self.MeanFirings = tf.constant(MeanFirings, dtype=myconfig.DTYPE)
         self.dt = tf.constant(dt, dtype=myconfig.DTYPE)
 
 
@@ -499,15 +500,15 @@ class PhaseLockingOutput(CommonOutProcessing):
 
         normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
 
-        real_sim = tf.reduce_sum(normed_firings * real, axis=1)
-        imag_sim = tf.reduce_sum(normed_firings * imag, axis=1)
+        real_sim = tf.reduce_mean(normed_firings * real, axis=1)
+        imag_sim = tf.reduce_mean(normed_firings * imag, axis=1)
 
         return real_sim, imag_sim
 
     def call(self, simulated_firings):
         selected_firings = simulated_firings #   tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
-        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
+        Rsim = 2.0 * sqrt(real_sim**2 + imag_sim**2 + 0.0000001) / self.MeanFirings
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
         return Rsim
 
