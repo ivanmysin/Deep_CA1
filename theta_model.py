@@ -171,7 +171,7 @@ def get_model(params, generators_params, dt, target_params):
     generators = SpatialThetaGenerators(generators_params)(input)
     net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
                     return_sequences=True, stateful=True,
-                    activity_regularizer=FiringsMeanOutRanger(HighFiringRateBound=200.0),
+                    # activity_regularizer=FiringsMeanOutRanger(HighFiringRateBound=200.0),
                     name="firings_outputs")(generators)
 
     only_modulation_output = PhaseLockingOutput(
