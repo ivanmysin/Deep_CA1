@@ -186,11 +186,11 @@ def get_model(params, generators_params, dt, target_params):
     firing_model = Model(inputs=input, outputs=net_layer)
 
     lmse_loss = tf.keras.losses.MeanSquaredLogarithmicError()   # # WeightedLMSE(output_masks['full_target'])
-    mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
+    # mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, mse_loss],
+        loss = lmse_loss, # [lmse_loss, mse_loss],
         loss_weights = [1.0, 1.0],
     )
 
@@ -263,7 +263,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=2000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain, epochs=4000, verbose=2, batch_size=1, callbacks=callbacks)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
 with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
