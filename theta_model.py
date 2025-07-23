@@ -14,7 +14,7 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutput,  WeightedMSE, WeightedLMSE, FiringsMeanOutRanger
+from genloss import SpatialThetaGenerators, PhaseLockingOutput,  WeightedMSE, WeightedLMSE, FiringsMeanOutRanger
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 
 import myconfig
@@ -222,25 +222,50 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 
 ########################################################################
-batch_len = 12500
-nbatches = 20
-params, generators_params, target_params, output_masks = get_params()
-
-
-
-Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
-
-with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
-    dfile.create_dataset('Xtrain', data=Xtrain)
-    dfile.create_dataset('Ytrain', data=Ytrain[0])
-    dfile.create_dataset('Ytrain_R', data=Ytrain[1])
-
-
-model, firing_model = get_model(params, generators_params, myconfig.DT, target_params)
-
-
+IS_CREATE_MODEL = False
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
 filename_template = 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+
+model_path = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_10000.keras'
+initial_epoch = 10000
+Epoches = 10000
+
+if IS_CREATE_MODEL:
+    batch_len = 12500
+    nbatches = 20
+    params, generators_params, target_params, output_masks = get_params()
+
+
+
+    Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
+
+    with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
+        dfile.create_dataset('Xtrain', data=Xtrain)
+        dfile.create_dataset('Ytrain', data=Ytrain[0])
+        dfile.create_dataset('Ytrain_R', data=Ytrain[1])
+
+
+    model, firing_model = get_model(params, generators_params, myconfig.DT, target_params)
+
+    initial_epoch = 0
+
+else:
+
+    model = load_model(model_path)
+
+    firings_outputs_layer = model.get_layer('firings_outputs').output
+    firing_model = Model(inputs=model.input, outputs=firings_outputs_layer)
+
+    with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='r') as dfile:
+        Xtrain = dfile['Xtrain'][:]
+        Ytrain_1 = dfile['Ytrain'][:]
+        Ytrain_2 = dfile['Ytrain_R'][:]
+
+    Ytrain = [Ytrain_1, Ytrain_2]
+
+    Epoches = Epoches + initial_epoch
+
+
 
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
@@ -263,7 +288,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=4000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain, epochs=Epoches, verbose=2, batch_size=1, callbacks=callbacks, initial_epoch=initial_epoch)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
 with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
