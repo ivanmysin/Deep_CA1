@@ -19,14 +19,15 @@ fig_name = 'fig4'
 
 
 neuron_idx_in_sols = []
-
-neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='theta_model')
-neurons_params = neurons_params[neurons_params['Npops'] == 1]['neurons'].to_list()
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
+neurons_params['Hippocampome_Neurons_Names'] = neurons_params['Hippocampome_Neurons_Names'].str.strip()
+neurons_params['Model_Neurons_Names'] = neurons_params['Model_Neurons_Names'].str.strip()
+neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
+neurons_params = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Names'].to_list()
 for neuron_name in plotting_colors["neurons_order"]:
     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
-
-T_st_idx = 0 # start of t
+T_st_idx = 200000 # start of t
 
 source_hfile = h5py.File('../outputs/firings/theta_freq_variation.h5', mode='r')
 
@@ -34,7 +35,7 @@ theta_freqs = sorted( source_hfile.keys(),  key=lambda x: float(x) )
 theta_phases4plots = np.linspace(-np.pi, np.pi, 100)
 sine = 0.5 * (np.cos(theta_phases4plots) + 1)
 
-duration = 1600
+duration = 2500
 DT = 0.01
 
 fig, axes = plt.subplots(nrows=len(plotting_colors["neurons_order"]), ncols=len(theta_freqs)+1, \
@@ -44,7 +45,7 @@ for freq_idx, freq in enumerate( theta_freqs ):
     print(freq)
     full_firings = source_hfile[freq]['firings'][:]
 
-    t = np.linspace(0, duration, full_firings.shape[0]) #[T_st_idx:]
+    t = np.linspace(0, duration, full_firings.shape[0])[T_st_idx:]
 
     freq = float(freq)
     theta_phases = (2 * np.pi * 0.001 * t * freq) % (2 * np.pi)

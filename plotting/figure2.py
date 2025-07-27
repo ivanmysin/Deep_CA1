@@ -14,10 +14,18 @@ params = {'legend.fontsize': '12',
 plt.rcParams.update(params)
 TEXTFONTSIZE = 'xx-large'
 
+# neuron_idx_in_sols = []
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
+neurons_params['Hippocampome_Neurons_Names'] = neurons_params['Hippocampome_Neurons_Names'].str.strip()
+neurons_params['Model_Neurons_Names'] = neurons_params['Model_Neurons_Names'].str.strip()
+# neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
+# neurons_params = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Names'].to_list()
+# for neuron_name in plotting_colors["neurons_order"]:
+#     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
 
 dt = 0.01
-duration = 2400
+duration = 2500
 
 fig_name = 'fig2'
 
@@ -25,8 +33,10 @@ neurons_order = plotting_colors["neurons_order"]
 path = '../outputs/firings/base_output.h5'
 
 hf = h5py.File(path, 'r')
-t = np.linspace(0, duration, 240000 )
+t = np.linspace(0, duration, int(duration / dt) )
 sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)
+
+print(hf.keys())
 
 gridspec_kw = {
     "width_ratios" : [1.0, 0.9, 1.0, 0.9],
@@ -55,7 +65,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
          col_idx = 2
 
      neuron_name_title = neuron_name
-     if len(neuron_name_title) > 17:
+     if len(neuron_name_title) > 12:
          neuron_name_title = neuron_name_title[:5] + neuron_name_title[5:].replace(" ", "\n", 1)
 
      ax2 = axes[row_idx, col_idx]
@@ -76,6 +86,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
          ax.set_ylabel("имп./сек.")
 
      print(neuron_name)
+
 
      firings = hf[neuron_name]['firings'][:]
      target = hf[neuron_name]['target_firing'][:]
@@ -112,3 +123,4 @@ fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=200)
 hf.close()
 
 plt.show()
+

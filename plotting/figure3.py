@@ -15,7 +15,7 @@ plt.rcParams.update(params)
 TEXTFONTSIZE = 'xx-large'
 
 dt = 0.01
-duration = 2400
+duration = 2500
 
 fig_name = 'fig3'
 
@@ -24,7 +24,7 @@ neurons_order = plotting_colors["neurons_order"]
 path = '../outputs/firings/base_output.h5'
 hf = h5py.File(path, 'r')
 
-t = np.linspace(0, duration, 240000 )
+t = np.linspace(0, duration, int(duration / dt) )
 sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)
 
 
@@ -49,7 +49,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
 
     neuron_name_title = neuron_name
-    if len(neuron_name_title) > 17:
+    if len(neuron_name_title) > 12:
         neuron_name_title = neuron_name_title[:5] +  neuron_name_title[5:].replace(" ", "\n", 1)
 
 
@@ -69,10 +69,10 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
 
     for pre_name in hf[neuron_name].keys():
-        if pre_name == 'CA3_generator':
+        if pre_name == 'CA3 Input':
             pre_name = 'CA3 Pyramidal'
 
-        if pre_name == 'MEC_generator':
+        if pre_name == 'MEC Input':
             pre_name = 'EC LIII Pyramidal'
 
         if not ((pre_name in plotting_colors["neurons_order"]) or (pre_name in plotting_colors["generators_order"])):
@@ -80,12 +80,12 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
 
         if pre_name == "CA3 Pyramidal":
-            g_syn = hf[neuron_name]['CA3_generator'][:]
+            g_syn = hf[neuron_name]['CA3 Input'][:]
         elif pre_name == "EC LIII Pyramidal":
-            g_syn = hf[neuron_name]['MEC_generator'][:]
+            g_syn = hf[neuron_name]['MEC Input'][:]
         else:
             g_syn =  hf[neuron_name][pre_name][:]
-        if pre_name in ["CA1 Pyramidal (deep)", "CA1 Pyramidal (superficial)" , "CA3 Pyramidal", "EC LIII Pyramidal"] :
+        if pre_name in ["Pyramidal (deep)", "Pyramidal (superficial)" , "CA3 Pyramidal", "EC LIII Pyramidal"] :
             ax = axes[row_idx, plot_idx]
         else:
             ax = axes[row_idx+1, plot_idx]
@@ -106,8 +106,13 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
     sine_amples_inh = 0.7*np.max(inh_g[10000:]) * sine
     axes[row_idx+1, plot_idx].plot(t, sine_amples_inh, linestyle="--", label="cos", color='black')
 
-    axes[row_idx, plot_idx].set_ylim(0.0, 1.1*np.max(exc_g[10000:]))
-    axes[row_idx+1, plot_idx].set_ylim(0.0, 1.1*np.max(inh_g[10000:]))
+    max_exc_g = np.max(exc_g[10000:])
+    if max_exc_g > 0.00001:
+        axes[row_idx, plot_idx].set_ylim(0.0, 1.1*max_exc_g)
+
+    max_inh_g = np.max(inh_g[10000:])
+    if max_inh_g > 0.00001:
+        axes[row_idx+1, plot_idx].set_ylim(0.0, 1.1*max_inh_g)
 
 for ax1 in axes[:, 1:]:
     for ax in ax1:

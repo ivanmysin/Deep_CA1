@@ -5,7 +5,7 @@ from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators
 import matplotlib.pyplot as plt
 import h5py
 
-model_path = './outputs/big_models/base_big_model_2000.keras'
+model_path = './outputs/big_models/base_theta_model.keras'
 result_file = './outputs/firings/theta_freq_variation.h5'
 
 firing_file = h5py.File(result_file, mode='w')
@@ -16,7 +16,7 @@ generators_params = get_gen_params(model_path)
 dt = myconfig.DT
 
 generators = SpatialThetaGenerators(generators_params)
-tnp = np.arange(0, 1600, dt, dtype=np.float32).reshape(1, -1, 1)
+tnp = np.arange(0, 2500, dt, dtype=np.float32).reshape(1, -1, 1)
 
 generators_firings = generators.call(tnp)
 
