@@ -46,6 +46,6 @@ for pre_idx, (_, pre_pop) in enumerate(populations.iterrows()):
             if len(syn) == 0:
                 continue
             else:
-                print(pre_type, '->', post_type, syn)
+                print(pre_type, '->', post_type, syn['Uinc'])
 
 
