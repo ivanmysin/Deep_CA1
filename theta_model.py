@@ -37,6 +37,11 @@ def get_params():
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
+    potconn_file_path = './parameters/PetentialConnections.csv'
+    potential_connections = pd.read_csv(potconn_file_path)
+    potential_connections['Presynaptic Neuron Type'] = potential_connections['Presynaptic Neuron Type'].str.strip()
+    potential_connections['Postsynaptic Neuron Type'] = potential_connections['Postsynaptic Neuron Type'].str.strip()
+
     populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
     # populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
     populations = populations[populations['Npops'] > 0]
@@ -124,7 +129,12 @@ def get_params():
 
             if len(syn) == 0:
                 # print("Connection from ", pre_type, "to", post_type, "not finded!")
-                continue
+
+                syn = potential_connections[(potential_connections['Presynaptic Neuron Type'] == pre_type) & (
+                        potential_connections['Postsynaptic Neuron Type'] == post_type)]
+
+                if len(syn) == 0:
+                    continue
 
             params['pconn'][pre_idx, post_idx] = 1 # syn['pconn'].values[0]
             Uinc = syn['Uinc'].values[0]
@@ -223,8 +233,8 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 ########################################################################
 IS_CREATE_MODEL = True
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
-filename_template = 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'pot_conns_add_R_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
+filename_template =  'pot_conns_add_R_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
 model_path = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_10000.keras'
 initial_epoch = 10000
