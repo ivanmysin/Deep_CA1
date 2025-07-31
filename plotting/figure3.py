@@ -21,7 +21,7 @@ fig_name = 'fig3'
 
 neurons_order = plotting_colors["neurons_order"]
 
-path = '../outputs/firings/base_output.h5'
+path = '../outputs/firings/output.h5'
 hf = h5py.File(path, 'r')
 
 t = np.linspace(0, duration, int(duration / dt) )

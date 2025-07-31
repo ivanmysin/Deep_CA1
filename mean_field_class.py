@@ -148,6 +148,7 @@ class MeanFieldNetwork(Layer):
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer=tf.keras.initializers.Constant(gsyn_max),
                                         # regularizer=self.gmax_regulizer,  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                        regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=tf.keras.constraints.NonNeg(),
