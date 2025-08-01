@@ -43,13 +43,13 @@ class SaveFirings(Callback):
 @tf.keras.utils.register_keras_serializable(package="ZeroWallReg")
 class ZeroWallReg(Regularizer):
 
-    def __init__(self, lw=0.01, close_coeff=100, eps=0.00001):
+    def __init__(self, lw=0.01, close_coeff=100, eps=0.001):
         self.close_coeff = close_coeff
         self.lw = lw
         self.eps = eps
 
     def __call__(self, x):
-        return tf.reduce_sum(-self.lw * tf.math.log( (x + self.eps) * self.close_coeff))
+        return tf.reduce_sum(-self.lw * tf.math.log( (x * self.close_coeff) + self.eps ) )
 
     def get_config(self):
         config = {
