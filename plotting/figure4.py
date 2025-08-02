@@ -86,7 +86,7 @@ for freq_idx, freq in enumerate( theta_freqs ):
 
         firings = full_firings[T_st_idx:, neuron_idx_in_sols[neuron_idx]]
 
-        firings_hist, firings_bins = np.histogram(theta_phases, bins=20, weights=firings, density=True, range=[-np.pi, np.pi])
+        firings_hist, firings_bins = np.histogram(theta_phases, bins=50, weights=firings, density=True, range=[-np.pi, np.pi])
         firings_bins = 0.5*(firings_bins[:-1] + firings_bins[1:])
         ax.plot(firings_bins, firings_hist, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, label="Симуляция")
 
