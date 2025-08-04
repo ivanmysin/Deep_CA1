@@ -162,7 +162,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=dt_dim), # tf.keras.constraints.NonNeg(),
+                                     constraint=MinMaxWeights(min=6.0, max=240.0),
                                      name=f"tau_f")
 
         self.tau_d = self.add_weight(shape=tf.keras.ops.shape(tau_d),
@@ -170,7 +170,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=dt_dim), # tf.keras.constraints.NonNeg(),
+                                     constraint=MinMaxWeights(min=2.0, max=15.0),
                                      name=f"tau_d")
 
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),
@@ -178,7 +178,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
+                                     constraint=MinMaxWeights(min=91.0, max=1300.0),
                                      name=f"tau_r")
 
         self.Uinc = self.add_weight(shape=tf.keras.ops.shape(Uinc),
@@ -186,7 +186,7 @@ class MeanFieldNetwork(Layer):
                                     # regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
                                     trainable=True,
                                     dtype=myconfig.DTYPE,
-                                    constraint=MinMaxWeights(min=0, max=1),  # ZeroOnesWeights(),
+                                    constraint=MinMaxWeights(min=0.04, max=0.4),
                                     name=f"Uinc")
 
         synaptic_matrix_shapes = tf.shape(self.gsyn_max)
