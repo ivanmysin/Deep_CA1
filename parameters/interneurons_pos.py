@@ -1,9 +1,13 @@
+import sys
+sys.path.append('../')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.cluster.vq import kmeans
 import pickle
 import os
+
+os.chdir("../")
 import myconfig
 
 
@@ -48,7 +52,9 @@ def main():
 
     for type_idx, cells_pop in interneurons_types.iterrows():
         if str(cells_pop["neurons"]) == "CA1 Pyramidal": continue
-        if not cells_pop["is_include"]: continue
+        if not cells_pop["is_include"]:
+            #print(cells_pop)
+            continue
 
         # if  str(cells_pop["neurons"]) == "CA1 Oriens-Alveus": continue  #!!!!!!!!!!!!!!!!!!!
 
@@ -59,11 +65,17 @@ def main():
         for cell_idx in range(cells_pop["Npops"]):
             print(cells_pop["neurons"])
 
+            cell_pos_dv = selected[cell_idx, 1]
+
+            if cell_pos_dv < myconfig.DV_MIN or cell_pos_dv > myconfig.DV_MAX:
+                continue
+
+
             int_cell = {
                 "type": cells_pop["neurons"],
 
                 "x_anat": selected[cell_idx, 0],
-                "y_anat": selected[cell_idx, 1],
+                "y_anat": cell_pos_dv,
                 "z_anat": 0,
 
                 "ThetaFreq" : myconfig.ThetaFreq,
@@ -99,5 +111,4 @@ def main():
 
 
 if __name__ == "__main__":
-    os.chdir("../")
     main()

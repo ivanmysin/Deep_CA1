@@ -1,10 +1,17 @@
 import tensorflow as tf
 import myconfig
 from tensorflow.keras.layers import Layer, RNN
+from tensorflow.keras.constraints import Constraint
 
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 from pprint import pprint
+
+class ZeroOnesWeights(Constraint):
+    """Ограничивает веса модели значениями между 0 и 1."""
+
+    def __call__(self, w):
+        return tf.clip_by_value(w, clip_value_min=0, clip_value_max=1)
 
 
 class BaseSynapse(Layer):
@@ -17,11 +24,14 @@ class BaseSynapse(Layer):
         self.Cm = tf.convert_to_tensor( params['Cm'], dtype=myconfig.DTYPE )
         self.Erev_min = tf.convert_to_tensor( params['Erev_min'], dtype=myconfig.DTYPE )
         self.Erev_max = tf.convert_to_tensor( params['Erev_max'], dtype=myconfig.DTYPE )
+        self.Vrest = tf.convert_to_tensor( params['Vrest'], dtype=myconfig.DTYPE )
+        self.gl = tf.convert_to_tensor( params['gl'], dtype=myconfig.DTYPE )
 
         try:
             self.pop_idx = params['pop_idx']
         except:
             self.pop_idx = 0
+
 
         self.units = tf.size(self.pconn)
 
@@ -32,7 +42,7 @@ class BaseSynapse(Layer):
 
 
 
-        self.output_size = 2
+        self.output_size = 1
         self.state_size = []
 
     def build(self, input_shape):
@@ -49,12 +59,16 @@ class TsodycsMarkramSynapse(BaseSynapse):
         super(TsodycsMarkramSynapse, self).__init__(params, dt=dt, mask=mask, **kwargs)
 
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE )
-        self.gmax_regulizer = tf.keras.regularizers.L2(l2=0.001)
+        self.gmax_regulizer = tf.keras.regularizers.L2(l2=1e-9)
         gsyn_max = tf.convert_to_tensor(params['gsyn_max'])
+        tau_f = tf.convert_to_tensor(params['tau_f'])
+        tau_d = tf.convert_to_tensor(params['tau_d'])
+        tau_r = tf.convert_to_tensor(params['tau_r'])
+        Uinc = tf.convert_to_tensor(params['Uinc'])
 
         self.gsyn_max = self.add_weight(shape = tf.keras.ops.shape(gsyn_max),
                                         initializer = tf.keras.initializers.Constant(gsyn_max),
-                                        regularizer = self.gmax_regulizer,
+                                        regularizer = self.gmax_regulizer, #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                         trainable = True,
                                         dtype = myconfig.DTYPE,
                                         constraint = tf.keras.constraints.NonNeg(),
@@ -62,26 +76,50 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
         #self.gsyn_max = tf.keras.Variable( params['gsyn_max'], name="gsyn_max", trainable=True, dtype=myconfig.DTYPE)
-        self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
-        self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
-        self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
-        self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
+        # self.tau_f = tf.keras.Variable( params['tau_f'], name="tau_f", trainable=False, dtype=myconfig.DTYPE)
+        # self.tau_d = tf.keras.Variable( params['tau_d'], name="tau_d", trainable=False, dtype=myconfig.DTYPE )
+        # self.tau_r = tf.keras.Variable( params['tau_r'], name="tau_r", trainable=False, dtype=myconfig.DTYPE )
+        # self.Uinc  = tf.keras.Variable( params['Uinc'], name="Uinc", trainable=False, dtype=myconfig.DTYPE )
 
+        self.tau_f = self.add_weight(shape = tf.keras.ops.shape(tau_f),
+                                     initializer=tf.keras.initializers.Constant(tau_f),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_f_{self.pop_idx}")
 
+        self.tau_d = self.add_weight(shape = tf.keras.ops.shape(tau_d),
+                                     initializer=tf.keras.initializers.Constant(tau_d),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_d_{self.pop_idx}")
 
+        self.tau_r = self.add_weight(shape = tf.keras.ops.shape(tau_r),
+                                     initializer=tf.keras.initializers.Constant(tau_r),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=tf.keras.constraints.NonNeg(),
+                                     name=f"tau_r_{self.pop_idx}")
 
+        self.Uinc = self.add_weight(shape = tf.keras.ops.shape(Uinc),
+                                     initializer=tf.keras.initializers.Constant(Uinc),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     constraint=ZeroOnesWeights(),
+                                     name=f"Uinc_{self.pop_idx}")
+
+        self.Vbias = self.add_weight(shape = [1, ],
+                                        initializer = tf.keras.initializers.Zeros(),
+                                        trainable = True,
+                                        dtype = myconfig.DTYPE,
+                                        # constraint = tf.keras.constraints.NonNeg(),
+                                        name = f"Vbias_{self.pop_idx}")
+
+        self.state_size = [self.units, self.units, self.units, 1]
 
     def build(self, input_shape):
         super(TsodycsMarkramSynapse, self).build(input_shape)
-
-        self.tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
-        self.state_size = [self.units, self.units, self.units]
-
-        self.exp_tau_d = exp(-self.dt / self.tau_d)
-        self.exp_tau_f = exp(-self.dt / self.tau_f)
-        self.exp_tau_r = exp(-self.dt / self.tau_r)
-
-        #self.pconn = self.pconn
 
         self.built = True
 
@@ -97,6 +135,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
             "Erev": self.Erev,
             "Erev_min": self.Erev_min,
             "Erev_max": self.Erev_max,
+            "Vrest": self.Vrest,
+            "gl": self.gl,
             "Cm": self.Cm,
             "dt" : self.dt,
             "mask" : self.mask,
@@ -118,6 +158,8 @@ class TsodycsMarkramSynapse(BaseSynapse):
         params['Erev'] = config['Erev']['config']["value"]
         params['Erev_min'] = config['Erev_min']['config']["value"]
         params['Erev_max'] = config['Erev_max']['config']["value"]
+        params['Vrest'] = config['Vrest']['config']["value"]
+        params['gl'] = config['gl']['config']["value"]
         params['Cm'] = config['Cm']['config']["value"]
         params['pop_idx'] = config['pop_idx']
         dt = config['dt']['config']["value"]
@@ -127,57 +169,66 @@ class TsodycsMarkramSynapse(BaseSynapse):
 
 
     def call(self, inputs, states):
+
+        tau1r = tf.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
+        #self.state_size = [self.units, self.units, self.units, 1]
+
+        exp_tau_d = exp(-self.dt / self.tau_d)
+        exp_tau_f = exp(-self.dt / self.tau_f)
+        exp_tau_r = exp(-self.dt / self.tau_r)
+
         FR = tf.boolean_mask(inputs, self.mask, axis=1)
 
         R = states[0]
         U = states[1]
         A = states[2]
-
+        Vsyn = states[3]
 
         FRpre_normed =  FR * self.pconn * 0.001 * self.dt # to convert firings in Hz to probability
 
-        a_ = A * self.exp_tau_d
-        r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
-        u_ = U * self.exp_tau_f
+        a_ = A * exp_tau_d
+        r_ = 1 + (R - 1 + tau1r * A) * exp_tau_r  - tau1r * A
+        u_ = U * exp_tau_f
 
         U = u_ + self.Uinc * (1 - u_) * FRpre_normed
         A = a_ + U * r_ * FRpre_normed
         R = r_ - U * r_ * FRpre_normed
 
 
-        gsyn = tf.nn.relu(self.gsyn_max) * A
-
-        g_tot = tf.reduce_sum(gsyn, axis=-1) + 0.0000001
-
-        E = tf.reduce_sum(gsyn * self.Erev, axis=-1) / g_tot
-
-        E = (E - self.Erev_min) / (self.Erev_max - self.Erev_min) #- 1
-
+        gsyn = A * tf.nn.relu(self.gsyn_max)
+        g_tot = tf.reduce_sum(gsyn, axis=-1) + self.gl
+        gE = gsyn * self.Erev
+        E_inf = (tf.reduce_sum(gE, axis=-1) + self.gl*self.Vrest ) / g_tot
         tau = self.Cm / g_tot
 
-        #tau = tf.math.log(tau + 1.0)
-        tau = 2 * exp(-self.dt / tau) - 1
+        Vsyn =  Vsyn - (Vsyn - E_inf) * (1 - exp(-self.dt / tau))
 
-        output = tf.stack([E, tau], axis=-1)
+        Vout = Vsyn + self.Vbias
 
-        #self.add_loss(self.gmax_regulizer(self.gsyn_max))
+        output = (Vout - self.Erev_min) / (self.Erev_max - self.Erev_min)
+        output = tf.reshape(output, shape=(1, 1))
 
-        return output, [R, U, A]
+        #print(output.Vsyn())
 
-    def get_initial_state(self, batch_size=None):
+        return output, [R, U, A, Vsyn]
+
+    def get_initial_state(self, batch_size=1):
         shape = [batch_size, self.units]
-
-        #print(batch_size)
 
         R = tf.ones( shape, dtype=myconfig.DTYPE)
         U = tf.zeros( shape, dtype=myconfig.DTYPE)
         A = tf.zeros( shape, dtype=myconfig.DTYPE)
-        initial_state = [R, U, A]
+
+        Vsyn = tf.zeros((batch_size, 1), dtype=myconfig.DTYPE) + self.Vrest
+
+
+
+        initial_state = [R, U, A, Vsyn]
 
         return initial_state
 
-    def add_regularization_penalties(self):
-        self.add_loss(self.gmax_regulizer(self.gsyn_max))
+    # def add_regularization_penalties(self):
+    #     self.add_loss(self.gmax_regulizer(self.gsyn_max))
 
 
 if __name__ == "__main__":
@@ -192,6 +243,7 @@ if __name__ == "__main__":
         "tau_d" : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.5,
         'pconn' : np.zeros(Ns, dtype=myconfig.DTYPE) + 1.0,
         'Erev' : np.zeros(Ns, dtype=myconfig.DTYPE),
+        'Vrest' : np.zeros(1, dtype=myconfig.DTYPE) - 65.0,
         'Erev_min' : -75.0,
         'Erev_max' : 0.0,
         'Cm' : 0.114,
@@ -207,11 +259,7 @@ if __name__ == "__main__":
 
     model = tf.keras.Sequential()
     model.add(synapses_layer)
-
     model.build(input_shape=input_shape)
-
-
-
     X = np.random.rand(50).reshape(1, 10, 5)
 
     Y = model.predict(X)

@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../')
+
 import os
 import pickle
 import myconfig
@@ -8,7 +11,7 @@ def main():
     neurons = []
 
     for pfile in parameters_files:
-        pfile = "_" + pfile
+        #pfile = "_" + pfile
 
         with open(myconfig.STRUCTURESOFNET + pfile, mode="br") as file:
             neuron = pickle.load(file)

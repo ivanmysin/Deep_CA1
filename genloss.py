@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import myconfig
 
+from tensorflow.keras import ops
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
 bessel_i0 = tf.math.bessel_i0
@@ -19,65 +20,110 @@ argmax = tf.math.argmax
 
 PI = np.pi
 
+@tf.keras.saving.register_keras_serializable()
+class WeightedMSE(tf.keras.Loss):
+    def __init__(self, weights, **kwargs):
+        super(WeightedMSE, self).__init__(**kwargs)
+        self.weights = tf.constant(weights, dtype=myconfig.DTYPE)
 
-class SimplestKeepLayer(tf.keras.layers.Layer):
-    def __init__(self, params):
-        super(SimplestKeepLayer, self).__init__()
-        self.targets_vals = tf.constant(params, dtype=myconfig.DTYPE)
+        self.weights = tf.reshape(self.weights, shape=(1, 1, -1))
 
-    def call(self, t):
-        return self.targets_vals
+    def call(self, y_true, y_pred):
+
+        d = ops.square(y_pred - y_true) * self.weights
+
+        loss = ops.mean(d, axis=-1)
+
+        return loss
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            'targets_vals': self.targets_vals,
+            'weights': self.weights,
         })
         return config
 
     @classmethod
     def from_config(cls, config):
-        return cls(config['targets_vals'])
+        weights = config['weights']
 
-class RILayer(tf.keras.layers.Layer):
-    def __init__(self, params):
-        super(RILayer, self).__init__()
+        return cls(weights, **config)
 
-        R = []
-        ThetaPhase = []
 
-        for p in params:
-            R.append(p["R"])
-            ThetaPhase.append(p["ThetaPhase"])
+@tf.keras.saving.register_keras_serializable()
+class WeightedLMSE(WeightedMSE):
+    def call(self, y_true, y_pred):
 
-        self.R = tf.constant(R, dtype=myconfig.DTYPE)
-        self.ThetaPhase = tf.constant(ThetaPhase, dtype=myconfig.DTYPE)
+        d = ops.square( ops.log(y_pred + 1.0) - ops.log(y_true + 1.0) ) * self.weights
 
-        imag = R * sin(ThetaPhase)
-        real = R * cos(ThetaPhase)
+        loss = ops.mean(d, axis=-1)
 
-        self.targets_vals = tf.stack([real, imag], axis=1)
-
-    def call(self, t):
-        return self.targets_vals
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'R': self.R,
-            'ThetaPhase': self.ThetaPhase,
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
+        return loss
 
 
 
+#####################################################################
+#
+# class SimplestKeepLayer(tf.keras.layers.Layer):
+#     def __init__(self, params):
+#         super(SimplestKeepLayer, self).__init__()
+#         self.targets_vals = tf.constant(params, dtype=myconfig.DTYPE)
+#
+#     def call(self, t):
+#         return self.targets_vals
+#
+#     def get_config(self):
+#         config = super().get_config()
+#         config.update({
+#             'targets_vals': self.targets_vals,
+#         })
+#         return config
+#
+#     @classmethod
+#     def from_config(cls, config):
+#         return cls(config['targets_vals'])
+#
+# @tf.keras.saving.register_keras_serializable()
+# class RILayer(tf.keras.layers.Layer):
+#     def __init__(self, params):
+#         super(RILayer, self).__init__()
+#
+#         R = []
+#         ThetaPhase = []
+#
+#         for p in params:
+#             R.append(p["R"])
+#             ThetaPhase.append(p["ThetaPhase"])
+#
+#         self.R = tf.constant(R, dtype=myconfig.DTYPE)
+#         self.ThetaPhase = tf.constant(ThetaPhase, dtype=myconfig.DTYPE)
+#
+#         imag = R * sin(ThetaPhase)
+#         real = R * cos(ThetaPhase)
+#
+#         self.targets_vals = tf.stack([real, imag], axis=1)
+#
+#     def call(self, t):
+#         return self.targets_vals
+#
+#     def get_config(self):
+#         config = super().get_config()
+#         config.update({
+#             'R': self.R,
+#             'ThetaPhase': self.ThetaPhase,
+#         })
+#         return config
+#
+#     @classmethod
+#     def from_config(cls, config):
+#         return cls(**config)
+#
+#
+#
 
 
     #### inputs generators
+@tf.keras.saving.register_keras_serializable()
 class CommonGenerator(tf.keras.layers.Layer):
     def __init__(self, params, **kwargs):
         super(CommonGenerator, self).__init__(**kwargs)
@@ -108,6 +154,7 @@ class CommonGenerator(tf.keras.layers.Layer):
         config = super().get_config()
         return config
 
+@tf.keras.saving.register_keras_serializable()
 class VonMissesGenerator(CommonGenerator):
     def __init__(self, params):
         super(VonMissesGenerator, self).__init__(params)
@@ -170,39 +217,55 @@ class VonMissesGenerator(CommonGenerator):
     def from_config(cls, config):
         return cls(config)
 
+@tf.keras.saving.register_keras_serializable()
 class SpatialThetaGenerators(CommonGenerator):
     def __init__(self, params, **kwargs):
         super(SpatialThetaGenerators, self).__init__(params, **kwargs)
         self.ALPHA = 5.0
 
-        ThetaFreq = []
+        if type(params) == list:
 
-        OutPlaceFiringRate = []
-        OutPlaceThetaPhase = []
-        InPlacePeakRate = []
-        CenterPlaceField = []
-        Rs = []
-        SigmaPlaceField = []
-        SlopePhasePrecession = []
-        PrecessionOnset = []
+            ThetaFreq = []
 
-        self.n_outs = len(params)
+            OutPlaceFiringRate = []
+            OutPlaceThetaPhase = []
+            InPlacePeakRate = []
+            CenterPlaceField = []
+            Rs = []
+            SigmaPlaceField = []
+            SlopePhasePrecession = []
+            PrecessionOnset = []
 
-        for p in params:
-            OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
-            OutPlaceThetaPhase.append( p["OutPlaceThetaPhase"] )
-            InPlacePeakRate.append( p["InPlacePeakRate"] )
-            Rs.append(p["R"]),
-
-            CenterPlaceField.append(p["CenterPlaceField"])
-
-            SigmaPlaceField.append(p["SigmaPlaceField"])
-            SlopePhasePrecession.append(p["SlopePhasePrecession"])
-            PrecessionOnset.append(p["PrecessionOnset"])
+            self.n_outs = len(params)
 
 
-            ThetaFreq.append( p["ThetaFreq"] )
+            for p in params:
+                OutPlaceFiringRate.append( p["OutPlaceFiringRate"] )
+                OutPlaceThetaPhase.append( p["OutPlaceThetaPhase"] )
+                InPlacePeakRate.append( p["InPlacePeakRate"] )
+                Rs.append(p["R"]),
 
+                CenterPlaceField.append(p["CenterPlaceField"])
+
+                SigmaPlaceField.append(p["SigmaPlaceField"])
+                SlopePhasePrecession.append(p["SlopePhasePrecession"])
+                PrecessionOnset.append(p["PrecessionOnset"])
+
+
+                ThetaFreq.append( p["ThetaFreq"] )
+        else:
+            ThetaFreq = params['ThetaFreq']
+
+            OutPlaceFiringRate = params['OutPlaceFiringRate']
+            OutPlaceThetaPhase = params['OutPlaceThetaPhase']
+            InPlacePeakRate = params['InPlacePeakRate']
+            CenterPlaceField = params['CenterPlaceField']
+            Rs = params['R']
+            SigmaPlaceField = params['SigmaPlaceField']
+            SlopePhasePrecession = params['SlopePhasePrecession']
+            PrecessionOnset = params['PrecessionOnset']
+
+            self.n_outs = len(OutPlaceFiringRate)
 
         self.ThetaFreq = tf.reshape( tf.constant(ThetaFreq, dtype=myconfig.DTYPE), [1, -1])
         self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=myconfig.DTYPE), [1, -1])
@@ -253,7 +316,8 @@ class SpatialThetaGenerators(CommonGenerator):
         firings = self.normalizator * exp(self.kappa * cos((self.mult4time + precession) * t - phases))
 
         firings = multip * firings  # / (0.001 * dt)
-        firings = tf.reshape(firings, shape=(1, tf.shape(firings)[1], tf.shape(firings)[2]))
+        # firings = tf.reshape(firings, shape=(1, tf.shape(firings)[1], tf.shape(firings)[2]))
+        # firings = tf.expand_dims(firings, axis=0)
 
         return firings
 
@@ -299,41 +363,45 @@ class SpatialThetaGenerators(CommonGenerator):
 #########################################################################
 ##### Output processing classes #########################################
 
-class CommonOutProcessing(tf.keras.layers.Layer):
-    def __init__(self, mask, **kwargs):
-        super(CommonOutProcessing, self).__init__(**kwargs)
-        #
-        # self.inputs_size = len(params)
-        #
-        # if mask is None:
-        #     mask = np.ones(self.inputs_size, dtype='bool')
-
-        self.mask = tf.constant(mask, dtype=tf.dtypes.bool)
-        self.input_size = tf.size(self.mask)
-        self.n_selected = tf.reduce_sum( tf.cast(self.mask, dtype=tf.int64)  )
-
-    def build(self):
-        input_shape = (1, None, self.input_size)
-        super(CommonOutProcessing, self).build(input_shape)
-        self.built = True
-
-
-    def call(self, firings):
-        selected_firings = tf.boolean_mask(firings, self.mask, axis=2)
-        return selected_firings
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'mask': self.mask.numpy().tolist(),
-        })
-        return config
-
-    # Реализация метода from_config
-    @classmethod
-    def from_config(cls, config):
-        mask = config.pop('mask')
-        return cls(mask, **config)
+# class CommonOutProcessing(tf.keras.layers.Layer):
+#     '''
+#     Класс просто делает выбор из входного тензора и возвращает значения без модификаций
+#     '''
+#
+#     def __init__(self, mask, **kwargs):
+#         super(CommonOutProcessing, self).__init__(**kwargs)
+#         #
+#         # self.inputs_size = len(params)
+#         #
+#         # if mask is None:
+#         #     mask = np.ones(self.inputs_size, dtype='bool')
+#
+#         self.mask = tf.constant(mask, dtype=tf.dtypes.bool)
+#         self.input_size = tf.size(self.mask)
+#         self.n_selected = tf.reduce_sum( tf.cast(self.mask, dtype=tf.int64)  )
+#
+#     def build(self):
+#         input_shape = (1, None, self.input_size)
+#         super(CommonOutProcessing, self).build(input_shape)
+#         self.built = True
+#
+#
+#     def call(self, firings):
+#         selected_firings = tf.boolean_mask(firings, self.mask, axis=2)
+#         return selected_firings
+#
+#     def get_config(self):
+#         config = super().get_config()
+#         config.update({
+#             'mask': self.mask.numpy().tolist(),
+#         })
+#         return config
+#
+#     # Реализация метода from_config
+#     @classmethod
+#     def from_config(cls, config):
+#         mask = config.pop('mask')
+#         return cls(mask, **config)
 
 
 # class FrequencyFilter(CommonOutProcessing):
@@ -404,12 +472,24 @@ class CommonOutProcessing(tf.keras.layers.Layer):
 #         return filtered_firings
 
 #########################################################################
-class PhaseLockingOutput(CommonOutProcessing):
-    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
-        super(PhaseLockingOutput, self).__init__(mask, **kwargs)
+@tf.keras.saving.register_keras_serializable()
+class PhaseLockingOutput(tf.keras.layers.Layer):
+    def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
+        '''
+        Класс возращает  степень фазовой модуляции по заданной выборке переменных
+
+        :param mask:
+        :param ThetaFreq:
+        :param dt:
+        :param kwargs:
+        '''
+
+
+        super(PhaseLockingOutput, self).__init__(**kwargs)
 
 
         self.ThetaFreq = tf.constant(ThetaFreq, dtype=myconfig.DTYPE)
+        self.MeanFirings = tf.constant(MeanFirings, dtype=myconfig.DTYPE)
         self.dt = tf.constant(dt, dtype=myconfig.DTYPE)
 
 
@@ -424,23 +504,24 @@ class PhaseLockingOutput(CommonOutProcessing):
         real = cos(theta_phases)
         imag = sin(theta_phases)
 
-        normed_firings = selected_firings / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
+        normed_firings = selected_firings  # / (tf.math.reduce_sum(selected_firings, axis=1) + 0.00000000001)
 
-        real_sim = tf.reduce_sum(normed_firings * real, axis=1)
-        imag_sim = tf.reduce_sum(normed_firings * imag, axis=1)
+        real_sim = tf.reduce_mean(normed_firings * real, axis=1)
+        imag_sim = tf.reduce_mean(normed_firings * imag, axis=1)
 
         return real_sim, imag_sim
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
+        selected_firings = simulated_firings #   tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
-        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001)
+        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001) / self.MeanFirings
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
         return Rsim
 
     def get_config(self):
         config = super().get_config()
         config.update({
+            'MeanFirings' :  self.MeanFirings.numpy().tolist(),
             'ThetaFreq': self.ThetaFreq.numpy().tolist(),
             'dt': self.dt.numpy().tolist(),
         })
@@ -449,10 +530,11 @@ class PhaseLockingOutput(CommonOutProcessing):
     # Реализация метода from_config
     @classmethod
     def from_config(cls, config):
-        return cls(**config)
+        MeanFirings = config.pop('MeanFirings'),
+        return cls(MeanFirings, **config)
 
 
-
+@tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
     def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
@@ -488,8 +570,8 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
         return cls(**config)
 
 
-
-class RobastMeanOut(CommonOutProcessing):
+@tf.keras.saving.register_keras_serializable()
+class RobastMeanOut(tf.keras.layers.Layer):
 
     def __init__(self, mask=None, **kwargs):
         super(RobastMeanOut, self).__init__(mask, **kwargs)
@@ -498,6 +580,8 @@ class RobastMeanOut(CommonOutProcessing):
         selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
 
         robast_mean = exp(tf.reduce_mean(log(selected_firings + 0.0001), axis=1))
+
+
         robast_mean = tf.reshape(robast_mean, shape=(1, 1, -1))
 
         return robast_mean
@@ -511,6 +595,7 @@ class RobastMeanOut(CommonOutProcessing):
 
 ########################################################################################################################
 ##### outputs regulizers
+@tf.keras.saving.register_keras_serializable()
 class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def __init__(self, LowFiringRateBound=0.1, HighFiringRateBound=90.0, strength=10):
         self.LowFiringRateBound = tf.convert_to_tensor(LowFiringRateBound)
@@ -541,6 +626,7 @@ class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def from_config(cls, config):
         return cls(**config)
 
+@tf.keras.saving.register_keras_serializable()
 class Decorrelator(tf.keras.regularizers.Regularizer):
     def __init__(self, strength=0.1):
         self.strength = strength

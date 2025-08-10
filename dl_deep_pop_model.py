@@ -12,11 +12,33 @@ import myconfig
 USE_SAVED_MODEL = False
 IS_FIT_MODEL = True
 
+
+def integrate_Erev(Erev, tau_syn, Erest=-60.0, dt=0.1):
+    ##E_rest = -60.0  ##!!!
+
+    E_t = np.zeros_like(Erev)
+    for idx, E in enumerate(E_t):
+        E_inf = Erev[idx]
+        if idx == 0:
+            E0 = Erest
+        else:
+            E0 = E_t[idx - 1]
+
+        E_t[idx] = E0 - (E0 - E_inf) * (1 - np.exp(-myconfig.DT / tau_syn[idx]))
+
+    E_t = 1 + E_t / 75.0
+
+    return E_t
+
+
 def get_dataset(path, train2testratio):
 
 
-    ##!!
+
     datafiles = sorted( [file for file in os.listdir(path) if file[-5:] ==".hdf5"] )
+
+    # ##!!
+    # datafiles = datafiles[:120]
 
     if len(datafiles) < 2:
         print(f"Empty folder!!! {path}")
@@ -39,10 +61,17 @@ def get_dataset(path, train2testratio):
         try:
             with (h5py.File(filepath, mode='r') as h5file):
 
-                firing_rate = h5file["firing_rate"][:].ravel()  # / 100
+                firing_rate = h5file["firing_rate"][:].ravel()
 
-                dfr = np.log( (firing_rate[1:] + 1) / (firing_rate[:-1] + 1))
-                dfr = np.append(0.0, dfr)
+                ##!!
+                ##firing_rate = np.log(firing_rate + 1.0)
+
+                Erevsyn = h5file["Erevsyn"][:].ravel()
+                tau_syn = h5file["tau_syn"][:].ravel()
+
+                E_t = integrate_Erev(Erevsyn, tau_syn, Erest=-60.0, dt=myconfig.DT)
+
+
 
                 if idx == 0:
                     N_in_time = h5file["firing_rate"].size # 20000
@@ -51,10 +80,10 @@ def get_dataset(path, train2testratio):
                     Nbatches_train = int(Niter_train * N_in_time / N_in_batch)
                     Nbatches_test = int(Niter_test * N_in_time / N_in_batch)
 
-                    Xtrain = np.zeros((Nbatches_train, N_in_batch, 2), dtype=np.float32)
+                    Xtrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
                     Ytrain = np.zeros((Nbatches_train, N_in_batch, 1), dtype=np.float32)
 
-                    Xtest = np.zeros((Nbatches_test, N_in_batch, 2), dtype=np.float32)
+                    Xtest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
                     Ytest = np.zeros((Nbatches_test, N_in_batch, 1), dtype=np.float32)
 
                 for idx_b in range(0, N_in_time, N_in_batch ):
@@ -63,45 +92,12 @@ def get_dataset(path, train2testratio):
                     if idx <= Niter_train:
                         X_tmp = Xtrain
                         Y_tmp = Ytrain
-
-                        # # gexc = h5file["gexc"][idx_b : e_idx]
-                        # # ginh = h5file["ginh"][idx_b : e_idx]
-                        # Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()   #(gexc*0 + -75*ginh)  / (gexc + ginh)
-                        #
-                        # #Erevsyn = 2.0*(Erevsyn/75.0 + 1)
-                        # Erevsyn = 1 + Erevsyn/75.0
-                        #
-                        # logtausyn = h5file["tau_syn"][idx_b : e_idx].ravel()
-                        #
-                        # logtausyn = 2 * np.exp(-myconfig.DT/logtausyn) - 1 # np.log( logtausyn + 1.0 ) #### !!!!
-                        # # logtausyn = logtausyn / 10.0
-                        # #print(logtausyn.min(), logtausyn.max())
-                        #
-                        # Xtrain[batch_idx, : , 0] = Erevsyn
-                        # Xtrain[batch_idx, : , 1] = logtausyn
-                        # Ytrain[batch_idx, : , 0] = h5file["firing_rate"][idx_b : e_idx].ravel() #* 100.0
                     else:
                         X_tmp = Xtest
                         Y_tmp = Ytest
 
-                    Erevsyn = h5file["Erevsyn"][idx_b : e_idx].ravel()
-                    Erevsyn = 1 + Erevsyn / 75.0
-
-                    tau_syn = h5file["tau_syn"][idx_b : e_idx].ravel()
-
-                    logtausyn = np.exp(-myconfig.DT / tau_syn) / np.exp(-0.25)
-
-                    X_tmp[batch_idx, : , 0] = Erevsyn
-                    X_tmp[batch_idx, : , 1] = logtausyn
-
-                    # gexc = h5file["gexc"][idx_b : e_idx].ravel() / 80
-                    # ginh = h5file["ginh"][idx_b : e_idx].ravel()  / 80
-
-                    # X_tmp[batch_idx, :, 0] = gexc
-                    # X_tmp[batch_idx, : , 1] = ginh
-
-
-                    Y_tmp[batch_idx, : , 0] = dfr[idx_b : e_idx]
+                    X_tmp[batch_idx, : , 0] = E_t[idx_b : e_idx]
+                    Y_tmp[batch_idx, : , 0] = firing_rate[idx_b : e_idx]
 
                     batch_idx += 1
         except OSError:
@@ -139,17 +135,22 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
         # create and fit the LSTM network
         model = Sequential()
-        model.add( Input(shape=(None, 2)) )
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( LSTM(32, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=False ) ) # , stateful=True
-        model.add( Dense(1, activation='tanh') ) #
+        model.add( Input(shape=(None, 1)) )
+        # model.add( GRU(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
+        #                 stateful=False, recurrent_dropout=0.0, dropout=0.1, \
+        #                 kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
+        #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
+        # model.add( GRU(32, return_sequences=True, kernel_initializer=keras.initializers.Zeros(), \
+        #                 stateful=False, recurrent_dropout=0.0, dropout=0.1, \
+        #                 kernel_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01),\
+        #                 recurrent_regularizer=keras.regularizers.L1L2(l1=0.01, l2=0.01))) # , stateful=True
+        #model.add(LSTM(32, return_sequences=True))
+        #model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        model.add( GRU(units=8, return_sequences=True, stateful=False) )
+        #model.add( Dense(units=16, activation='leaky_relu' ) )  #
+        model.add( Dense(units=1, activation=keras.ops.square) ) #  'exponential'
 
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) #, stateful=True
-        # model.add( GRU(16, return_sequences=True, kernel_initializer=keras.initializers.HeUniform(), stateful=True ) ) # , stateful=True
-        # model.add( Dense(1, activation='relu') ) #
-
-        model.compile(loss="mae", optimizer=keras.optimizers.Adam(learning_rate=0.001), metrics = ['mae', "mean_squared_logarithmic_error", 'mse'])
-        #model.compile(loss='mean_squared_logarithmic_error', optimizer='adam', metrics = ['mae',])
+        model.compile(loss='log_cosh', optimizer=keras.optimizers.Adam(learning_rate=0.0005), metrics = ['mae', 'mse', 'mean_squared_logarithmic_error'])
 
     if IS_FIT_MODEL:
         hist = model.fit(Xtrain, Ytrain, epochs=myconfig.NEPOCHES, batch_size=myconfig.BATCHSIZE, verbose=myconfig.VERBOSETRANINGPOPMODELS, validation_data=(Xtest, Ytest))
@@ -171,45 +172,20 @@ def fit_dl_model_of_population(datapath, targetpath, logfile):
 
 def main():
 
-    logfilepath = myconfig.PRETRANEDMODELS #+ "logfitmodels.h5"
-
-    # logfile = open(logfilepath, mode="a")
-    # logfile.write("################################################\n")
-
+    logfilepath = myconfig.PRETRANEDMODELS
 
     for datasetspath in os.listdir(myconfig.DATASETS4POPULATIONMODELS):
         datapath = myconfig.DATASETS4POPULATIONMODELS + datasetspath + "/"
         if not os.path.isdir(datapath):
             continue
 
+        # pop_type = datapath.split("/")[-2]
+        # if pop_type != 'CA1 Pyramidal':
+        #     continue
+
         targetpath = myconfig.PRETRANEDMODELS + f"{datasetspath}.keras"
         fit_dl_model_of_population(datapath, targetpath, logfilepath)
-
-    #logfile.close()
 
 if __name__ == '__main__':
     main()
 
-# Y_pred = model.predict(Xtest)
-#
-# t = np.linspace(0, 0.1*Y_pred.shape[1], Y_pred.shape[1])
-# for idx in range(100):
-#     fig, axes = plt.subplots(nrows=3)
-#
-#     axes[0].set_title(idx)
-#     axes[0].plot(t, Ytest[idx, :, 0], label="Izhikevich model", color="red")
-#     axes[0].plot(t, Y_pred[idx, :, 0], label="LSTM", color="green")
-#
-#
-#     axes[0].legend(loc="upper right")
-#
-#     axes[1].plot(t, Xtest[idx, :, 0], label="Synaptic Erev", color="orange")
-#     axes[2].plot(t, Xtest[idx, :, 1], label="Synaptic tau", color="blue")
-#
-#     axes[1].legend(loc="upper right")
-#     axes[2].legend(loc="upper right")
-#
-#     plt.show(block=True)
-#
-#     # if idx > 20:
-#     #     break

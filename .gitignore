@@ -1,6 +1,6 @@
 # user deleted
-/output/
-!*/output/.gitkeep
+/outputs/
+!*/outputs/.gitkeep
 /presimulation_files/
 !*/presimulation_files/.gitkeep
 /population_datasets/

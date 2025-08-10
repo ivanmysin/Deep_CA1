@@ -1,7 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from keras.src.backend import shape
-from keras.src.ops import dtype
 from tensorflow.keras.layers import Layer, RNN
 
 from synapses_layers import TsodycsMarkramSynapse
@@ -78,13 +76,15 @@ for key in selected_synparam.keys():
 synparam["Cm"] = float( 0.001 * neurons_params[neurons_params["Presynaptic Neuron Type"] == post_type]["Izh C"].values[0] )
 synparam["Erev_min"] = -75.0
 synparam["Erev_max"] = 0.0
+synparam["Vrest"] = -60.0
 synparam["gsyn_max"][-1] *= 10.0
 
 
 # pprint(synparam)
 
 input_shape = [1, None, 2]
-synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
+mask = np.ones(2, dtype='bool')
+synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=mask), return_sequences=True, stateful=True)
 
 model = tf.keras.Sequential()
 model.add(synapses_layer)
@@ -102,7 +102,6 @@ print(Y)
 fig, axes = plt.subplots(nrows=3)
 #axes[0].plot(t, firings)
 axes[1].plot(t, Y[0, :, 0])
-axes[2].plot(t, Y[0, :, 1])
 axes[2].set_ylim(0, 80)
 
 plt.show()

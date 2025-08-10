@@ -84,8 +84,11 @@ input_shape = [1, None, 2]
 synapses_layer = RNN(TsodycsMarkramSynapse(synparam, dt=0.1, mask=None), return_sequences=True, stateful=True)
 population_model = load_model("../pretrained_models/CA1 Basket.keras")
 
+
+
+
 model = tf.keras.Sequential()
-#model.add(Input(shape=(2, )))
+model.add(Input(shape=(2, )))
 model.add(synapses_layer)
 model.add( tf.keras.models.clone_model(population_model.layers[0]) )
 model.add( tf.keras.models.clone_model(population_model.layers[1]) )

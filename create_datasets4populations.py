@@ -192,12 +192,12 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     win = win / np.sum(win)
     population_firing_rate = np.convolve(population_firing_rate, win, mode='same')
 
-    gexc = np.asarray(gexc_monitor.gexc / mS).astype(np.float32).ravel()
-    ginh = np.asarray(ginh_monitor.ginh / mS).astype(np.float32).ravel()
+    gexc = np.asarray(gexc_monitor.gexc / nS).astype(np.float32).ravel()
+    ginh = np.asarray(ginh_monitor.ginh / nS).astype(np.float32).ravel()
     grest = myconfig.GREST
 
     Erev =  (params["Eexc"]/mV * gexc + params["Einh"]/mV * ginh  + params["Vrest"]/mV * grest ) / (gexc + ginh + grest)
-    tau_syn = float(params['Cm']/uF) / (gexc + ginh + grest)
+    tau_syn = float(params['Cm']/pF) / (gexc + ginh + grest)
 
     file = h5py.File(filepath, mode='w')
     file.create_dataset('firing_i', data=np.asarray(firing_monitor.i).astype(np.float32).ravel() )
@@ -211,7 +211,8 @@ def run_izhikevich_neurons(params, duration, NN, filepath):
     file.create_dataset('ginh', data=ginh)
 
     if myconfig.IS_SAVE_V:
-        file.create_dataset('V', data=np.asarray(M_full_V.V / mV))
+        file.create_dataset('V', data = np.asarray(M_full_V.V / mV))
+        file.create_dataset('U', data=np.asarray(M_full_V.U / pA))
 
     file.close()
 
@@ -260,15 +261,15 @@ def create_all_types_dataset(all_params, NN):
 def main():
     NN = myconfig.NUMBERNEURONSINPOP
     default_params = {
-        "Cm": 114, # * uF,  # /cm**2,
-        "k": 1.19, # * mS / mV,
+        "Cm": 114, # * pF,
+        "k": 1.19, # * nS / mV,
         "Vrest": -57.63, # * mV,
-        "Vth_mean": 35.53, #*mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+        "Vth_mean": 35.53, #*mV,
         "Vpeak": 21.72, # * mV,
         "Vmin": -48.7, # * mV,
         "a": 0.005, # * ms ** -1,
-        "b": 0.22, # * mS,
-        "d": 2, # * uA,
+        "b": 0.22, # * nS,
+        "d": 2, # * pA,
 
         "Eexc": 0 * mV,
         "Einh": -75 * mV,

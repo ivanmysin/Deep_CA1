@@ -12,13 +12,14 @@ neurons = [
         "CenterPlaceField": 10,
         "SigmaPlaceField": 30,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0, #10,  # DV
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
         "MinFiringRate" : 0.1,
         "MaxFiringRate" : 50.0,
 
+        "I_ext" : 0,
     },
     {
         "type": "CA1 Pyramidal",
@@ -30,12 +31,13 @@ neurons = [
         "CenterPlaceField": 10,
         "SigmaPlaceField": 30,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0, # 10,  # DV
         "PrecessionOnset": 3.14,
 
         "ThetaFreq": 7.0,
         "MinFiringRate": 0.1,
         "MaxFiringRate": 50.0,
+        "I_ext": 0,
     },
     {
         "type": "CA1 Basket",
@@ -46,6 +48,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 0,
     },
     {
         "type": "CA1 Basket CCK+",
@@ -56,6 +59,7 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 200.0,
     },
     {
         "type": "CA1 Oriens-Alveus",
@@ -66,145 +70,143 @@ neurons = [
         "R": 0.3,
         "MinFiringRate": 1.0,
         "MaxFiringRate": 80.0,
+        "I_ext": 100.0,
     },
     {
-        "type": "CA3 Pyramidal_generator",
+        "type": "CA3_generator",
         "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
         "OutPlaceThetaPhase": 3.14*0.5,  # DV
-        "R": 0.3,
+        "R": 0.25,
 
-        "InPlacePeakRate": 8.0,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 10,
-        "SigmaPlaceField": 30,
+        "InPlacePeakRate": 30,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 2500,
+        "SigmaPlaceField": 500,
 
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
 
-        "ThetaFreq": 7.0,
+        "ThetaFreq": 8.0,
 
 
     },
     {
-        "type": "EC LIII Pyramidal_generator",
+        "type": "MEC_generator",
         "OutPlaceFiringRate": 0.5,  # Хорошо бы сделать лог-нормальное распределение
-        "OutPlaceThetaPhase": 3.14 * 0.5,  # DV
-        "R": 0.3,
+        "OutPlaceThetaPhase": -3.14 * 0.5,  # DV
+        "R": 0.25,
 
-        "InPlacePeakRate": 8.0,  # Хорошо бы сделать лог-нормальное распределение
-        "CenterPlaceField": 10,
-        "SigmaPlaceField": 30,
+        "InPlacePeakRate": 50.0,  # Хорошо бы сделать лог-нормальное распределение
+        "CenterPlaceField": 7000,
+        "SigmaPlaceField": 500,
 
-        "SlopePhasePrecession": 10,  # DV
+        "SlopePhasePrecession": 0.0,  # DV
         "PrecessionOnset": 3.14,
 
-        "ThetaFreq": 7.0,
+        "ThetaFreq": 8.0,
     },
 ]
 
 connections = [
-    {
-        "pconn" : 1.0,
-        "pre_idx" : 0,
-        "post_idx" : 0,
-        "gsyn_max": np.random.rand(),
-    },
+    # {
+    #     "pconn" : 0.0,
+    #     "pre_idx" : 0,
+    #     "post_idx" : 0,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 1.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 1,
+    #     "gsyn_max": 500.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 1,
+    #     "post_idx": 1,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 1,
+    #     "post_idx": 0,
+    #     "gsyn_max": 0.0,
+    # },
+    #
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 2,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 0,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
     {
         "pconn": 1.0,
-        "pre_idx": 0,
-        "post_idx": 1,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 1,
-        "post_idx": 1,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 1,
-        "post_idx": 0,
-        "gsyn_max": np.random.rand(),
-    },
-
-
-
-    {
-        "pconn": 1.0,
-        "pre_idx": 0,
-        "post_idx": 2,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 0,
+        "pre_idx": 2,
         "post_idx": 3,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 0,
-        "post_idx": 4,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 10.0,
     },
 
-    ##########
-    {
-        "pconn": 1.0,
-        "pre_idx": 5,
-        "post_idx": 0,
-        "gsyn_max": np.random.rand(),
-    },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 5,
+    #     "post_idx": 0,
+    #     "gsyn_max": 0.0,
+    # },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 1,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 500.0,
     },
     {
         "pconn": 1.0,
         "pre_idx": 5,
         "post_idx": 2,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 50.0,
     },
-    {
-        "pconn": 1.0,
-        "pre_idx": 5,
-        "post_idx": 3,
-        "gsyn_max": np.random.rand(),
-    },
-   ##########
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 5,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
+
     {
         "pconn": 1.0,
         "pre_idx": 6,
         "post_idx": 0,
-        "gsyn_max": np.random.rand(),
+        "gsyn_max": 50.0,
     },
-    {
-        "pconn": 1.0,
-        "pre_idx": 6,
-        "post_idx": 1,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 6,
-        "post_idx": 2,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 6,
-        "post_idx": 3,
-        "gsyn_max": np.random.rand(),
-    },
-    {
-        "pconn": 1.0,
-        "pre_idx": 6,
-        "post_idx": 4,
-        "gsyn_max": np.random.rand(),
-    },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 1,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 2,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 3,
+    #     "gsyn_max": 0.0,
+    # },
+    # {
+    #     "pconn": 0.0,
+    #     "pre_idx": 6,
+    #     "post_idx": 4,
+    #     "gsyn_max": 0.0,
+    # },
 ]
 
 

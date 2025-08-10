@@ -1,10 +1,13 @@
+import sys
+sys.path.append('../')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-import myconfig
-import os
 
+import os
+os.chdir("../")
+import myconfig
 
 def main():
     TRACK_LENGTH = 400  # cm
@@ -85,6 +88,9 @@ def main():
         Nsteps = int( Npyr / (DV_LENGTH+100) / 100) + 1
         for cell_pos_dv in range(0, DV_LENGTH+100, 100):
 
+            if cell_pos_dv < myconfig.DV_MIN or cell_pos_dv > myconfig.DV_MAX:
+                continue
+
             place_size = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_MEAN) / 6
             place_size_std = (PLACESIZE_SLOPE_DV * cell_pos_dv + PLACESIZE_STD) / 6
 
@@ -124,5 +130,5 @@ def main():
             pickle.dump(generators, file)
 
 if __name__ == "__main__":
-    os.chdir("../")
+
     main()

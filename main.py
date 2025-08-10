@@ -12,6 +12,7 @@ from tensorflow.keras.layers import Input, RNN, Reshape
 from tensorflow.keras.saving import load_model
 from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 from time_step_layer import TimeStepLayer
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 def save_trained_to_pickle(trainable_variables, connections):
@@ -26,8 +27,10 @@ def save_trained_to_pickle(trainable_variables, connections):
             if conn["post_idx"] != pop_idx:
                 continue
 
-            conn["gsyn"] = tv[conn_counter]
-
+            try:
+                conn["gsyn"] = tv[conn_counter]
+            except IndexError:
+                conn["gsyn"] = None
             conn_counter += 1
 
     if myconfig.RUNMODE == 'DEBUG':
@@ -68,20 +71,25 @@ def get_dataset(populations):
             except KeyError:
                 continue
 
-    phase_locking_without_phase = np.asarray(phase_locking_without_phase).reshape(1, -1)
-    robast_mean_firing_rate = np.asarray(robast_mean_firing_rate).reshape(1, -1)
+    phase_locking_without_phase = np.asarray(phase_locking_without_phase).reshape(1, 1, -1)
+    robast_mean_firing_rate = np.asarray(robast_mean_firing_rate).reshape(1, 1, -1)
 
     phase_locking_with_phase = np.asarray(phase_locking_with_phase)
 
-    im = phase_locking_with_phase[1, :] * np.sin(phase_locking_with_phase[0, :])
-    re = phase_locking_with_phase[1, :] * np.cos(phase_locking_with_phase[0, :])
+    im = phase_locking_with_phase[:, 1] * np.sin(phase_locking_with_phase[:, 0])
+    re = phase_locking_with_phase[:, 1] * np.cos(phase_locking_with_phase[:, 0])
 
     phase_locking_with_phase = np.stack([re, im], axis=1).reshape(1, 2, -1)
 
     generators = SpatialThetaGenerators(pyramidal_targets)
 
     Xtrain = []
-    Ytrain = []
+    Ytrain = {
+        'pyramilad_mask': [],
+        'locking_with_phase': [],
+        'robast_mean': [],
+        'locking': [],
+    }
 
     t0 = 0.0
     for batch_idx in range(n_times_batches):
@@ -93,12 +101,21 @@ def get_dataset(populations):
 
         pyr_targets = generators(t)
 
-        Ytrain.append({
-            'pyramilad_mask': pyr_targets,
-            'locking_with_phase': np.copy(phase_locking_with_phase),
-            'robast_mean': np.copy(robast_mean_firing_rate),
-            'locking' : np.copy(phase_locking_without_phase),
-        })
+        # print(pyr_targets.shape)
+        # print(phase_locking_with_phase.shape)
+        # print(robast_mean_firing_rate.shape)
+        # print(phase_locking_without_phase.shape)
+
+        Ytrain['pyramilad_mask'].append(pyr_targets)
+        Ytrain['locking_with_phase'].append( np.copy(phase_locking_with_phase) )
+        Ytrain['robast_mean'].append( np.copy(robast_mean_firing_rate) )
+        Ytrain['locking'].append( np.copy(phase_locking_without_phase) )
+
+
+    Xtrain = np.concatenate(Xtrain, axis=0)
+    for key, val in Ytrain.items():
+        Ytrain[key] = np.concatenate(val, axis=0)
+
 
     return Xtrain, Ytrain
 
@@ -125,6 +142,8 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
             LowFiringRateBound.append(pop["MinFiringRate"])
             HighFiringRateBound.append(pop["MaxFiringRate"])
         except KeyError:
+            if not 'generator' in pop['type']:
+                print(pop['type'], "No MinFiringRate or MaxFiringRate")
             continue
 
         if pop["type"] == "CA1 Pyramidal":
@@ -136,22 +155,25 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
                     phase_locking_out_mask[pop_idx] = True
                 else:
                     frequecy_filter_out_mask[pop_idx] = True
-
             except KeyError:
                 continue
 
+
+    # print("Pyramidal", np.sum(simple_out_mask))
+    # print("frequecy_filter_out_mask", np.sum(frequecy_filter_out_mask))
+    # print("phase_locking_out_mask", np.sum(phase_locking_out_mask))
 
 
     input = Input(shape=(None, 1), batch_size=1)
     generators = SpatialThetaGenerators(spatial_gen_params)(input)
 
     time_step_layer = TimeStepLayer(Ns, populations, connections, neurons_params, synapses_params, base_pop_models, dt=myconfig.DT)
-    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True,
-                          activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
+    time_step_layer = RNN(time_step_layer, return_sequences=True, stateful=True) #, activity_regularizer=FiringsMeanOutRanger(LowFiringRateBound=LowFiringRateBound, HighFiringRateBound=HighFiringRateBound))
 
     time_step_layer = time_step_layer(generators)
 
-    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.1), name="firings_outputs")(time_step_layer)
+    time_step_layer = Reshape(target_shape=(-1, Ns), activity_regularizer=Decorrelator(strength=0.001), name="firings_outputs")(time_step_layer)
+    ### time_step_layer = Reshape(target_shape=(-1, Ns), name="firings_outputs")(time_step_layer)
 
     output_layers = []
 
@@ -166,7 +188,6 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     robast_mean_out = RobastMeanOut(mask=frequecy_filter_out_mask, name='robast_mean')
     output_layers.append(robast_mean_out(time_step_layer))
 
-    phase_locking_out_mask = np.ones(Ns, dtype='bool')
     phase_locking_selector = PhaseLockingOutput(mask=phase_locking_out_mask,
                                                 ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT, name='locking')
     output_layers.append(phase_locking_selector(time_step_layer))
@@ -177,7 +198,7 @@ def get_model(populations, connections, neurons_params, synapses_params, base_po
     # big_model.build(input_shape = (None, 1))
 
     big_model.compile(
-        optimizer=tf.keras.optimizers.Adam(),
+        optimizer = tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=0.1),
         loss={
             'pyramilad_mask': tf.keras.losses.logcosh,
             'locking_with_phase': tf.keras.losses.MSE,
@@ -205,11 +226,14 @@ def main():
         connections_path = myconfig.STRUCTURESOFNET + "connections.pickle"
 
 
-    with open(neurons_path, "rb") as neurons_file: ##!!
+    with open(neurons_path, "rb") as neurons_file:
         populations = pickle.load(neurons_file)
 
-    with open(connections_path, "rb") as synapses_file: ##!!
+    with open(connections_path, "rb") as synapses_file:
         connections = pickle.load(synapses_file)
+
+        # for conn in connections:
+        #     conn['pconn'] *= 100
 
     Xtrain, Ytrain = get_dataset(populations)
 
@@ -222,44 +246,75 @@ def main():
     neurons_params.rename(
         {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
          'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
+
+    neurons_params['Cm'] *= 0.001 # recalculate pF to nF
+    neurons_params['k'] *= 0.001 # recalculate nS to pS
+
     synapses_params = pd.read_csv(myconfig.TSODYCSMARKRAMPARAMS)
     synapses_params.rename({"g": "gsyn_max", "u": "Uinc", "Connection Probability": "pconn"}, axis=1, inplace=True)
 
+    synapses_params["gsyn_max"] *= 0.1 # !!!!
+
     base_pop_models = {}
-    for pop_type in pop_types_params["neurons"]:
+    for pop_idx, population in pop_types_params.iterrows():
+        if not population["is_include"]:
+            continue
 
-        if myconfig.RUNMODE == 'DEBUG':
-            model_file = "./pretrained_models/NO_Trained.keras"
-        else:
-            model_file = myconfig.PRETRANEDMODELS + pop_type + '.keras'
-
-        base_pop_models[pop_type] = model_file # load_model(model_file)
+        pop_type = population["neurons"]
+        base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + pop_type + '.keras'
+        # if myconfig.RUNMODE == 'DEBUG':
+        #     base_pop_models[pop_type] = myconfig.PRETRANEDMODELS + 'NO_Trained.keras'
 
     model = get_model(populations, connections, neurons_params, synapses_params, base_pop_models)
+    firings_model = get_firings_model(model)
     print(model.summary())
 
-    model.save('big_model.keras')
+    #model.save('big_model.keras')
+
+    # Ypreds = model.predict(Xtrain[0])
+    #
+    # for y in Ypreds:
+    #     print(y.shape)
 
     # custom_objects = {
     #     'FiringsMeanOutRanger': FiringsMeanOutRanger,
     #     'Decorrelator' : Decorrelator,
     # }
     # model = load_model('big_model.keras',  custom_objects = custom_objects)
-    # print(model.summary())
 
-    for x_train, y_train in zip(Xtrain, Ytrain):
-        model.fit(x_train, y_train, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2)
-    #
-    # save_trained_to_pickle(model.trainable_variables, connections)
-    model.save('big_model.keras')
+    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY  # ms
+    t_full = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
 
-    firings_model = get_firings_model(model)
+    # fname = "weights-{epoch:03d}-{loss:.4f}.hdf5"
+    # checkpoint = ModelCheckpoint(fname, monitor="loss", mode="min",
+    #                              period=10, verbose=1)
+    # callbacks = [checkpoint, ]
 
-    duration_full_simulation = 1000 * myconfig.TRACK_LENGTH / myconfig.ANIMAL_VELOCITY # ms
-    t = np.arange(0, duration_full_simulation, myconfig.DT).reshape(1, -1, 1)
-    firings = firings_model.predict(t)
-    with h5py.File("firings.h5", mode='w') as h5file:
-        h5file.create_dataset('firings', data=firings)
+
+    with tf.device('/gpu:0'):
+        #loss_hist = []
+        for epoch_idx in range(myconfig.EPOCHES_FULL_T):
+
+            history = model.fit(Xtrain, Ytrain, epochs=myconfig.EPOCHES_ON_BATCH, verbose=2, batch_size=1)
+            loss = history.history['loss']
+            #loss = model.train_on_batch(x_train, y_train)
+
+
+            epoch_counter = epoch_idx + 1
+            model.save(myconfig.OUTPUTSPATH_MODELS + f'{epoch_counter}_big_model.keras')
+            save_trained_to_pickle(model.trainable_variables, connections)
+
+            firings = firings_model.predict(t_full)
+            with h5py.File(myconfig.OUTPUTSPATH_FIRINGS + f'{epoch_counter}_firings.h5', mode='w') as h5file:
+                h5file.create_dataset('firings', data=firings)
+                h5file.create_dataset('loss_hist', data=np.asarray(loss))
+
+            print("Full time epoches", epoch_counter)
+            #print("Loss over epoche", loss_hist[-1])
+
+
+
+
 
 
 

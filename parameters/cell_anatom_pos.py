@@ -1,10 +1,15 @@
+import sys
+sys.path.append('../')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-import myconfig
+
 import os
+
+os.chdir("../")
 from scipy.cluster.vq import kmeans
+import myconfig
 
 
 def main():
@@ -108,6 +113,9 @@ def main():
 
         for pyrs_x, pyrs_y, pyrs_z in zip(pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z):
 
+            if pyrs_y < myconfig.DV_MIN or pyrs_y > myconfig.DV_MAX:
+                continue
+
             if PLACECELLSPROB < np.random.rand():
                 center_place_field = np.random.uniform(low=0.0, high=TRACK_LENGTH, size=1)[0]
             else:
@@ -181,14 +189,14 @@ def main():
 
 
 if __name__ == "__main__":
-    os.chdir("../")
+
     pyr_coodinates_x, pyr_coodinates_y, pyr_coodinates_z, right_bound, left_bound, CA1_flat = main()
-    #print(pyr_coodinates_x.size, pyr_coodinates_x.size//2)
-
-    fig, axes = plt.subplots()
-    axes.plot( right_bound, CA1_flat["H"], color="blue")
-    axes.plot( left_bound, CA1_flat["H"], color="blue")
-
-    axes.scatter(pyr_coodinates_x, pyr_coodinates_y)
-
-    plt.show()
+    # print(pyr_coodinates_x.size)
+    #
+    # fig, axes = plt.subplots()
+    # axes.plot( right_bound, CA1_flat["H"], color="blue")
+    # axes.plot( left_bound, CA1_flat["H"], color="blue")
+    #
+    # axes.scatter(pyr_coodinates_x, pyr_coodinates_y)
+    #
+    # plt.show()
