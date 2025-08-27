@@ -9,6 +9,10 @@ import sys
 sys.path.append('/')
 import myconfig
 
+from progress.bar import IncrementalBar
+from pprint import pprint
+
+
 class MeanFieldNetwork:
 
     def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
@@ -48,7 +52,6 @@ class MeanFieldNetwork:
         self.state_size = [self.units, self.units, self.units, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
 
     def get_initial_state(self, batch_size=1):
-        shape = [self.units+3, self.units]
 
         r = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
         v = np.zeros( [1, self.units], dtype=myconfig.DTYPE)
@@ -56,8 +59,9 @@ class MeanFieldNetwork:
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
-        R = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
-        U = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+
+        R = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE) +0.5
+        U = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE) +0.5
         A = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
         initial_state = [r, v, w, R, U, A]
@@ -69,8 +73,16 @@ class MeanFieldNetwork:
         return drdt
 
     def get_v_avg_derivative(self, rates, v_avg, w_avg, g_syn):
+      
         Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
-        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi * rates)**2
+        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + Isyn + self.I_ext - (np.pi * rates)**2 # + Isyn
+        return dvdt
+    
+    def get_v_avg_derivative0(self, rates, v_avg, w_avg, g_syn):
+      
+        Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
+        dvdt = self.aI*v_avg ** 2 + self.bI * v_avg + self.cI - w_avg + Isyn + self.I_ext - (np.pi * rates)**2 # + Isyn
+
         return dvdt
 
     def get_w_avg_derivative(self, rates, v_avg, w_avg):
@@ -137,7 +149,8 @@ class MeanFieldNetwork:
         # v_avg = v_avg + dv_avg
         # w_avg = w_avg + dw_avg
 
-        rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
+        
+        rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn) # spikes per ms
 
         firing_probs =  (self.dts_non_dim * rates).T #tf.reshape(rates, shape=(-1, 1))
 
@@ -167,6 +180,10 @@ class MeanFieldNetwork:
         return output, [rates, v_avg, w_avg, R, U, A]
 
     def predict(self, inputs, time_axis=1, initial_states=None):
+
+        bar = IncrementalBar('Countdown', max = inputs.shape[time_axis])
+
+
         if initial_states is None:
             states = self.get_initial_state()
         else:
@@ -182,6 +199,10 @@ class MeanFieldNetwork:
 
             for s in states:
                 hist_states.append(s)
+
+
+            bar.next()
+
 
         outputs = np.stack(outputs)
 
@@ -331,13 +352,80 @@ class SpatialThetaGenerators:
         return firings
 
 
+def run_mean_field(params, duration, dt_mean, firings_inputs):
+    NN = len(params['Iext'])
+    Ninps = 2
+    # duration = 1000.0
+
+    mean_izh_params = {
+        "V0": params['Izh Vr'][:,0], #-57.63,
+        "U0": np.zeros(NN, dtype=np.float32),
+
+        "Cm": params['Izh C'][:,0], #114,  # * pF,
+        "k": params['Izh k'][:,0], #1.19,  # * mS
+        "Vrest": params['Izh Vr'][:,0], #-57.63,  # * mV,
+        "Vth": params['Izh Vt'][:,0], #-35.53,  # *mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
+        "Vpeak": params['Izh Vpeak'][:,0], #21.72,  # * mV,
+        "Vmin": params['Izh Vmin'][:,0], #-48.7,  # * mV,
+        "a": params['Izh a'][:,0], #0.005,  # * ms ** -1,
+        "b": params['Izh b'][:,0], #0.22,  # * mS,
+        "d": params['Izh d'][:,0], #2,  # * pA,
+
+        "I_ext": params['Iext'][:,0] #800,  # pA
+    }
+
+    # Словарь с константами
+    mean_cauchy_dencity_params = {
+        'Delta_eta': params['Delta_eta'][0,0], #80,  # 0.02,
+        'bar_eta': 0.0,  # 0.191,
+    }
+
+
+    mean_izh_params = mean_izh_params | mean_cauchy_dencity_params
+    izh_params = izhs_lib.dimensional_to_dimensionless(mean_izh_params)
+    izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_mean, mean_izh_params['Cm'], mean_izh_params['k'], mean_izh_params['Vrest'])
+
+
+    izh_params['gsyn_max'] = params['g'][:,:,0] #gsyn_max
+    izh_params['pconn'] = params['pconn'][:,:,0] #pconn
+    Erev = params['e_r'][:,:,0] #np.zeros_like(gsyn_max) + e_r
+    izh_params['e_r'] = izhs_lib.transform_e_r(Erev, mean_izh_params['Vrest'])
+    izh_params['tau_d'] = params['tau_d'][:,:,0] #np.zeros_like(gsyn_max) + tau_d
+    izh_params['tau_r'] = params['tau_r'][:,:,0] #np.zeros_like(gsyn_max) + tau_r
+    izh_params['tau_f'] = params['tau_f'][:,:,0] #np.zeros_like(gsyn_max) + tau_f
+    izh_params['Uinc'] = params['u'][:,:,0] #np.zeros_like(gsyn_max) + Uinc
+
+    print('\nDimensionless params:\n')
+    pprint(izh_params)
+
+
+    t_mean = np.arange(0, duration, dt_mean, dtype=np.float32)
+    t_mean = t_mean.reshape(1, -1, 1)
+    t_mean = t_mean.ravel()
+
+
+    model = MeanFieldNetwork(izh_params, dt_dim=dt_mean, use_input=True)
+
+    
+
+    rates, hist_states = model.predict(firings_inputs)
+
+    # A = hist_states[-1]
+
+
+    rates = rates.reshape(-1, NN)
+
+    return rates
+
 
 ######################################################################
 if __name__ == '__main__':
 
     NN = 2
-    Ninps = 3
-    dt_dim = 0.1  # ms
+
+    Ninps = 2
+    dt_dim = 0.01  # ms
+
     duration = 1000.0
 
     dim_izh_params = {
@@ -354,7 +442,9 @@ if __name__ == '__main__':
         "b": 0.22,  # * mS,
         "d": 2,  # * pA,
 
-        "Iext": 800,  # pA
+
+        "I_ext": 800,  # pA
+
     }
 
     # Словарь с константами
@@ -370,6 +460,12 @@ if __name__ == '__main__':
     for key, val in izh_params.items():
         izh_params[key] = np.zeros(NN, dtype=np.float32) + val
 
+
+    # k = dim_izh_params['k']
+    # V_R = dim_izh_params['Vrest']
+    # izh_params['I_ext'][0] = 500/(k*(V_R**2))
+
+
     ## synaptic static variables
     tau_d = 6.02  # ms
     tau_r = 359.8  # ms
@@ -383,8 +479,10 @@ if __name__ == '__main__':
 
 
     pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
+
     pconn[0, 1] = 1
     pconn[1, 0] = 1
+
 
     Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) - 75
     e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
@@ -396,6 +494,11 @@ if __name__ == '__main__':
     izh_params['tau_r'] = np.zeros_like(gsyn_max) + tau_r
     izh_params['tau_f'] = np.zeros_like(gsyn_max) + tau_f
     izh_params['Uinc'] = np.zeros_like(gsyn_max) + Uinc
+
+
+    
+
+    pprint(izh_params)
 
 
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
