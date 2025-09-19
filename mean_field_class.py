@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
-from tensorflow.keras.regularizers import Regularizer
+from tensorflow.keras.regularizers import Regularizer, L2
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Model
 from tensorflow.keras.saving import load_model
@@ -127,6 +127,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
+                                        regularizer=L2(l2=0.001),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -151,7 +152,7 @@ class MeanFieldNetwork(Layer):
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer=tf.keras.initializers.Constant(gsyn_max),
                                         # regularizer=self.gmax_regulizer,  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                        regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
+                                        #regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=tf.keras.constraints.NonNeg(),
