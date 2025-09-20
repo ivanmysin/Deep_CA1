@@ -22,11 +22,11 @@ import myconfig
 
 def get_params():
 
-    # TestPopulation = 'CA1 O-LM'
-    # output_masks = {
-    #     'full_target' : [],
-    #     'only_R' : [],
-    # }
+    TestPopulation = '' #'CA1 O-LM'
+    output_masks = {
+        'full_target' : [],
+        'only_R' : [],
+    }
 
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
@@ -63,15 +63,15 @@ def get_params():
 
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
 
-        # for m in output_masks.values():
-        #     m.append(True)
+        for m in output_masks.values():
+            m.append(True)
 
-        # if hippocampome_pop_type == TestPopulation:
-        #     # output_masks['only_R'][-1] = True
-        #     output_masks['full_target'][-1] = False
-        # # else:
-        # #     output_masks['only_R'][-1] = False
-        # #     output_masks['full_target'][-1] = True
+        if hippocampome_pop_type == TestPopulation:
+            # output_masks['only_R'][-1] = True
+            output_masks['full_target'][-1] = False
+        # else:
+        #     output_masks['only_R'][-1] = False
+        #     output_masks['full_target'][-1] = True
 
 
 
