@@ -22,11 +22,11 @@ import myconfig
 
 def get_params():
 
-    TestPopulation = 'CA1 O-LM'
-    output_masks = {
-        'full_target' : [],
-        'only_R' : [],
-    }
+    # TestPopulation = 'CA1 O-LM'
+    # output_masks = {
+    #     'full_target' : [],
+    #     'only_R' : [],
+    # }
 
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
@@ -233,16 +233,16 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 ########################################################################
 IS_CREATE_MODEL = True
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
-filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + '6Hz_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
+filename_template =  '6Hz_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
-model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_10000.keras'
+model_path = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_10000.keras'
 initial_epoch = 10000
 Epoches = 10000
 
 if IS_CREATE_MODEL:
-    batch_len = 12500
-    nbatches = 20
+    batch_len = 20000 #!!! 12500
+    nbatches = 12 #!!! 20
     params, generators_params, target_params, output_masks = get_params()
 
 
@@ -301,7 +301,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=Epoches, verbose=2, batch_size=1, callbacks=callbacks, initial_epoch=initial_epoch)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
+with h5py.File(myconfig.OUTPUTSPATH + '6Hz_theta_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
 
