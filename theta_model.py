@@ -63,8 +63,8 @@ def get_params():
 
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
 
-        for m in output_masks.values():
-            m.append(True)
+        # for m in output_masks.values():
+        #     m.append(True)
 
         # if hippocampome_pop_type == TestPopulation:
         #     # output_masks['only_R'][-1] = True
