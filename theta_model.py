@@ -49,7 +49,7 @@ def get_params():
     params = {}
     dimpopparams = {
         'dt_dim' : myconfig.DT,
-        'Delta_eta' : myconfig.DELTA_ETA,
+        'Delta_eta' : [], # myconfig.DELTA_ETA,
         'I_ext' : [],
     }
 
@@ -81,6 +81,11 @@ def get_params():
             dimpopparams['I_ext'].append(pop['I_ext'])
         except KeyError:
             dimpopparams['I_ext'].append(0.0)
+
+        try:
+            dimpopparams['Delta_eta'].append(pop['Delta_eta'])
+        except KeyError:
+            dimpopparams['Delta_eta'].append(myconfig.DELTA_ETA)
 
         for key in p:
             val = p[key].values[0]
@@ -242,7 +247,7 @@ Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 20000 #!!! 12500
-    nbatches = 12 #!!! 20
+    nbatches = 5 #!!! 20
     params, generators_params, target_params, output_masks = get_params()
 
 

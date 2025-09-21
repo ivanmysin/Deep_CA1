@@ -1,17 +1,29 @@
+import os
+os.chdir('../')
+
 import numpy as np
 import myconfig
 from myutils import get_net_params, get_gen_params
 from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators
 import h5py
+import matplotlib.pyplot as plt
+
+from pprint import pprint
 
 #model_path = './outputs/big_models/theta_model_5410.keras'  #   './outputs/big_models/pot_conns_add_R_theta_model_4930.keras'
-model_path =  myconfig.OUTPUTSPATH_MODELS + 'theta_model_2410.keras'  #   './outputs/big_models/pot_conns_add_R_theta_model_4930.keras'
+model_path1 =  '/home/ivan/nice_theta_models/8Hz_theta_model.keras'  #   './outputs/big_models/pot_conns_add_R_theta_model_4930.keras'
+model_path2 =  '/home/ivan/nice_theta_models/5Hz_theta_model.keras'  #   './outputs/big_models/pot_conns_add_R_theta_model_4930.keras'
 result_file = './outputs/firings/theta_freq_variation.h5'
 
-firing_file = h5py.File(result_file, mode='w')
+generators_params = get_gen_params(model_path1)
 
-params = get_net_params(model_path)
-generators_params = get_gen_params(model_path)
+params8 = get_net_params(model_path1)
+params5 = get_net_params(model_path2)
+
+params = params5
+#
+# for key in params8.keys():
+#     params[key] = 0.5 * (params8[key] + params5[key])
 
 dt = myconfig.DT
 
@@ -20,11 +32,13 @@ tnp = np.arange(0, 2500, dt, dtype=np.float32).reshape(1, -1, 1)
 
 generators_firings = generators.call(tnp)
 
+
 model = MeanFieldNetwork(params, dt_dim=dt, use_input=True)
 npfirings, states = model.predict(generators_firings)
 initial_states = [s[-1] for s in states]
 
 model.v_threshold = 10000
+firing_file = h5py.File(result_file, mode='w')
 
 for theta_freq in range(4, 13):
     generators.set_theta_freq(theta_freq)
@@ -37,6 +51,7 @@ for theta_freq in range(4, 13):
     theta_freq_group = firing_file.create_group(str(theta_freq))
 
     theta_freq_group.create_dataset(name='firings', data=npfirings)
+    theta_freq_group.create_dataset(name='generators_firings', data=generators_firings)
 
     theta_freq_group.create_dataset(name='v_avg', data=states[1])
     theta_freq_group.create_dataset(name='w_avg', data=states[2])
@@ -44,12 +59,5 @@ for theta_freq in range(4, 13):
     theta_freq_group.create_dataset(name='U', data=states[4])
     theta_freq_group.create_dataset(name='A', data=states[5])
 
-
 firing_file.close()
-
-# generators_firings = generators_firings.reshape(-1, generators_firings.shape[-1])
-# tnp = tnp.ravel()
-# # plt.plot(tnp, npfirings)
-# plt.plot(tnp, generators_firings)
-# plt.show()
 

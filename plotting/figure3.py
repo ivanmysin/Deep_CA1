@@ -21,8 +21,9 @@ fig_name = 'fig3'
 
 neurons_order = plotting_colors["neurons_order"]
 
-path = '../outputs/firings/output.h5'
-hf = h5py.File(path, 'r')
+path = '../outputs/firings/theta_freq_variation.h5'
+hfile = h5py.File(path, 'r')
+hf = hfile['5']
 
 t = np.linspace(0, duration, int(duration / dt) )
 sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * 8.0) + 1)

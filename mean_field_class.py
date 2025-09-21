@@ -121,6 +121,7 @@ class MeanFieldNetwork(Layer):
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=MinMaxWeights(min=0.0001),
+                                        regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         name=f"Delta_eta")
 
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
