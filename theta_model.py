@@ -237,7 +237,7 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 
 ########################################################################
-IS_CREATE_MODEL = False
+IS_CREATE_MODEL = True
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + '5Hz_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
 filename_template =  '5Hz_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
