@@ -243,7 +243,7 @@ filename_template =  '5Hz_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_
 
 model_path = myconfig.OUTPUTSPATH_MODELS + '5Hz_theta_model_5000.keras'
 initial_epoch = 5000
-Epoches = 5000
+Epoches = 10000
 
 if IS_CREATE_MODEL:
     batch_len = 20000 #!!! 12500
