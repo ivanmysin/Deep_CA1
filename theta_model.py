@@ -241,7 +241,7 @@ IS_CREATE_MODEL = False
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + '5Hz_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
 filename_template =  '5Hz_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
-model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_10000.keras'
+model_path = myconfig.OUTPUTSPATH_MODELS + '5Hz_theta_model_5000.keras'
 initial_epoch = 5000
 Epoches = 5000
 
