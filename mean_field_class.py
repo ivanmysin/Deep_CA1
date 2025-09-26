@@ -5,7 +5,7 @@ from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer, L2
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Model
-from tensorflow.keras.saving import load_model
+
 import izhs_lib
 import h5py
 
@@ -128,7 +128,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=0.000001),
+                                        # regularizer=L2(l2=0.000001),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -152,8 +152,8 @@ class MeanFieldNetwork(Layer):
 
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer=tf.keras.initializers.Constant(gsyn_max),
-                                        regularizer=L2(l2=0.000001), # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                        #regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
+                                        # regularizer=L2(l2=0.000001), # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                        regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=tf.keras.constraints.NonNeg(),
@@ -161,7 +161,7 @@ class MeanFieldNetwork(Layer):
 
         self.tau_f = self.add_weight(shape=tf.keras.ops.shape(tau_f),
                                      initializer=tf.keras.initializers.Constant(tau_f),
-                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=6.0, max=240.0),
@@ -169,7 +169,7 @@ class MeanFieldNetwork(Layer):
 
         self.tau_d = self.add_weight(shape=tf.keras.ops.shape(tau_d),
                                      initializer=tf.keras.initializers.Constant(tau_d),
-                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=2.0, max=15.0),
@@ -177,7 +177,7 @@ class MeanFieldNetwork(Layer):
 
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),
                                      initializer=tf.keras.initializers.Constant(tau_r),
-                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min=91.0, max=1300.0),
@@ -185,7 +185,7 @@ class MeanFieldNetwork(Layer):
 
         self.Uinc = self.add_weight(shape=tf.keras.ops.shape(Uinc),
                                     initializer=tf.keras.initializers.Constant(Uinc),
-                                    # regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
+                                    regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
                                     trainable=True,
                                     dtype=myconfig.DTYPE,
                                     constraint=MinMaxWeights(min=0.04, max=0.4),

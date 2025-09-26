@@ -59,7 +59,7 @@ PCONN_THRESHOLD = 0.05
 
 
 #####
-ThetaFreq = 5.0  #8.0  # !!!
+ThetaFreq = 8.0  # !!! 5.0  #
 
 ##############################################
 ######### fit whole model of CA1 net #########
