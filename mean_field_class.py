@@ -172,7 +172,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=2.0, max=150.0),
+                                     constraint=MinMaxWeights(min=2.0, max=150.0), # max=15.0 !!
                                      name=f"tau_d")
 
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),

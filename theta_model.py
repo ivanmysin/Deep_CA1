@@ -206,7 +206,7 @@ def get_model(params, generators_params, dt, target_params):
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
         loss = [lmse_loss, lmse_loss],
-        loss_weights = [1.0, 1.0],
+        loss_weights = [1.0, 0.1],
     )
 
     return big_model, firing_model
@@ -243,11 +243,11 @@ filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epo
 
 model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 initial_epoch = 5000
-Epoches = 10000
+Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 12500  ## 20000 #!!!
-    nbatches = 10 #!!! 20
+    nbatches = 4 #!!! 20
     params, generators_params, target_params, output_masks = get_params()
 
 
