@@ -260,6 +260,8 @@ if IS_CREATE_MODEL:
         dfile.create_dataset('Ytrain', data=Ytrain[0])
         dfile.create_dataset('Ytrain_R', data=Ytrain[1])
 
+    Ytrain = Ytrain[0]
+
 
     model, firing_model = get_model(params, generators_params, myconfig.DT, target_params)
 
@@ -277,7 +279,7 @@ else:
         Ytrain_1 = dfile['Ytrain'][:]
         Ytrain_2 = dfile['Ytrain_R'][:]
 
-    Ytrain = [Ytrain_1, Ytrain_2]
+    Ytrain = Ytrain_1 #  [Ytrain_1, Ytrain_2]
 
     Epoches = Epoches + initial_epoch
 
