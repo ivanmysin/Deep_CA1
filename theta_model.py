@@ -195,7 +195,7 @@ def get_model(params, generators_params, dt, target_params):
                                     name='only_modulation_output')(net_layer)
 
     # outputs = generators # net_layer  #
-    outputs = [net_layer, only_modulation_output]  # generators #
+    outputs = net_layer   # [net_layer, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
     firing_model = Model(inputs=input, outputs=net_layer)
@@ -209,8 +209,8 @@ def get_model(params, generators_params, dt, target_params):
         # !!! loss_weights = [1.0, 0.1],
     )
 
-    # !!! return big_model, firing_model
-    return firing_model, firing_model
+    return big_model, firing_model
+
 
 def get_dataset(target_params, dt, batch_len, nbatches):
     duration = int(batch_len * nbatches * dt)
