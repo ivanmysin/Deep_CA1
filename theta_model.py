@@ -205,11 +205,12 @@ def get_model(params, generators_params, dt, target_params):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, lmse_loss],
-        loss_weights = [1.0, 0.1],
+        loss = lmse_loss # !!! [lmse_loss, lmse_loss],
+        # !!! loss_weights = [1.0, 0.1],
     )
 
-    return big_model, firing_model
+    # !!! return big_model, firing_model
+    return firing_model, firing_model
 
 def get_dataset(target_params, dt, batch_len, nbatches):
     duration = int(batch_len * nbatches * dt)
