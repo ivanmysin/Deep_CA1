@@ -22,11 +22,11 @@ import myconfig
 
 def get_params():
 
-    TestPopulation = 'CA1 O-LM'
-    output_masks = {
-        'full_target' : [],
-        'only_R' : [],
-    }
+    # TestPopulation = '' #'CA1 O-LM'
+    # output_masks = {
+    #     'full_target' : [],
+    #     'only_R' : [],
+    # }
 
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
@@ -49,7 +49,7 @@ def get_params():
     params = {}
     dimpopparams = {
         'dt_dim' : myconfig.DT,
-        'Delta_eta' : myconfig.DELTA_ETA,
+        'Delta_eta' : [], # myconfig.DELTA_ETA,
         'I_ext' : [],
     }
 
@@ -63,15 +63,15 @@ def get_params():
 
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
 
-        for m in output_masks.values():
-            m.append(True)
-
-        if hippocampome_pop_type == TestPopulation:
-            # output_masks['only_R'][-1] = True
-            output_masks['full_target'][-1] = False
-        # else:
-        #     output_masks['only_R'][-1] = False
-        #     output_masks['full_target'][-1] = True
+        # for m in output_masks.values():
+        #     m.append(True)
+        #
+        # if hippocampome_pop_type == TestPopulation:
+        #     # output_masks['only_R'][-1] = True
+        #     output_masks['full_target'][-1] = False
+        # # else:
+        # #     output_masks['only_R'][-1] = False
+        # #     output_masks['full_target'][-1] = True
 
 
 
@@ -81,6 +81,11 @@ def get_params():
             dimpopparams['I_ext'].append(pop['I_ext'])
         except KeyError:
             dimpopparams['I_ext'].append(0.0)
+
+        try:
+            dimpopparams['Delta_eta'].append(pop['Delta_eta'])
+        except KeyError:
+            dimpopparams['Delta_eta'].append(myconfig.DELTA_ETA)
 
         for key in p:
             val = p[key].values[0]
@@ -129,12 +134,13 @@ def get_params():
 
             if len(syn) == 0:
                 # print("Connection from ", pre_type, "to", post_type, "not finded!")
+                continue
 
-                syn = potential_connections[(potential_connections['Presynaptic Neuron Type'] == pre_type) & (
-                        potential_connections['Postsynaptic Neuron Type'] == post_type)]
-
-                if len(syn) == 0:
-                    continue
+                # syn = potential_connections[(potential_connections['Presynaptic Neuron Type'] == pre_type) & (
+                #         potential_connections['Postsynaptic Neuron Type'] == post_type)]
+                #
+                # if len(syn) == 0:
+                #     continue
 
             params['pconn'][pre_idx, post_idx] = 1 # syn['pconn'].values[0]
             Uinc = syn['Uinc'].values[0]
@@ -171,7 +177,7 @@ def get_params():
 
     # target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
 
-    return params, generators_params, target_params, output_masks
+    return params, generators_params, target_params #, output_masks
 ########################################################################
 def get_model(params, generators_params, dt, target_params):
     input = Input(shape=(None, 1), batch_size=1)
@@ -190,7 +196,7 @@ def get_model(params, generators_params, dt, target_params):
                                     name='only_modulation_output')(net_layer)
 
     # outputs = generators # net_layer  #
-    outputs = [net_layer, only_modulation_output]  # generators #
+    outputs = net_layer   # [net_layer, only_modulation_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
     firing_model = Model(inputs=input, outputs=net_layer)
@@ -200,11 +206,12 @@ def get_model(params, generators_params, dt, target_params):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, lmse_loss],
-        loss_weights = [1.0, 0.1],
+        loss = lmse_loss # !!! [lmse_loss, lmse_loss],
+        # !!! loss_weights = [1.0, 0.1],
     )
 
     return big_model, firing_model
+
 
 def get_dataset(target_params, dt, batch_len, nbatches):
     duration = int(batch_len * nbatches * dt)
@@ -233,18 +240,17 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 ########################################################################
 IS_CREATE_MODEL = True
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'pot_conns_add_R_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
-filename_template =  'pot_conns_add_R_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
+filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
-model_path = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_10000.keras'
-initial_epoch = 10000
-Epoches = 10000
+model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
+initial_epoch = 5000
+Epoches = 5000
 
 if IS_CREATE_MODEL:
-    batch_len = 12500
+    batch_len = 12500  ## 20000 #!!!
     nbatches = 20
-    params, generators_params, target_params, output_masks = get_params()
-
+    params, generators_params, target_params = get_params()
 
 
     Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
@@ -253,6 +259,8 @@ if IS_CREATE_MODEL:
         dfile.create_dataset('Xtrain', data=Xtrain)
         dfile.create_dataset('Ytrain', data=Ytrain[0])
         dfile.create_dataset('Ytrain_R', data=Ytrain[1])
+
+    Ytrain = Ytrain[0]
 
 
     model, firing_model = get_model(params, generators_params, myconfig.DT, target_params)
@@ -271,7 +279,7 @@ else:
         Ytrain_1 = dfile['Ytrain'][:]
         Ytrain_2 = dfile['Ytrain_R'][:]
 
-    Ytrain = [Ytrain_1, Ytrain_2]
+    Ytrain = Ytrain_1 #  [Ytrain_1, Ytrain_2]
 
     Epoches = Epoches + initial_epoch
 
@@ -301,7 +309,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=Epoches, verbose=2, batch_size=1, callbacks=callbacks, initial_epoch=initial_epoch)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
+with h5py.File(myconfig.OUTPUTSPATH + 'theta_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
 
