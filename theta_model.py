@@ -22,11 +22,11 @@ import myconfig
 
 def get_params():
 
-    TestPopulation = '' #'CA1 O-LM'
-    output_masks = {
-        'full_target' : [],
-        'only_R' : [],
-    }
+    # TestPopulation = '' #'CA1 O-LM'
+    # output_masks = {
+    #     'full_target' : [],
+    #     'only_R' : [],
+    # }
 
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
@@ -63,15 +63,15 @@ def get_params():
 
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
 
-        for m in output_masks.values():
-            m.append(True)
-
-        if hippocampome_pop_type == TestPopulation:
-            # output_masks['only_R'][-1] = True
-            output_masks['full_target'][-1] = False
-        # else:
-        #     output_masks['only_R'][-1] = False
-        #     output_masks['full_target'][-1] = True
+        # for m in output_masks.values():
+        #     m.append(True)
+        #
+        # if hippocampome_pop_type == TestPopulation:
+        #     # output_masks['only_R'][-1] = True
+        #     output_masks['full_target'][-1] = False
+        # # else:
+        # #     output_masks['only_R'][-1] = False
+        # #     output_masks['full_target'][-1] = True
 
 
 
@@ -134,12 +134,13 @@ def get_params():
 
             if len(syn) == 0:
                 # print("Connection from ", pre_type, "to", post_type, "not finded!")
+                continue
 
-                syn = potential_connections[(potential_connections['Presynaptic Neuron Type'] == pre_type) & (
-                        potential_connections['Postsynaptic Neuron Type'] == post_type)]
-
-                if len(syn) == 0:
-                    continue
+                # syn = potential_connections[(potential_connections['Presynaptic Neuron Type'] == pre_type) & (
+                #         potential_connections['Postsynaptic Neuron Type'] == post_type)]
+                #
+                # if len(syn) == 0:
+                #     continue
 
             params['pconn'][pre_idx, post_idx] = 1 # syn['pconn'].values[0]
             Uinc = syn['Uinc'].values[0]
@@ -176,7 +177,7 @@ def get_params():
 
     # target_params.loc[ target_params['Hippocampome_Neurons_Names'] == TestPopulation, "R"] = 0
 
-    return params, generators_params, target_params, output_masks
+    return params, generators_params, target_params #, output_masks
 ########################################################################
 def get_model(params, generators_params, dt, target_params):
     input = Input(shape=(None, 1), batch_size=1)
@@ -249,8 +250,7 @@ Epoches = 5000
 if IS_CREATE_MODEL:
     batch_len = 12500  ## 20000 #!!!
     nbatches = 4 #!!! 20
-    params, generators_params, target_params, output_masks = get_params()
-
+    params, generators_params, target_params = get_params()
 
 
     Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
