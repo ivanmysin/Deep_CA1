@@ -249,7 +249,7 @@ Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 12500  ## 20000 #!!!
-    nbatches = 4 #!!! 20
+    nbatches = 20
     params, generators_params, target_params = get_params()
 
 
