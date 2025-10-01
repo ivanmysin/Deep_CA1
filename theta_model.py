@@ -110,7 +110,7 @@ def get_params():
     Nsim = NN - len(generators_params)
     gsyn_max = np.zeros(shape=(NN, Nsim), dtype=np.float32)
 
-    print(gsyn_max.shape)
+    ## print(gsyn_max.shape)
 
     dimpopparams['gsyn_max'] = gsyn_max
     dimpopparams["Erev"] = np.zeros_like(gsyn_max) - 75.0
