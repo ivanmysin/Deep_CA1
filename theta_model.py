@@ -233,12 +233,12 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 ########################################################################
 IS_CREATE_MODEL = True
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'pot_conns_add_R_theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
-filename_template =  'pot_conns_add_R_theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
+filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
-model_path = myconfig.OUTPUTSPATH_MODELS + 'add_R_theta_model_10000.keras'
-initial_epoch = 10000
-Epoches = 10000
+model_path = myconfig.OUTPUTSPATH_MODELS + 'heta_model_5000.keras'
+initial_epoch = 5000
+Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 12500
