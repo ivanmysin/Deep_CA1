@@ -1,126 +1,144 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import sys
 
-# import sys
-# sys.path.append('/')
+sys.path.append('../')
+from myutils import get_net_params
+
 from plots_config import plotting_colors
-
 import h5py
-params = {'legend.fontsize': '12',
+
+params = {'legend.fontsize': '16',
           'figure.figsize': (15, 5),
-         'axes.labelsize': 'xx-large',
-         'axes.titlesize':'xx-large',
-         'xtick.labelsize':'xx-large',
-         'ytick.labelsize':'xx-large',
+          'axes.labelsize': 'xx-large',
+          'axes.titlesize':'xx-large',
+          'xtick.labelsize':'x-large',
+          'ytick.labelsize':'x-large',
           }
 plt.rcParams.update(params)
 TEXTFONTSIZE = 'xx-large'
 
+fig_name = 'fig4'
 
-
-dt = 0.01
-duration = 2400
-
-fig_name = 'fig2'
 
 neuron_idx_in_sols = []
-neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='theta_model')
-neurons_params = neurons_params[neurons_params['Npops'] == 1]['neurons'].to_list()
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
+neurons_params['Hippocampome_Neurons_Names'] = neurons_params['Hippocampome_Neurons_Names'].str.strip()
+neurons_params['Model_Neurons_Names'] = neurons_params['Model_Neurons_Names'].str.strip()
+neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
+neurons_params = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Names'].to_list()
 for neuron_name in plotting_colors["neurons_order"]:
     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
+model_path =  '/home/ivan/nice_theta_models/5Hz_theta_model.keras'
+params = get_net_params(model_path)
 
-neurons_order = plotting_colors["neurons_order"]
-path = '../outputs/firings/theta_freq_variation.h5'
+T_st_idx = 0 # start of t
+theta_freq = 12
+DT = 0.01
+source_hfile = h5py.File('../outputs/firings/theta_freq_variation.h5', mode='r')
 
-freq = '12'
+hf = source_hfile[f'{theta_freq}']
 
-hf = h5py.File(path, 'r')
-t = np.linspace(0, duration, 160000 )
-sine = 0.5 * (np.cos(2 * np.pi * 0.001*t * float(freq)) + 1)
+full_firings = hf['firings'][:, :]
 
-gridspec_kw = {
-    "width_ratios" : [1.0, 0.9, 1.0, 0.9],
-}
+print(params.keys())
+gsyns = hf['A'][:] * params['gsyn_max']
+e_r = params['e_r']
 
-if len(neurons_order)%2 == 0:
-    nrows = len(neurons_order)//2
-else:
-    nrows = len(neurons_order) // 2 + 1
+is_exc = (e_r > 0).astype(np.float32)
+is_inh = (e_r < 0).astype(np.float32)
 
-fig, axes = plt.subplots( nrows=nrows, ncols=4, \
-                          gridspec_kw=gridspec_kw, constrained_layout=True, figsize=(18, 10))
+gsyn_exc = np.sum(gsyns * is_exc, axis=1)
+gsyn_inh = np.sum(gsyns * is_inh, axis=1)
 
-#fig.tight_layout(pad=4.0)
-
-
+t = np.linspace(0, full_firings.shape[0]*DT, full_firings.shape[0])
 
 
-for neuron_idx, neuron_name in enumerate(neurons_order):
-     col_idx = 0
-     row_idx = neuron_idx
 
-     if neuron_idx > (nrows - 1):
-         row_idx = neuron_idx - nrows
 
-         col_idx = 2
 
-     neuron_name_title = neuron_name
-     if len(neuron_name_title) > 17:
-         neuron_name_title = neuron_name_title[:5] + neuron_name_title[5:].replace(" ", "\n", 1)
-
-     ax2 = axes[row_idx, col_idx]
-     ax2.axis("off")
-     ax2.set_xlim(0, 1)
-     ax2.set_ylim(0, 1)
-     ax2.text(0.5, 0.5, neuron_name_title, fontsize=TEXTFONTSIZE)
-
-     ax = axes[row_idx, col_idx + 1]
-     if neuron_idx == 0:
-         ax.set_title("Частота разрядов")
-     if (neuron_idx == nrows - 1) or (neuron_idx == len(neurons_order) - 1):
-        ax.set_xlabel("Время (мс)")
-     else:
-        ax.xaxis.set_ticklabels([])
-
-     if row_idx == int(nrows//2) :
-         ax.set_ylabel("имп./сек.")
-
-     print(neuron_name)
-
-     firings = hf[freq]['firings'][:,  neuron_idx_in_sols[neuron_idx] ]
-     # target = hf['4']['target_firing'][: neuron_idx_in_sols[neuron_idx] ]
-
-     # print("target", target.shape)
-     # print("firings", firings.shape)
-     # ax.plot(t, target, label = "Целевая частота", color='black', linewidth=4)
-     ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=5, label="Симуляция")
-#     neurons_indexes = montecarlofile[neuron_name + "_indexes"][:]
-#     neurons_times = montecarlofile[neuron_name + "_times"][:]
-#     montecarlofirings, _ = np.histogram(neurons_times, bins=t)
-#     montecarlofirings = montecarlofirings / np.max(neurons_indexes + 1)
-#     montecarlofirings = montecarlofirings / (0.001 * (t[1] - t[0]))
-#     montecarlofirings = np.convolve(montecarlofirings, Parzen, mode='same')
+sine = 0.5 * ( np.cos(2*np.pi*theta_freq*t*0.001) + 1)
 #
-#     #ax.plot(t[:-1], montecarlofirings, linestyle="--", color=plotting_colors["neuron_colors"][neuron_name], label="Monte-Carlo")
-     sine_ampls = sine * 0.7*np.max(firings)
-     ax.plot(t, sine_ampls, linestyle="--", label = "cos", color='black')
+#
+# fig, axes = plt.subplots(nrows=len(source_hfile.keys()), ncols=1, \
+#                                  constrained_layout=True, figsize=(5, 10), sharex=True  )
+#
+# for idx, theta_freq in enumerate( sorted( source_hfile.keys())):
+#
+#
+#     generators_firings = source_hfile[f'{theta_freq}/generators_firings'][0, :, :]
+#     axes[idx].set_title(theta_freq)
+#     theta_freq = float(theta_freq)
+#
+#     if idx == 0:
+#         t = np.linspace(0, generators_firings.shape[0]*DT, generators_firings.shape[0])
+#         sine = 0.5 * ( np.cos(2*np.pi*theta_freq*t*0.001) + 1)
+#
+#
+#     sine = 1.5* 0.5 * ( np.cos(2*np.pi*theta_freq*t*0.001) + 1)
+#
+#
+#
+#
+#     axes[idx].plot(t, generators_firings[:, 0])
+#     axes[idx].plot(t, generators_firings[:, 1])
+#     axes[idx].plot(t, sine, color='black', linewidth=5)
+#
+#     axes[idx].set_xlim(0, 500)
 
-     #ax.set_ylim(0, 1.1*max( [np.max(firings[8000:]), np.max(target)]) )
 
 
 
-     ax.legend( bbox_to_anchor=(1.7, 1.1), loc="upper right")
-     ax.set_xlim(800, 1200)
+#     axes[0].set_title(neuron_name)
+#
+#     ax = axes[0]
+#
+#     firings = full_firings[T_st_idx:, neuron_idx_in_sols[neuron_idx]]
+#     cos_ref = sine * 0.7 * np.max(firings)
+#
+#
+#     ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, label="Симуляция")
+#     ax.plot(t, cos_ref, color='black', linewidth=0.5, label="Cos", linestyle='--')
 
-if len(neurons_order)%2 != 0:
-    axes[-1, -1].axis('off')
-    axes[-1, -2].axis('off')
+
+for neuron_idx, neuron_name in enumerate(plotting_colors["neurons_order"]):
+
+    fig, axes = plt.subplots(nrows=3, ncols=1, \
+                             constrained_layout=True, figsize=(5, 10), sharex=True  )
+
+    axes[0].set_title(neuron_name)
+
+    ax = axes[0]
+
+    firings = full_firings[T_st_idx:, neuron_idx_in_sols[neuron_idx]]
+    cos_ref = sine * 0.7 * np.max(firings)
 
 
+    ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, label="Симуляция")
+    ax.plot(t, cos_ref, color='black', linewidth=0.5, label="Cos", linestyle='--')
 
-#fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=200)
-hf.close()
+    axes[1].plot(t, gsyn_exc[:, neuron_idx_in_sols[neuron_idx]], color='black', linewidth=1.5, label="Cos", linestyle='--')
+    axes[2].plot(t, gsyn_inh[:, neuron_idx_in_sols[neuron_idx]], color='black', linewidth=1.5, label="Cos", linestyle='--')
 
+
+    for pre_idx, pre_name in enumerate(neurons_params):
+
+        if e_r[pre_idx, 0] > 0:
+            ax = axes[1]
+        else:
+            ax = axes[2]
+
+        gsyn = gsyns[:, pre_idx,  neuron_idx_in_sols[neuron_idx]]
+
+        #gsyn_exc = gsyns[:, -2:, neuron_idx]
+
+        ax.plot(t, gsyn, label=pre_name)
+
+
+    ax.set_xlim(0, 1500)
+
+source_hfile.close()
+#fig.savefig(f'../outputs/plots/{fig_name}.png', dpi=500)
 plt.show()
