@@ -110,7 +110,7 @@ def get_params():
     Nsim = NN - len(generators_params)
     gsyn_max = np.zeros(shape=(NN, Nsim), dtype=np.float32)
 
-    #print(gsyn_max.shape)
+    print(gsyn_max.shape)
 
     dimpopparams['gsyn_max'] = gsyn_max
     dimpopparams["Erev"] = np.zeros_like(gsyn_max) - 75.0
@@ -120,6 +120,7 @@ def get_params():
     params['tau_r'] = np.zeros_like(gsyn_max) + 10  # + tau_r
     params['tau_f'] = np.zeros_like(gsyn_max) + 5  # + tau_f
     params['Uinc'] = np.zeros_like(gsyn_max) + 0.5  # + Uinc
+
 
     for pre_idx, (_, pre_pop) in enumerate(populations.iterrows()):
         for post_idx, (_, post_pop) in enumerate(populations.iterrows()):
@@ -282,8 +283,6 @@ else:
     Ytrain = Ytrain_1 #  [Ytrain_1, Ytrain_2]
 
     Epoches = Epoches + initial_epoch
-
-
 
 
 Nepoches4modelsaving = 2 * len(Xtrain) + 1
