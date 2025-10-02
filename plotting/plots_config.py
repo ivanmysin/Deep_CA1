@@ -23,7 +23,7 @@ plotting_colors = {
 
     },
 
-    "neurons_order" : ["Pyramidal (deep)", "Pyramidal (superficial)" ,
+    "neurons_order" : [  #"Pyramidal (deep)", "Pyramidal (superficial)" ,
                        "Basket", "O-LM", "Basket CCK+",
                        "Ivy", "Neurogliaform",
                        "Bistratified", "Axo-Axonic",
