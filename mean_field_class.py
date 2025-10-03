@@ -2,10 +2,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
-from tensorflow.keras.regularizers import Regularizer
+from tensorflow.keras.regularizers import Regularizer, L2
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Model
-from tensorflow.keras.saving import load_model
+
 import izhs_lib
 import h5py
 
@@ -118,7 +118,7 @@ class MeanFieldNetwork(Layer):
 
         self.Delta_eta = self.add_weight(shape=tf.keras.ops.shape(Delta_eta),
                                         initializer=tf.keras.initializers.Constant(Delta_eta),
-                                        trainable=True,
+                                        trainable=False,
                                         dtype=myconfig.DTYPE,
                                         constraint=MinMaxWeights(min=0.0001),
                                         name=f"Delta_eta")
@@ -127,6 +127,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
+                                        regularizer=L2(L2=0.0001),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 

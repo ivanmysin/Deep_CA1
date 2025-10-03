@@ -78,4 +78,4 @@ EPOCHES_FULL_T = 1000
 
 
 
-DELTA_ETA = 15 #pA dim
+DELTA_ETA = 50 ###!!! 15 #pA dim
