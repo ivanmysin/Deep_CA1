@@ -201,7 +201,7 @@ def get_model(params, generators_params, dt, target_params):
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
         loss = [lmse_loss, lmse_loss],
-        loss_weights = [1.0, 1.0],
+        loss_weights = [1.0, 0.0],
     )
 
     return big_model, firing_model
@@ -236,7 +236,7 @@ IS_CREATE_MODEL = True
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
 filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
 
-model_path = myconfig.OUTPUTSPATH_MODELS + 'heta_model_5000.keras'
+model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 initial_epoch = 5000
 Epoches = 5000
 
