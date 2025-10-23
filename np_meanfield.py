@@ -124,29 +124,17 @@ class MeanFieldNetwork:
         A = states[5]
 
         g_syn = self.gsyn_max * A
-        # g_syn_tot = np.sum(g_syn, axis=0)
-        #
-        #
-        # Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
-        #
-        # drates = self.dts_non_dim * (self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        # dv_avg = self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi *rates)**2)
-        # dw_avg = self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
-        #
-        # rates = rates + drates
-        # v_avg = v_avg + dv_avg
-        # w_avg = w_avg + dw_avg
 
         rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
-        firing_probs =  (self.dts_non_dim * rates).T #tf.reshape(rates, shape=(-1, 1))
+        firing_probs =  (self.dts_non_dim * rates).T # probability of AP generation
 
         if self.use_input:
             inputs = inputs.T * 0.001 * self.dt_dim
             firing_probs = np.concatenate( [firing_probs, inputs], axis=0)
 
         v_avg[ v_avg > self.v_threshold ] = self.v_threshold
-        #v_avg[v_avg < -0.5] = -1
+
 
         FRpre_normed = self.pconn *  firing_probs
 
@@ -196,6 +184,194 @@ class MeanFieldNetwork:
 
             h_states.append(s)
         return outputs, h_states
+
+#############################################################################
+class IzhikevichNetwork:
+
+    def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
+        self.dt_dim = dt_dim
+        self.use_input = use_input
+        self.NN = 2  # количество нейронов в каждой популяции
+
+        self.Npops = len(params['alpha']) # число популяций
+        self.alpha = np.asarray(params['alpha'], dtype=np.float32)
+        self.alpha = np.expand_dims(self.alpha, axis=1)
+
+        self.a = np.asarray(params['a'], dtype=np.float32)
+        self.a = np.expand_dims(self.a, axis=1)
+
+        self.b = np.asarray(params['b'], dtype=np.float32)
+        self.b = np.expand_dims(self.b, axis=1)
+
+        self.w_jump = np.asarray(params['w_jump'], dtype=np.float32)
+        self.w_jump = np.tile(self.w_jump, self.NN).reshape(self.Npops, self.NN)  # Повторяем w_jump для каждой популяции
+
+        self.dts_non_dim = np.asarray(params['dts_non_dim'], dtype=np.float32)
+        self.Delta_eta = np.asarray(params['Delta_eta'], dtype=np.float32)
+        self.I_ext = np.asarray(params['I_ext'], dtype=np.float32)
+        self.I_ext = np.expand_dims(self.I_ext, axis=1)
+
+        # Пороговые значения для ресета
+        self.v_peak = 100 # np.asarray(params['v_peak'], dtype=np.float32)
+        self.v_reset = -100 # np.asarray(params['v_reset'], dtype=np.float32)
+
+        # Синаптические параметры
+        self.gsyn_max = np.asarray(params['gsyn_max'], dtype=np.float32)
+        self.tau_f = np.asarray(params['tau_f'], dtype=np.float32)
+        self.tau_d = np.asarray(params['tau_d'], dtype=np.float32)
+        self.tau_r = np.asarray(params['tau_r'], dtype=np.float32)
+        self.Uinc = np.asarray(params['Uinc'], dtype=np.float32)
+        self.e_r = np.asarray(params['e_r'], dtype=np.float32)
+
+        self.e_r = np.expand_dims(self.e_r , axis=2)
+
+        self.pconn = np.asarray(params['pconn'])
+
+        # Предварительные вычисления
+        self.tau1r = np.where(self.tau_d != self.tau_r, self.tau_d / (self.tau_d - self.tau_r), 1e-13)
+        self.exp_tau_d = np.exp(-self.dt_dim / self.tau_d)
+        self.exp_tau_f = np.exp(-self.dt_dim / self.tau_f)
+        self.exp_tau_r = np.exp(-self.dt_dim / self.tau_r)
+
+        synaptic_matrix_shapes = self.gsyn_max.shape
+        self.state_size = [self.Npops, self.Npops, self.Npops, synaptic_matrix_shapes, synaptic_matrix_shapes, synaptic_matrix_shapes]
+
+    def get_initial_state(self, batch_size=1):
+        # Инициализация состояний нейронов
+        v = np.zeros((self.Npops, self.NN), dtype=np.float32)
+        w = np.zeros((self.Npops, self.NN), dtype=np.float32)
+
+        # Инициализация синаптических переменных
+        synaptic_matrix_shapes = self.gsyn_max.shape
+        R = np.zeros(synaptic_matrix_shapes, dtype=np.float32)
+        U = np.zeros(synaptic_matrix_shapes, dtype=np.float32)
+        A = np.zeros(synaptic_matrix_shapes, dtype=np.float32)
+
+        # Для совместимости с интерфейсом возвращаем rates как zeros
+        rates = np.zeros((1, self.Npops), dtype=np.float32)
+
+        return [rates, v, w, R, U, A]
+
+    def dvdt(self, v, w, I_syn):
+        """Уравнение для мембранного потенциала"""
+        return v * (v - self.alpha) - w + self.I_ext + I_syn
+
+    def dwdt(self, v, w):
+        """Уравнение для адаптационной переменной"""
+        return self.a * (self.b * v - w)
+
+    def runge_kutta_step(self, v, w, I_syn):
+        """Шаг интегрирования методом Рунге-Кутты 4-го порядка"""
+        k1v = self.dvdt(v, w, I_syn)
+        k1w = self.dwdt(v, w)
+
+        k2v = self.dvdt(v + 0.5 * self.dt_dim * k1v, w + 0.5 * self.dt_dim * k1w, I_syn)
+        k2w = self.dwdt(v + 0.5 * self.dt_dim * k1v, w + 0.5 * self.dt_dim * k1w)
+
+        k3v = self.dvdt(v + 0.5 * self.dt_dim * k2v, w + 0.5 * self.dt_dim * k2w, I_syn)
+        k3w = self.dwdt(v + 0.5 * self.dt_dim * k2v, w + 0.5 * self.dt_dim * k2w)
+
+        k4v = self.dvdt(v + self.dt_dim * k3v, w + self.dt_dim * k3w, I_syn)
+        k4w = self.dwdt(v + self.dt_dim * k3v, w + self.dt_dim * k3w)
+
+        v_new = v + self.dt_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
+        w_new = w + self.dt_dim * (k1w + 2*k2w + 2*k3w + k4w) / 6.0
+
+        return v_new, w_new
+
+    def call(self, inputs, states):
+        rates = states[0]
+        v = states[1]
+        w = states[2]
+        R = states[3]
+        U = states[4]
+        A = states[5]
+
+        # Вычисление синаптической проводимости
+        g_syn = self.gsyn_max * A
+
+        g_syn = np.expand_dims(g_syn, axis=2)
+
+        # Вычисление общего синаптического тока для каждого нейрона
+        I_syn = g_syn * (self.e_r - v)
+        I_syn = np.sum(I_syn, axis=0)
+
+
+        # Интегрирование уравнений нейронов
+        v_new, w_new = self.runge_kutta_step(v, w, I_syn)
+
+
+
+        # Применение ресет-правил
+        spike_mask = v_new >= self.v_peak
+
+
+
+        spike_mask = spike_mask.reshape((self.Npops, self.NN))
+
+        # print('spike_mask', spike_mask.shape)
+        # print('self.w_jump', self.w_jump.shape)
+
+        # print(self.w_jump.shape)
+        ## !!!! Начать отсюда!!!!
+
+        v_new[spike_mask] = self.v_reset #[spike_mask]
+        w_new[spike_mask] += self.w_jump[spike_mask]
+
+        # Вычисление доли спайков в каждой популяции (вероятность генерации ПД)
+        firing_probs = np.mean(spike_mask, axis=1, keepdims=True).T  # форма: (1, units)
+
+        # Обновление синаптических переменных (без изменений)
+        if self.use_input:
+            inputs_processed = inputs.T * 0.001 * self.dt_dim
+            firing_probs_extended = np.concatenate([firing_probs.T, inputs_processed], axis=0)
+        else:
+            firing_probs_extended = firing_probs.T
+
+        FRpre_normed = self.pconn * firing_probs_extended
+
+        a_ = A * self.exp_tau_d
+        r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r - self.tau1r * A
+        u_ = U * self.exp_tau_f
+
+        U_new = u_ + self.Uinc * (1 - u_) * FRpre_normed
+        A_new = a_ + U_new * r_ * FRpre_normed
+        R_new = r_ - U_new * r_ * FRpre_normed
+
+        # Конвертация выходной частоты (аналогично оригинальному коду)
+        output = firing_probs * self.dts_non_dim / self.dt_dim * 1000
+
+        return output, [firing_probs, v_new, w_new, R_new, U_new, A_new]
+
+    def predict(self, inputs, time_axis=1, initial_states=None):
+        if initial_states is None:
+            states = self.get_initial_state()
+        else:
+            states = initial_states
+
+        outputs = []
+        hist_states = []
+
+        for idx in range(inputs.shape[time_axis]):
+            inp = inputs[:, idx, :]
+            output, states = self.call(inp, states)
+            outputs.append(output)
+
+            for s in states:
+                hist_states.append(s)
+
+        outputs = np.stack(outputs)
+
+        h_states = []
+        for s_idx in range(len(states)):
+            s = hist_states[s_idx::len(states)]
+            s = np.stack(s)
+            h_states.append(s)
+
+        return outputs, h_states
+
+
+#############################################################################
 
 class SpatialThetaGenerators:
     def __init__(self, params, **kwargs):
