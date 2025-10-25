@@ -6,56 +6,133 @@ import matplotlib.pyplot as plt
 import h5py
 
 model_path = './outputs/big_models/theta_model.keras'
-result_file = './outputs/firings/units_theta_freq_variation.h5'
+# result_file = './outputs/firings/units_theta_freq_variation.h5'
+result_file = './outputs/firings/pop_theta_freq_variation.h5'
 
-firing_file = h5py.File(result_file, mode='w')
+
 
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300
-params['v_reset'] = np.zeros((10, 10), dtype=np.float32) - 300
+params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
 
-dt = myconfig.DT
+
+# params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300
+# params['v_reset'] = np.zeros((10, 10), dtype=np.float32) - 300
+
+dt = myconfig.DT # шаг в мс
+duration = 500 # время симуляции в мс
+save_interval = 100 # интервал сохранения в мс
 
 generators = SpatialThetaGenerators(generators_params)
-tnp = np.arange(0, 2500, dt, dtype=np.float32).reshape(1, -1, 1)
+tnp = np.arange(0, duration, dt, dtype=np.float32).reshape(1, -1, 1)
 
 generators_firings = generators.call(tnp)
 
-model = IzhikevichNetwork(params, dt_dim=dt, use_input=True)
+# model = IzhikevichNetwork(params, dt_dim=dt, use_input=True)
+model = MeanFieldNetwork(params, dt_dim=dt, use_input=True)
+model.NN = 1
+model.Npops = 10
 
+# Вычисляем количество шагов для сохранения
+n_steps_total = int(duration / dt)
+n_steps_per_save = int(save_interval / dt)
+n_saves = int(duration / save_interval)
 
-
-npfirings, states = model.predict(generators_firings)
+# Первоначальная симуляция для получения начальных состояний
+npfirings, states = model.predict(generators_firings[:, :100, :], save_states=False)
 initial_states = [s[-1] for s in states]
-#
-# model.v_threshold = 10000
-#
-# for theta_freq in range(4, 13):
-#     generators.set_theta_freq(theta_freq)
-#     generators_firings = generators.call(tnp)
-#     npfirings, states = model.predict(generators_firings, initial_states=initial_states)
-#
-#     #print(npfirings.shape)
-#     npfirings = npfirings[:, 0, :]
-#
-#     theta_freq_group = firing_file.create_group(str(theta_freq))
-#
-#     theta_freq_group.create_dataset(name='firings', data=npfirings)
-#
-#     theta_freq_group.create_dataset(name='v_avg', data=states[1])
-#     theta_freq_group.create_dataset(name='w_avg', data=states[2])
-#     theta_freq_group.create_dataset(name='R', data=states[3])
-#     theta_freq_group.create_dataset(name='U', data=states[4])
-#     theta_freq_group.create_dataset(name='A', data=states[5])
-#
-#
-# firing_file.close()
 
+firing_file = h5py.File(result_file, mode='w')
+
+for theta_freq in [8, ]: # range(4, 13):
+    generators.set_theta_freq(theta_freq)
+    generators_firings = generators.call(tnp)
+
+    theta_freq_group = firing_file.create_group(str(theta_freq))
+
+    # Создаем datasets для хранения результатов
+    firings_ds = theta_freq_group.create_dataset(
+        name='firings',
+        shape=(n_steps_total, model.Npops),  # форма: (все_шаги, units)
+        dtype=np.float32
+    )
+    v_avg_ds = theta_freq_group.create_dataset(
+        name='v_avg',
+        shape=(n_steps_total, model.Npops),
+        dtype=np.float32
+    )
+    w_avg_ds = theta_freq_group.create_dataset(
+        name='w_avg',
+        shape=(n_steps_total,model.Npops),
+        dtype=np.float32
+    )
+    R_ds = theta_freq_group.create_dataset(
+        name='R',
+        shape=(n_steps_total,) + states[3].shape[1:],
+        dtype=np.float32
+    )
+    U_ds = theta_freq_group.create_dataset(
+        name='U',
+        shape=(n_steps_total,) + states[4].shape[1:],
+        dtype=np.float32
+    )
+    A_ds = theta_freq_group.create_dataset(
+        name='A',
+        shape=(n_steps_total,) + states[5].shape[1:],
+        dtype=np.float32
+    )
+
+    current_states = initial_states.copy()
+    current_time_index = 0
+
+    # Разбиваем симуляцию на блоки по save_interval
+    for save_idx in range(n_saves):
+        start_step = save_idx * n_steps_per_save
+        end_step = (save_idx + 1) * n_steps_per_save
+
+        # Выбираем часть входных данных для текущего интервала
+        block_input = generators_firings[:, start_step:end_step, :]
+
+        # Запускаем симуляцию для текущего блока
+        npfirings_block, states_block = model.predict(
+            block_input,
+            initial_states=current_states,
+            save_states=True
+        )
+
+
+
+        if states_block[1].shape[1] != 1:
+            v_avg_block = np.mean(states_block[1], axis=2)
+            w_avg_block = np.mean(states_block[2], axis=2)
+        else:
+            v_avg_block = states_block[1][:, 0, :]
+            w_avg_block = states_block[2][:, 0, :]
+        # Сохраняем результаты текущего блока
+        firings_ds[current_time_index:current_time_index + n_steps_per_save] = npfirings_block[:, 0, :]
+        v_avg_ds[current_time_index:current_time_index + n_steps_per_save] = v_avg_block # states_block[1]
+        w_avg_ds[current_time_index:current_time_index + n_steps_per_save] = w_avg_block # states_block[2]
+        R_ds[current_time_index:current_time_index + n_steps_per_save] = states_block[3]
+        U_ds[current_time_index:current_time_index + n_steps_per_save] = states_block[4]
+        A_ds[current_time_index:current_time_index + n_steps_per_save] = states_block[5]
+
+        # Обновляем состояния для следующего блока
+        current_states = [s[-1] for s in states_block]
+        current_time_index += n_steps_per_save
+
+        print(f'Theta freq {theta_freq}: saved block {save_idx + 1}/{n_saves}')
+
+    # Обновляем начальные состояния для следующей частоты
+    initial_states = current_states
+    print(f'{theta_freq} is simulated')
+
+firing_file.close()
 # generators_firings = generators_firings.reshape(-1, generators_firings.shape[-1])
+
+# npfirings = npfirings.reshape(-1, npfirings.shape[-1])
 # tnp = tnp.ravel()
-# # plt.plot(tnp, npfirings)
-# plt.plot(tnp, generators_firings)
+# plt.plot(tnp, npfirings)
+# ## plt.plot(tnp, generators_firings)
 # plt.show()
 

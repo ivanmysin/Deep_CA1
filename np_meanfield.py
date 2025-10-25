@@ -154,7 +154,7 @@ class MeanFieldNetwork:
 
         return output, [rates, v_avg, w_avg, R, U, A]
 
-    def predict(self, inputs, time_axis=1, initial_states=None):
+    def predict(self, inputs, time_axis=1, initial_states=None, save_states=False):
         if initial_states is None:
             states = self.get_initial_state()
         else:
@@ -191,7 +191,7 @@ class IzhikevichNetwork:
     def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
         self.dt_dim = dt_dim
         self.use_input = use_input
-        self.NN = 2  # количество нейронов в каждой популяции
+        self.NN = 4000  # количество нейронов в каждой популяции
 
         self.Npops = len(params['alpha']) # число популяций
         self.alpha = np.asarray(params['alpha'], dtype=np.float32)
@@ -207,9 +207,18 @@ class IzhikevichNetwork:
         self.w_jump = np.tile(self.w_jump, self.NN).reshape(self.Npops, self.NN)  # Повторяем w_jump для каждой популяции
 
         self.dts_non_dim = np.asarray(params['dts_non_dim'], dtype=np.float32)
+        self.dts_non_dim = self.dts_non_dim.reshape(-1, 1)
+
         self.Delta_eta = np.asarray(params['Delta_eta'], dtype=np.float32)
+        self.Delta_eta = self.Delta_eta.reshape(-1, 1)
+
         self.I_ext = np.asarray(params['I_ext'], dtype=np.float32)
-        self.I_ext = np.expand_dims(self.I_ext, axis=1)
+        self.I_ext = self.I_ext.reshape(-1, 1)
+
+        rads = np.random.uniform(-np.pi, np.pi, int(self.NN * self.Npops)).reshape(self.Npops, self.NN)
+        self.I_ext = self.I_ext + self.Delta_eta * np.tan( rads )
+
+
 
         # Пороговые значения для ресета
         self.v_peak = 100 # np.asarray(params['v_peak'], dtype=np.float32)
@@ -265,17 +274,20 @@ class IzhikevichNetwork:
         k1v = self.dvdt(v, w, I_syn)
         k1w = self.dwdt(v, w)
 
-        k2v = self.dvdt(v + 0.5 * self.dt_dim * k1v, w + 0.5 * self.dt_dim * k1w, I_syn)
-        k2w = self.dwdt(v + 0.5 * self.dt_dim * k1v, w + 0.5 * self.dt_dim * k1w)
+        # k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, I_syn)
+        # k2w = self.dwdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w)
+        #
+        # k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, I_syn)
+        # k3w = self.dwdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w)
+        #
+        # k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, I_syn)
+        # k4w = self.dwdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w)
+        #
+        # v_new = v + self.dts_non_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
+        # w_new = w + self.dts_non_dim * (k1w + 2*k2w + 2*k3w + k4w) / 6.0
 
-        k3v = self.dvdt(v + 0.5 * self.dt_dim * k2v, w + 0.5 * self.dt_dim * k2w, I_syn)
-        k3w = self.dwdt(v + 0.5 * self.dt_dim * k2v, w + 0.5 * self.dt_dim * k2w)
-
-        k4v = self.dvdt(v + self.dt_dim * k3v, w + self.dt_dim * k3w, I_syn)
-        k4w = self.dwdt(v + self.dt_dim * k3v, w + self.dt_dim * k3w)
-
-        v_new = v + self.dt_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
-        w_new = w + self.dt_dim * (k1w + 2*k2w + 2*k3w + k4w) / 6.0
+        v_new = v + self.dts_non_dim * k1v
+        w_new = w + self.dts_non_dim * k1w
 
         return v_new, w_new
 
@@ -339,11 +351,11 @@ class IzhikevichNetwork:
         R_new = r_ - U_new * r_ * FRpre_normed
 
         # Конвертация выходной частоты (аналогично оригинальному коду)
-        output = firing_probs * self.dts_non_dim / self.dt_dim * 1000
+        output = firing_probs / self.dt_dim * 1000
 
         return output, [firing_probs, v_new, w_new, R_new, U_new, A_new]
 
-    def predict(self, inputs, time_axis=1, initial_states=None):
+    def predict(self, inputs, time_axis=1, initial_states=None, save_states=True):
         if initial_states is None:
             states = self.get_initial_state()
         else:
@@ -357,8 +369,14 @@ class IzhikevichNetwork:
             output, states = self.call(inp, states)
             outputs.append(output)
 
+            if save_states:
+                for s in states:
+                    hist_states.append(s)
+
+        if not save_states:
             for s in states:
                 hist_states.append(s)
+
 
         outputs = np.stack(outputs)
 
