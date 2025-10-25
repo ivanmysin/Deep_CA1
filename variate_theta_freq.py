@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import h5py
 
 model_path = './outputs/big_models/theta_model.keras'
-# result_file = './outputs/firings/units_theta_freq_variation.h5'
-result_file = './outputs/firings/pop_theta_freq_variation.h5'
+result_file = './outputs/firings/units_theta_freq_variation.h5'
+# result_file = './outputs/firings/pop_theta_freq_variation.h5'
 
 
 
@@ -29,10 +29,10 @@ tnp = np.arange(0, duration, dt, dtype=np.float32).reshape(1, -1, 1)
 
 generators_firings = generators.call(tnp)
 
-# model = IzhikevichNetwork(params, dt_dim=dt, use_input=True)
-model = MeanFieldNetwork(params, dt_dim=dt, use_input=True)
-model.NN = 1
-model.Npops = 10
+model = IzhikevichNetwork(params, dt_dim=dt, use_input=True)
+# model = MeanFieldNetwork(params, dt_dim=dt, use_input=True)
+# model.NN = 1
+# model.Npops = 10
 
 # Вычисляем количество шагов для сохранения
 n_steps_total = int(duration / dt)
