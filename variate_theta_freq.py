@@ -119,7 +119,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file.close()
 #########################################################################
-model_path = './outputs/big_models/theta_model.keras'
+model_path = '/home/ivanmysin/nice_theta_models/5000_theta_model.keras'   #'./outputs/big_models/theta_model.keras'
 result_file_units = './outputs/firings/units_theta_freq_variation.h5'
 result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
