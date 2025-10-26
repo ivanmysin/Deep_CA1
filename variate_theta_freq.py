@@ -128,6 +128,7 @@ params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
 params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
+params['I_ext'][:] = 0.0 #
 
 make_simulation(params, result_file_pop, 'meanfield')
 make_simulation(params, result_file_units, 'units')
