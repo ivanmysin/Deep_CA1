@@ -274,20 +274,20 @@ class IzhikevichNetwork:
         k1v = self.dvdt(v, w, I_syn)
         k1w = self.dwdt(v, w)
 
-        # k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, I_syn)
-        # k2w = self.dwdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w)
-        #
-        # k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, I_syn)
-        # k3w = self.dwdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w)
-        #
-        # k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, I_syn)
-        # k4w = self.dwdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w)
-        #
-        # v_new = v + self.dts_non_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
-        # w_new = w + self.dts_non_dim * (k1w + 2*k2w + 2*k3w + k4w) / 6.0
+        k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, I_syn)
+        k2w = self.dwdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w)
 
-        v_new = v + self.dts_non_dim * k1v
-        w_new = w + self.dts_non_dim * k1w
+        k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, I_syn)
+        k3w = self.dwdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w)
+
+        k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, I_syn)
+        k4w = self.dwdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w)
+
+        v_new = v + self.dts_non_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
+        w_new = w + self.dts_non_dim * (k1w + 2*k2w + 2*k3w + k4w) / 6.0
+
+        # v_new = v + self.dts_non_dim * k1v
+        # w_new = w + self.dts_non_dim * k1w
 
         return v_new, w_new
 
