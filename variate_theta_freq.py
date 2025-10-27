@@ -5,11 +5,13 @@ from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators, IzhikevichNet
 import matplotlib.pyplot as plt
 import h5py
 
+DT_COEFF = 0.1
+
 
 def make_simulation(params, result_file, simulation_type):
-    dt = myconfig.DT  # шаг в мс
-    duration = 500  # время симуляции в мс
-    save_interval = 100  # интервал сохранения в мс
+    dt = myconfig.DT * DT_COEFF  # шаг в мс
+    duration = 2500  # время симуляции в мс
+    save_interval = 20  # интервал сохранения в мс
 
     generators = SpatialThetaGenerators(generators_params)
     tnp = np.arange(0, duration, dt, dtype=np.float32).reshape(1, -1, 1)
@@ -119,7 +121,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file.close()
 #########################################################################
-model_path = '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #'./outputs/big_models/theta_model.keras'
+model_path = './outputs/big_models/theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
 result_file_units = './outputs/firings/units_theta_freq_variation.h5'
 result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
@@ -127,11 +129,12 @@ result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
-params['I_ext'][:] = 0.0 #
+# params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
+params['dts_non_dim'][:] *= DT_COEFF
 
 make_simulation(params, result_file_pop, 'meanfield')
-make_simulation(params, result_file_units, 'units')
+# make_simulation(params, result_file_units, 'units')
+
 
 # params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300
 # params['v_reset'] = np.zeros((10, 10), dtype=np.float32) - 300

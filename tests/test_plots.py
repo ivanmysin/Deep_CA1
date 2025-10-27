@@ -31,18 +31,20 @@ def get_avg(filepath):
 
     v_avg = firingfile['8']['v_avg'][:]
 
-
-
-    # print(v_avg.shape)
-    #
-    # if v_avg.shape[1] == 1:
-    #     v_avg = v_avg[:, 0, :]
-    # else:
-    #     v_avg = np.mean(v_avg, axis=2)
-
     firingfile.close()
 
     return v_avg
+
+def get_firings(filepath):
+    firingfile = h5py.File(filepath, 'r')
+
+    firings = firingfile['8']['firings'][:]
+
+    firingfile.close()
+
+    return firings
+
+firings_full = get_firings(filepath_pop)
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
@@ -56,7 +58,7 @@ v_avg_pop = get_avg(filepath_pop)
 v_avg_units = get_avg(filepath)
 
 
-t = np.linspace(0, gsyn_exc.shape[0] * dt, gsyn_exc.shape[0])
+
 
 
 
@@ -64,19 +66,20 @@ t = np.linspace(0, gsyn_exc.shape[0] * dt, gsyn_exc.shape[0])
 fig, ax = plt.subplots(nrows=gsyn_exc.shape[1])
 for i in range(gsyn_exc.shape[1]):
 
-
-    # ax[i].plot(t, firings_full[:, i], label='firing rate')
+    t = np.linspace(0, firings_full.shape[0] * dt, firings_full.shape[0])
+    ax[i].plot(t, firings_full[:, i], label='firing rate')
     # ax[i].plot(gsyn_exc[:, i], label='firing rate')
     # ax[i].plot(gsyn_exc[:, i], linewidth=3, label='firing rate')
     # ax[i].plot(gsyn_exc_pop[:, i], linewidth=1, label='firing rate')
 
 
-    ax[i].plot(v_avg_units[:, i], linewidth=1, label='units')
-    ax[i].plot(v_avg_pop[:, i], linewidth=3, label='mean field')
+    # ax[i].plot(v_avg_units[:, i], linewidth=1, label='units')
+    # ax[i].plot(v_avg_pop[:, i], linewidth=3, label='mean field')
 
     ax[i].legend(loc='upper right')
 
-
+    ax[i].set_xlim(1500, 2500)
+    ax[i].set_ylim(0, 40)
 
 
 
