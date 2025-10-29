@@ -191,7 +191,7 @@ class IzhikevichNetwork:
     def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
         self.dt_dim = dt_dim
         self.use_input = use_input
-        self.NN = 4000  # количество нейронов в каждой популяции
+        self.NN = 1000  # количество нейронов в каждой популяции
 
         self.Npops = len(params['alpha']) # число популяций
         self.alpha = np.asarray(params['alpha'], dtype=np.float32)

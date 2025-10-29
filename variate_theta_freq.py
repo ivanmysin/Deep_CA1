@@ -132,8 +132,8 @@ generators_params = get_gen_params(model_path)
 # params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
 params['dts_non_dim'][:] *= DT_COEFF
 
-make_simulation(params, result_file_pop, 'meanfield')
-# make_simulation(params, result_file_units, 'units')
+# make_simulation(params, result_file_pop, 'meanfield')
+make_simulation(params, result_file_units, 'units')
 
 
 # params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300

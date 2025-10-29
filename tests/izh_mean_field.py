@@ -20,7 +20,7 @@ dim_izh_params = {
     "b": 0.22, # * mS,
     "d": 2, # * pA,
 
-    "Iext" : 0, # pA
+    "Iext" : 100, # pA
 }
 
 # Словарь с константами
@@ -47,9 +47,9 @@ w_jump = params['w_jump']
 a = params['a']
 b = params['b']
 
-## population dynamic variables
+
 rate = np.zeros(NN, dtype=np.float64)
-v_avg = np.zeros_like(rate) + 1.0 # izh_params['vk']
+v_avg = np.zeros_like(rate) # 1.0 # izh_params['vk']
 #v_avg[0] = -0.05
 
 w_avg = np.zeros_like(rate) + izh_params['wk']

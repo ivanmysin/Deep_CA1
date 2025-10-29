@@ -19,13 +19,13 @@ TEXTFONTSIZE = 'xx-large'
 
 
 
-dt = 0.01
-duration = 2400
+dt = 0.001
+duration = 2500
 
 fig_name = 'fig2'
 
 neuron_idx_in_sols = []
-neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='theta_model')
+neurons_params = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
 neurons_params = neurons_params[neurons_params['Npops'] == 1]['neurons'].to_list()
 for neuron_name in plotting_colors["neurons_order"]:
     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
@@ -34,7 +34,7 @@ for neuron_name in plotting_colors["neurons_order"]:
 neurons_order = plotting_colors["neurons_order"]
 path = '../outputs/firings/theta_freq_variation.h5'
 
-freq = '12'
+freq = '8'
 
 hf = h5py.File(path, 'r')
 t = np.linspace(0, duration, 160000 )
