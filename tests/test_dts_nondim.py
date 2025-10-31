@@ -27,8 +27,12 @@ for idx, pop in populations.iterrows():
 
     koeff = k * abs(Vrest) / Cm
 
-    print(pop_name, koeff[0])
-    print('Cm =', Cm)
-    print('Vrest =', Vrest)
-    print('k =', k)
+    Delta_eta = 80 /  (2 * koeff)
+
+    print(pop_name)
+    print('Delta_eta =', Delta_eta[0])
+    print('koeff =', koeff[0])
+    print('Cm =', Cm[0])
+    print('Vrest =', Vrest[0])
+    print('k =', k[0])
     print('='*20)

@@ -6,7 +6,7 @@ import os
 os.chdir('../')
 from myutils import get_net_params, get_gen_params
 
-model_path = './outputs/big_models/theta_model.keras'
+model_path = './outputs/big_models/sI_theta_model_5000.keras'
 filepath = 'outputs/firings/units_theta_freq_variation.h5'
 filepath_pop = 'outputs/firings/pop_theta_freq_variation.h5'
 
@@ -88,7 +88,7 @@ print(firings_full.shape)
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-dt = 0.001
+dt = 0.01
 
 gsyn_exc, gsyn_inh = get_gsyn(filepath, params)
 # firings_full = firingfile['8']['firings'][:]
@@ -108,8 +108,8 @@ for i in range(gsyn_exc.shape[1]):
     t = np.linspace(0, firings_full.shape[0] * dt, firings_full.shape[0])
 
     ax[i].set_title(neurons_names[i])
-    # ax[i].plot(t[start_idx:], firings_full_units[start_idx:, i], linewidth=1, label='units')
-    # ax[i].plot(t[start_idx:], firings_full[start_idx:, i], linewidth=3, label='mean field')
+    ax[i].plot(t[start_idx:], firings_full_units[start_idx:, i], linewidth=1, label='units')
+    ax[i].plot(t[start_idx:], firings_full[start_idx:, i], linewidth=3, label='mean field')
 
 
     # ax[i].plot(gsyn_exc[:, i], label='firing rate')
@@ -117,15 +117,16 @@ for i in range(gsyn_exc.shape[1]):
     # ax[i].plot(gsyn_exc_pop[:, i], linewidth=1, label='firing rate')
 
 
-    ax[i].plot(t, v_avg_units[:, i], linewidth=1, label='units')
-    ax[i].plot(t, v_avg_pop[:, i], linewidth=3, label='mean field')
+    # ax[i].plot(t, v_avg_units[:, i], linewidth=1, label='units')
+    # ax[i].plot(t, v_avg_pop[:, i], linewidth=3, label='mean field')
 
     ax[i].legend(loc='upper right')
 
     ax[i].set_xlim(1500, 2500)
-    ax[i].set_ylim(-0.2, 1.1)
+    # ax[i].set_ylim(-0.2, 1.1)
 
-fig.savefig('./outputs/plots/v_avg.png', dpi=300)
+# fig.savefig('./outputs/plots/v_avg.png', dpi=300)
+fig.savefig('./outputs/plots/test_firings.png', dpi=300)
 
 
 plt.show()

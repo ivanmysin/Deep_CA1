@@ -245,8 +245,10 @@ if IS_CREATE_MODEL:
     nbatches = 20
     params, generators_params, target_params, output_masks = get_params()
 
+    print(params['Delta_eta'])
 
 
+"""
     Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
 
     with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
@@ -304,4 +306,4 @@ history = model.fit(x=Xtrain, y=Ytrain, epochs=Epoches, verbose=2, batch_size=1,
 with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
-
+"""
