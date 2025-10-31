@@ -72,24 +72,24 @@ if __name__ == '__main__':
             "ThetaFreq": 8.0,
         },
 
-        {
-            "R": 0.5,
-            "OutPlaceFiringRate": 5.5,
-            "OutPlaceThetaPhase": 0.0,
-            "InPlacePeakRate": 18.0,
-            "CenterPlaceField": -5000.0,
-            "SigmaPlaceField": 500,
-            "SlopePhasePrecession": 0.0,  # np.deg2rad(10)*10 * 0.001,
-            "PrecessionOnset": np.nan,  # -1.57,
-            "ThetaFreq": 8.0,
-        },
+        # {
+        #     "R": 0.5,
+        #     "OutPlaceFiringRate": 5.5,
+        #     "OutPlaceThetaPhase": 0.0,
+        #     "InPlacePeakRate": 18.0,
+        #     "CenterPlaceField": -5000.0,
+        #     "SigmaPlaceField": 500,
+        #     "SlopePhasePrecession": 0.0,  # np.deg2rad(10)*10 * 0.001,
+        #     "PrecessionOnset": np.nan,  # -1.57,
+        #     "ThetaFreq": 8.0,
+        # },
     ]
 
 
     neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
     neurons_params.rename(
         {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
-         'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
+         'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vreset'}, axis=1, inplace=True)
 
     populations = pd.read_excel('./parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
     populations['Hippocampome_Neurons_Names'] = populations['Hippocampome_Neurons_Names'].str.strip()
@@ -97,10 +97,10 @@ if __name__ == '__main__':
     # neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
     neurons_names = populations[(populations['Npops'] == 1)&(populations['Simulated_Type'] == 'simulated')]['Hippocampome_Neurons_Names'].to_list()
 
-    NN = 2
+    NN = 1
     Ninps = len(generator_params)
-    dt_dim = 0.001  # ms
-    duration = 1000.0
+    dt_dim = 0.1  # ms
+    duration = 400.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
 
@@ -113,19 +113,20 @@ if __name__ == '__main__':
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = 800
+        dim_izh_params['Iext'] = 8 # 0.01 * dim_izh_params['Cm']
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
         # Словарь с константами
         cauchy_dencity_params = {
-            'Delta_eta': 50,  # 0.02,
+            'Delta_eta': 15, #* dim_izh_params['Cm'],  # 0.02,
             'bar_eta': 0.0,  # 0.191,
         }
 
         dim_izh_params = dim_izh_params | cauchy_dencity_params
         izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
         izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+
 
         for key, val in izh_params.items():
             izh_params[key] = np.zeros(NN, dtype=np.float32) + val
@@ -137,21 +138,21 @@ if __name__ == '__main__':
         Uinc = 0.25
 
         gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        gsyn_max[0, 1] = 20
-        gsyn_max[1, 0] = 15
+        # gsyn_max[0, 1] = 20
+        gsyn_max[1, 0] = 100
 
-        gsyn_max[Ninps:, :] = 5
+        # gsyn_max[Ninps:, :] = 5
 
 
 
         pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        pconn[0, 1] = 1
+        # pconn[0, 1] = 1
         pconn[1, 0] = 1
 
-        pconn[Ninps:, :] = 1
+        #pconn[Ninps:, :] = 1
 
-        Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) - 75
-        Erev[Ninps:, :] = 0.0
+        Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) # - 75
+        #Erev[:, :] = 0.0
         e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
 
         izh_params['gsyn_max'] = gsyn_max
@@ -173,26 +174,30 @@ if __name__ == '__main__':
         rates_units, hist_states_units = make_simulation(izh_params, dt_dim, simtype='izh')
         rates = parzen_filter(rates_units, window_size=1005, axis=0)
 
+        print(hist_states_units[1].shape)
+
         rates_list = [rates, rates_pops]
         hist_states_list = [hist_states_units, hist_states_pops]
 
-        fig, axes = plt.subplots(nrows=6, ncols=1, figsize=(10, 10))
+        t = t.ravel()
+
+        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 10))
         for i, (rates, hist_states) in enumerate( zip(rates_list, hist_states_list) ):
             #hist_states = hist_states_units
             A = hist_states[-1]
 
-            gsyn_12 = A[:, 0, 1] * gsyn_max[0, 1]
-            gsyn_21 = A[:, 1, 0] * gsyn_max[1, 0]
+            # gsyn_12 = A[:, 0, 1] * gsyn_max[0, 1]
+            # gsyn_21 = A[:, 1, 0] * gsyn_max[1, 0]
 
             # print(A.shape)
             # print(rates.shape)
             # print(hist_states[1].shape)
 
             rates = rates.reshape(-1, NN)
-            t = t.ravel()
 
 
-            if hist_states[1].shape[1] != 1:
+
+            if i == 0:
                 v_avg = np.mean(hist_states[1], axis=2)
                 w_avg = np.mean(hist_states[2], axis=2)
             else:
@@ -201,18 +206,19 @@ if __name__ == '__main__':
 
 
             axes[0].plot(t, rates[:, 0])
-            axes[1].plot(t, rates[:, 1])
+            # axes[1].plot(t, rates[:, 1])
 
 
-            axes[2].plot(t, v_avg[:, 0])
-            axes[3].plot(t, v_avg[:, 1])
+
+            axes[1].plot(t, v_avg[:, 0])
+            #axes[3].plot(t, v_avg[:, 1])
 
 
-            #axes[2].plot(t, w_avg)
+            axes[2].plot(t, w_avg)
 
 
-            axes[4].plot(t, gsyn_12)
-            axes[5].plot(t, gsyn_21)
+            # axes[4].plot(t, gsyn_12)
+            # axes[5].plot(t, gsyn_21)
 
 
         fig.savefig('./outputs/plots/' + neuron_name + '.png', dpi=300, bbox_inches='tight')

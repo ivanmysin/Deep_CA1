@@ -62,7 +62,7 @@ def dimensional_to_dimensionless(dimensional_vars):
     #dimensionless_vars['s'] = transform_s(dimensional_vars['s'])
     #dimensionless_vars['T'] = transform_T(dimensional_vars['t'], C, k1, V_R)
     dimensionless_vars['v_peak'] = transform_v_peak(dimensional_vars['Vpeak'], V_R)
-    dimensionless_vars['v_reset'] = transform_v_reset(dimensional_vars['Vmin'], V_R)
+    dimensionless_vars['v_reset'] = transform_v_reset(dimensional_vars['Vreset'], V_R)
     dimensionless_vars['alpha'] = transform_alpha(dimensional_vars['Vth'], V_R)
     #dimensionless_vars['g_syn'] = transform_g_syn(dimensional_vars['G_syn'], k1, V_R)
     dimensionless_vars['a'] = transform_a(1/dimensional_vars['a'], k1, V_R, C)

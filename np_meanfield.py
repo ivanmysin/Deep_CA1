@@ -218,11 +218,9 @@ class IzhikevichNetwork:
         rads = np.random.uniform(-np.pi, np.pi, int(self.NN * self.Npops)).reshape(self.Npops, self.NN)
         self.I_ext = self.I_ext + self.Delta_eta * np.tan( rads )
 
-
-
         # Пороговые значения для ресета
-        self.v_peak = 100 # np.asarray(params['v_peak'], dtype=np.float32)
-        self.v_reset = -100 # np.asarray(params['v_reset'], dtype=np.float32)
+        self.v_peak = np.tile( np.asarray(params['v_peak'], dtype=np.float32).reshape(1, -1), self.NN).reshape(self.Npops, self.NN)
+        self.v_reset = np.tile( np.asarray(params['v_reset'], dtype=np.float32).reshape(1, -1), self.NN).reshape(self.Npops, self.NN)
 
         # Синаптические параметры
         self.gsyn_max = np.asarray(params['gsyn_max'], dtype=np.float32)
@@ -327,7 +325,7 @@ class IzhikevichNetwork:
         # print(self.w_jump.shape)
         ## !!!! Начать отсюда!!!!
 
-        v_new[spike_mask] = self.v_reset #[spike_mask]
+        v_new[spike_mask] = self.v_reset[spike_mask]
         w_new[spike_mask] += self.w_jump[spike_mask]
 
         # Вычисление доли спайков в каждой популяции (вероятность генерации ПД)
