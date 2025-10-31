@@ -113,7 +113,7 @@ if __name__ == '__main__':
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = 8 # 0.01 * dim_izh_params['Cm']
+        dim_izh_params['Iext'] = 10 # 0.01 * dim_izh_params['Cm']
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
@@ -141,15 +141,15 @@ if __name__ == '__main__':
         # gsyn_max[0, 1] = 20
         #gsyn_max[1, 0] = 100
 
-        gsyn_max[Ninps:, :] = 0
+        gsyn_max[Ninps:, 0] = 20
 
 
 
         pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
         # pconn[0, 1] = 1
-        pconn[1, 0] = 1
+        # pconn[1, 0] = 1
 
-        #pconn[Ninps:, :] = 1
+        pconn[Ninps:, :] = 1
 
         Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) # - 75
         #Erev[:, :] = 0.0

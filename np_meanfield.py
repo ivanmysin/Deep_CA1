@@ -265,6 +265,7 @@ class IzhikevichNetwork:
         I_syn = g_syn * (self.e_r - v)
         I_syn = np.sum(I_syn, axis=0)
 
+
         return v * (v - self.alpha) - w + self.I_ext + I_syn
 
     def dwdt(self, v, w):
