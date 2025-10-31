@@ -259,26 +259,30 @@ class IzhikevichNetwork:
 
         return [rates, v, w, R, U, A]
 
-    def dvdt(self, v, w, I_syn):
+    def dvdt(self, v, w, g_syn):
         """Уравнение для мембранного потенциала"""
+        # Вычисление общего синаптического тока для каждого нейрона
+        I_syn = g_syn * (self.e_r - v)
+        I_syn = np.sum(I_syn, axis=0)
+
         return v * (v - self.alpha) - w + self.I_ext + I_syn
 
     def dwdt(self, v, w):
         """Уравнение для адаптационной переменной"""
         return self.a * (self.b * v - w)
 
-    def runge_kutta_step(self, v, w, I_syn):
+    def runge_kutta_step(self, v, w, g_syn):
         """Шаг интегрирования методом Рунге-Кутты 4-го порядка"""
-        k1v = self.dvdt(v, w, I_syn)
+        k1v = self.dvdt(v, w, g_syn)
         k1w = self.dwdt(v, w)
 
-        k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, I_syn)
+        k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, g_syn)
         k2w = self.dwdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w)
 
-        k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, I_syn)
+        k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, g_syn)
         k3w = self.dwdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w)
 
-        k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, I_syn)
+        k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, g_syn)
         k4w = self.dwdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w)
 
         v_new = v + self.dts_non_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
@@ -302,24 +306,16 @@ class IzhikevichNetwork:
 
         g_syn = np.expand_dims(g_syn, axis=2)
 
-        # Вычисление общего синаптического тока для каждого нейрона
-        I_syn = g_syn * (self.e_r - v)
-        I_syn = np.sum(I_syn, axis=0)
+
 
 
         # Интегрирование уравнений нейронов
-        v_new, w_new = self.runge_kutta_step(v, w, I_syn)
+        v_new, w_new = self.runge_kutta_step(v, w, g_syn)
 
         # Применение ресет-правил
         spike_mask = v_new >= self.v_peak
 
         spike_mask = spike_mask.reshape((self.Npops, self.NN))
-
-        # print('spike_mask', spike_mask.shape)
-        # print('self.w_jump', self.w_jump.shape)
-
-        # print(self.w_jump.shape)
-        ## !!!! Начать отсюда!!!!
 
         v_new[spike_mask] = self.v_reset[spike_mask]
         w_new[spike_mask] += self.w_jump[spike_mask]

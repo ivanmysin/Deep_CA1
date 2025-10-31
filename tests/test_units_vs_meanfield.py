@@ -131,10 +131,6 @@ if __name__ == '__main__':
         for key, val in izh_params.items():
             izh_params[key] = np.zeros(NN, dtype=np.float32) + val
 
-        izh_params['v_peak'][0] = 10
-        izh_params['v_reset'][0] = -10
-
-
         ## synaptic static variables
         tau_d = 6.02  # ms
         tau_r = 359.8  # ms
