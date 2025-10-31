@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
     neurons_names = populations[(populations['Npops'] == 1)&(populations['Simulated_Type'] == 'simulated')]['Hippocampome_Neurons_Names'].to_list()
 
-    NN = 1
+    NN = 2
     Ninps = len(generator_params)
     dt_dim = 0.1  # ms
     duration = 400.0
@@ -131,6 +131,10 @@ if __name__ == '__main__':
         for key, val in izh_params.items():
             izh_params[key] = np.zeros(NN, dtype=np.float32) + val
 
+        izh_params['v_peak'][0] = 10
+        izh_params['v_reset'][0] = -10
+
+
         ## synaptic static variables
         tau_d = 6.02  # ms
         tau_r = 359.8  # ms
@@ -139,9 +143,9 @@ if __name__ == '__main__':
 
         gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
         # gsyn_max[0, 1] = 20
-        gsyn_max[1, 0] = 100
+        #gsyn_max[1, 0] = 100
 
-        # gsyn_max[Ninps:, :] = 5
+        gsyn_max[Ninps:, :] = 0
 
 
 
@@ -172,7 +176,7 @@ if __name__ == '__main__':
         rates_pops, hist_states_pops = make_simulation(izh_params, dt_dim, simtype='meanfield')
 
         rates_units, hist_states_units = make_simulation(izh_params, dt_dim, simtype='izh')
-        rates = parzen_filter(rates_units, window_size=1005, axis=0)
+        rates = parzen_filter(rates_units, window_size=105, axis=0)
 
         print(hist_states_units[1].shape)
 
@@ -204,13 +208,15 @@ if __name__ == '__main__':
                 v_avg = hist_states[1].reshape(-1, NN)
                 w_avg = hist_states[2].reshape(-1, NN)
 
+            if i != 0:
+                continue
 
-            axes[0].plot(t, rates[:, 0])
+            axes[0].plot(t, rates)
             # axes[1].plot(t, rates[:, 1])
 
 
 
-            axes[1].plot(t, v_avg[:, 0])
+            axes[1].plot(t, v_avg)
             #axes[3].plot(t, v_avg[:, 1])
 
 
@@ -225,4 +231,6 @@ if __name__ == '__main__':
 
         # plt.show(block=False)
         plt.close(fig)
+
+
 

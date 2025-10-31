@@ -219,8 +219,8 @@ class IzhikevichNetwork:
         self.I_ext = self.I_ext + self.Delta_eta * np.tan( rads )
 
         # Пороговые значения для ресета
-        self.v_peak = np.tile( np.asarray(params['v_peak'], dtype=np.float32).reshape(1, -1), self.NN).reshape(self.Npops, self.NN)
-        self.v_reset = np.tile( np.asarray(params['v_reset'], dtype=np.float32).reshape(1, -1), self.NN).reshape(self.Npops, self.NN)
+        self.v_peak = np.tile( np.asarray(params['v_peak'], dtype=np.float32), self.NN).reshape(self.NN, self.Npops).transpose()
+        self.v_reset = np.tile( np.asarray(params['v_reset'], dtype=np.float32), self.NN).reshape(self.NN, self.Npops).transpose()
 
         # Синаптические параметры
         self.gsyn_max = np.asarray(params['gsyn_max'], dtype=np.float32)
@@ -310,12 +310,8 @@ class IzhikevichNetwork:
         # Интегрирование уравнений нейронов
         v_new, w_new = self.runge_kutta_step(v, w, I_syn)
 
-
-
         # Применение ресет-правил
         spike_mask = v_new >= self.v_peak
-
-
 
         spike_mask = spike_mask.reshape((self.Npops, self.NN))
 
