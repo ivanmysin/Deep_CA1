@@ -346,7 +346,7 @@ class MeanFieldNetwork(Layer):
 
         # Вычисляем показатель экспоненты: shape (N, 1)
         exponent_base = -self.alpha - g_syn_tot + 2.0 * v_avg
-        exponent_base = tf.expand_dims(exponent_base, axis=1)  # (N, 1)
+        # exponent_base = tf.expand_dims(exponent_base, axis=1)  # (N, 1)
 
         # Экспонента: exp(t * exponent_base) → shape (N, T)
         exponent = exponent_base * self.dts_non_dim  #
