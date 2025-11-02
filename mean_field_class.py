@@ -15,7 +15,7 @@ import myconfig
 
 #
 
-PI = 3.141592653589793
+PI = pi = tf.constant(3.141592653589793, dtype=myconfig.DTYPE)
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
@@ -288,7 +288,11 @@ class MeanFieldNetwork(Layer):
 
             Isyn += Inmda
 
-        rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+        # rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
+
+        rates = self.update_rates(v_avg, g_syn_tot, rates)
+        rates = tf.where(rates < 0, 0.0, rates)
+
         v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
 
@@ -334,6 +338,42 @@ class MeanFieldNetwork(Layer):
 
 
         return output, new_states
+
+    def update_rates(self, v_avg, g_syn_tot, rates0):
+        """
+        """
+
+
+        # Вычисляем показатель экспоненты: shape (N, 1)
+        exponent_base = -self.alpha - g_syn_tot + 2.0 * v_avg
+        exponent_base = tf.expand_dims(exponent_base, axis=1)  # (N, 1)
+
+        # Экспонента: exp(t * exponent_base) → shape (N, T)
+        exponent = exponent_base * self.dts_non_dim  #
+        exp_term = tf.exp(exponent)  # (N, T)
+
+        # Стационарная часть: Delta_eta / (pi * (alpha + g_syn_tot - 2*v_avg))
+        denominator = self.alpha + g_syn_tot - 2.0 * v_avg
+        # denominator = tf.expand_dims(denominator, axis=1)  # (N, 1)
+
+        # Защита от деления на ноль
+        safe_denominator = tf.where(
+            tf.abs(denominator) < 1e-10,
+            tf.ones_like(denominator),  # временное значение, чтобы не было NaN
+            denominator
+        )
+
+        stationary = self.Delta_eta / (PI * safe_denominator)  # (N, 1)
+
+        # C1 = r0 - stationary; r0 уже (N,), расширяем до (N, 1)
+        C1 = rates0 - stationary  # (N, 1)
+
+        # Итоговое решение: C1 * exp_term + stationary
+        new_rates = C1 * exp_term + stationary  # (N, T)
+
+        return new_rates
+
+
 
     def get_config(self):
         config = super().get_config()

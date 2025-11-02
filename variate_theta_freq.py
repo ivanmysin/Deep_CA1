@@ -5,13 +5,13 @@ from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators, IzhikevichNet
 import matplotlib.pyplot as plt
 import h5py
 
-DT_COEFF = 1
+DT_COEFF = 0.1
 
 
 def make_simulation(params, result_file, simulation_type):
     dt = myconfig.DT * DT_COEFF  # шаг в мс
     duration = 2500  # время симуляции в мс
-    save_interval = 50  # интервал сохранения в мс
+    save_interval = 20  # интервал сохранения в мс
 
     generators = SpatialThetaGenerators(generators_params)
     tnp = np.arange(0, duration, dt, dtype=np.float32).reshape(1, -1, 1)
@@ -19,9 +19,6 @@ def make_simulation(params, result_file, simulation_type):
     generators_firings = generators.call(tnp)
 
     if simulation_type == 'units':
-
-        params['v_peak'] = np.zeros(10, dtype=np.float32) + 1.5
-        params['v_reset'] = np.zeros(10, dtype=np.float32) - 1
         model = IzhikevichNetwork(params, dt_dim=dt, use_input=True)
 
     elif simulation_type == 'meanfield':
@@ -124,7 +121,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file.close()
 #########################################################################
-model_path = './outputs/big_models/sI_theta_model_5000.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
+model_path = './outputs/big_models/theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
 result_file_units = './outputs/firings/units_theta_freq_variation.h5'
 result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
@@ -135,7 +132,7 @@ generators_params = get_gen_params(model_path)
 # params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
 params['dts_non_dim'][:] *= DT_COEFF
 
-make_simulation(params, result_file_pop, 'meanfield')
+# make_simulation(params, result_file_pop, 'meanfield')
 make_simulation(params, result_file_units, 'units')
 
 
