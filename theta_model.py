@@ -242,7 +242,7 @@ Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 12500
-    nbatches = 20
+    nbatches = 5
     params, generators_params, target_params, output_masks = get_params()
 
     Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
