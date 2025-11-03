@@ -209,6 +209,7 @@ def get_model(params, generators_params, dt, target_params):
 def get_dataset(target_params, dt, batch_len, nbatches):
     duration = int(batch_len * nbatches * dt)
 
+
     generators = SpatialThetaGenerators(target_params)
     t = tf.reshape(tf.range(0, duration, dt, dtype=myconfig.DTYPE), shape=(1, -1, 1))
 
