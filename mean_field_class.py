@@ -290,11 +290,12 @@ class MeanFieldNetwork(Layer):
 
         # rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
 
-        rates = self.update_rates(v_avg, g_syn_tot, rates)
-        rates = tf.where(rates < 0, 0.0, rates)
+        new_rates = self.update_rates(v_avg, g_syn_tot, rates)
+        new_rates = tf.where(rates < 0, 0.0, rates)
 
-        v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
+        new_v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        # w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
+        new_w_avg = self.update_w_avg(w_avg, v_avg, rates)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
@@ -327,10 +328,10 @@ class MeanFieldNetwork(Layer):
             dgnmda = dgnmda + self.dt_dim * (released_mediator - gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
             gnmda = gnmda + self.dt_dim * dgnmda
 
-            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
+            new_states = [new_rates, new_v_avg, new_w_avg, R, U, A, gnmda, dgnmda]
 
         else:
-            new_states = [rates, v_avg, w_avg, R, U, A]
+            new_states = [new_rates, new_v_avg, new_w_avg, R, U, A]
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
 
@@ -374,6 +375,28 @@ class MeanFieldNetwork(Layer):
         return new_rates
 
 
+    def update_w_avg(self, w_avg, v_avg, r):
+        """
+
+        """
+
+        # Вычисляем стационарную часть: b*v_avg + (r*w_jump)/a
+        stationary_term_1 = self.b * v_avg  # (N,)
+
+        stationary_term_2 = (r * self.w_jump) / self.a
+
+        stationary = stationary_term_1 + stationary_term_2  # (N,)
+
+        # C1 = w0 - stationary
+        C1 = w_avg - stationary  # (N, 1)
+
+        # Экспоненциальный множитель: exp(-a*t)
+        exp_term = exp(-self.a * self.dts_non_dim)  # (N, T)
+
+        # Итоговое решение
+        new_w_avg = C1 * exp_term + stationary  # (N, T)
+
+        return new_w_avg
 
     def get_config(self):
         config = super().get_config()

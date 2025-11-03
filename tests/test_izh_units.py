@@ -23,7 +23,7 @@ d = tp["d"].values[0]
 d = tp["d"].values[0]
 k = tp["k"].values[0]
 dt = 0.1
-V = np.zeros(20000, dtype=np.float64)
+V = np.zeros(200, dtype=np.float64)
 V[0] = Vrest
 U = np.zeros_like(V)
 Iinh = 0

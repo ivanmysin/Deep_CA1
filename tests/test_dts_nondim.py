@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import os
 
@@ -6,7 +7,7 @@ import myconfig
 
 neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
 neurons_params.rename(
-    {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
+    {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
      'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vmin'}, axis=1, inplace=True)
 
 populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
@@ -21,18 +22,32 @@ for idx, pop in populations.iterrows():
 
     p = neurons_params[neurons_params["Neuron Type"] == pop_name]
 
-    Cm = p['Cm'].values
-    k = p['k'].values
-    Vrest = p['Vrest'].values
+    Cm = p['Cm'].values[0]
+    k = p['k'].values[0]
+    Vrest = p['Vrest'].values[0]
+    Vth = p['Vth'].values[0]
 
-    koeff = k * abs(Vrest) / Cm
+    dt_non_dim_koeff = k * abs(Vrest) / Cm
 
-    Delta_eta = 80 /  (2 * koeff)
+    alpha = 1 + Vth/(np.abs(Vrest))
+
+    mean_target_fr = pop['OutPlaceFiringRate']
+
+    rst = mean_target_fr / 1000 / dt_non_dim_koeff
+
+    Delta_eta = pop['Delta_eta']  #  mean_target_fr * np.pi * 0.001 * alpha      # 80 /  (2 * koeff)
+
+    Delta_eta = Delta_eta / (k * Vrest**2)
+
+    vst = 0.5*(alpha - Delta_eta/np.pi/rst)
 
     print(pop_name)
-    print('Delta_eta =', Delta_eta[0])
-    print('koeff =', koeff[0])
-    print('Cm =', Cm[0])
-    print('Vrest =', Vrest[0])
-    print('k =', k[0])
+    print('Delta_eta =', Delta_eta)
+    print('koeff =', dt_non_dim_koeff)
+    print('Cm =', Cm)
+    print('Vrest =', Vrest)
+    print('k =', k)
+    print('VT =', Vth)
+    print('alpha =', alpha )
+    print('vst =', vst )
     print('='*20)
