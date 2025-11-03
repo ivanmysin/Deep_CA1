@@ -291,7 +291,7 @@ class MeanFieldNetwork(Layer):
         # rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
 
         new_rates = self.update_rates(v_avg, g_syn_tot, rates)
-        new_rates = tf.where(rates < 0, 0.0, rates)
+        # new_rates = tf.where(rates < 0, 0.0, rates)
 
         new_v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         # w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
