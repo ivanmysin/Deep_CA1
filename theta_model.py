@@ -84,7 +84,9 @@ def get_params():
 
         try:
             dimpopparams['Delta_eta'].append(pop['Delta_eta'])
+            print(hippocampome_pop_type, 'Delta_eta = ', pop['Delta_eta'])
         except KeyError:
+            print('Delta_eta НЕ НАЙДЕНА ДЛЯ ', hippocampome_pop_type)
             dimpopparams['Delta_eta'].append(myconfig.DELTA_ETA)
 
         for key in p:
@@ -244,11 +246,11 @@ filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epo
 
 model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 initial_epoch = 5000
-Epoches = 5000
+Epoches = 15000
 
 if IS_CREATE_MODEL:
     batch_len = 12500
-    nbatches = 5
+    nbatches = 20
     params, generators_params, target_params, output_masks = get_params()
 
     Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches)
