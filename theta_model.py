@@ -83,9 +83,9 @@ def get_params():
             dimpopparams['I_ext'].append(0.0)
 
         try:
-            dimpopparams['I_ext'].append(pop['Delta_eta'])
+            dimpopparams['Delta_eta'].append(pop['Delta_eta'])
         except KeyError:
-            dimpopparams['I_ext'].append(myconfig.DELTA_ETA)
+            dimpopparams['Delta_eta'].append(myconfig.DELTA_ETA)
 
         for key in p:
             val = p[key].values[0]
