@@ -49,7 +49,7 @@ def get_params():
     params = {}
     dimpopparams = {
         'dt_dim' : myconfig.DT,
-        'Delta_eta' : myconfig.DELTA_ETA,
+        'Delta_eta' : [],
         'I_ext' : [],
     }
 
@@ -81,6 +81,11 @@ def get_params():
             dimpopparams['I_ext'].append(pop['I_ext'])
         except KeyError:
             dimpopparams['I_ext'].append(0.0)
+
+        try:
+            dimpopparams['I_ext'].append(pop['Delta_eta'])
+        except KeyError:
+            dimpopparams['I_ext'].append(myconfig.DELTA_ETA)
 
         for key in p:
             val = p[key].values[0]
