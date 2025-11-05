@@ -127,7 +127,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=0.0001),
+                                        regularizer=L2(l2=0.002),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -261,6 +261,62 @@ class MeanFieldNetwork(Layer):
 
         return initial_state
 
+    def get_rate_derivative(self, rates, v_avg, g_syn_tot):
+        drdt = self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates
+        return drdt
+
+    def get_v_avg_derivative(self, rates, v_avg, w_avg, g_syn):
+        Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
+        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi * rates)**2
+        return dvdt
+
+    def get_w_avg_derivative(self, rates, v_avg, w_avg):
+        dwdt = self.a * (self.b * v_avg - w_avg) + self.w_jump * rates
+        return dwdt
+
+    def runge_kutta_step(self, rates, v_avg, w_avg, g_syn):
+        g_syn_tot = np.sum(g_syn, axis=0)
+
+        k1_rates = self.get_rate_derivative(rates, v_avg, g_syn_tot)
+        k1_v = self.get_v_avg_derivative(rates, v_avg, w_avg, g_syn)
+        k1_w = self.get_w_avg_derivative(rates, v_avg, w_avg)
+
+        half_rate = rates + 0.5 * self.dts_non_dim * k1_rates
+        half_v = v_avg + 0.5 * self.dts_non_dim * k1_v
+        half_w = w_avg + 0.5 * self.dts_non_dim * k1_w
+
+
+        k2_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k2_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k2_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
+
+        half_rate = rates + 0.5 * self.dts_non_dim * k2_rates
+        half_v = v_avg + 0.5 * self.dts_non_dim *  k2_v
+        half_w = w_avg + 0.5 * self.dts_non_dim * k2_w
+
+        k3_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k3_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k3_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
+
+        half_rate = rates + self.dts_non_dim * k3_rates
+        half_v = v_avg + self.dts_non_dim * k3_v
+        half_w = w_avg + self.dts_non_dim * k3_w
+
+        k4_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
+        k4_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
+        k4_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
+
+        rates = rates + self.dts_non_dim * (k1_rates + 2*k2_rates + 2*k3_rates + k4_rates) / 6.0
+        v_avg = v_avg + self.dts_non_dim * (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6.0
+        w_avg = w_avg + self.dts_non_dim * (k1_w + 2*k2_w + 2*k3_w + k4_w) / 6.0
+
+        # rates = rates + self.dts_non_dim * k1_rates
+        # v_avg = v_avg + self.dts_non_dim * k1_v
+        # w_avg = w_avg + self.dts_non_dim * k1_w
+
+        return rates, v_avg, w_avg
+
+
     def call(self, inputs, states):
         rates = states[0]
         v_avg = states[1]
@@ -288,14 +344,16 @@ class MeanFieldNetwork(Layer):
 
             Isyn += Inmda
 
-        new_rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-
+        # new_rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
         # new_rates = self.update_rates(v_avg, g_syn_tot, rates)
         # new_rates = tf.where(new_rates < 0, 0.0, new_rates)
+        # new_v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
 
-        new_v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-        new_w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
+
+        # new_w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
         # new_w_avg = self.update_w_avg(w_avg, v_avg, rates)
+
+        rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
@@ -328,10 +386,10 @@ class MeanFieldNetwork(Layer):
             dgnmda = dgnmda + self.dt_dim * (released_mediator - gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
             gnmda = gnmda + self.dt_dim * dgnmda
 
-            new_states = [new_rates, new_v_avg, new_w_avg, R, U, A, gnmda, dgnmda]
+            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
 
         else:
-            new_states = [new_rates, new_v_avg, new_w_avg, R, U, A]
+            new_states = [rates, v_avg, w_avg, R, U, A]
 
         output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
 

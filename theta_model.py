@@ -246,7 +246,7 @@ filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epo
 
 model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 initial_epoch = 5000
-Epoches = 15000
+Epoches = 5000
 
 if IS_CREATE_MODEL:
     batch_len = 12500
