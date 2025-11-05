@@ -5,13 +5,13 @@ from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators, IzhikevichNet
 import matplotlib.pyplot as plt
 import h5py
 
-DT_COEFF = 0.1
+DT_COEFF = 1.0
 
 
 def make_simulation(params, result_file, simulation_type):
     dt = myconfig.DT * DT_COEFF  # шаг в мс
     duration = 2500  # время симуляции в мс
-    save_interval = 20  # интервал сохранения в мс
+    save_interval = 250  # интервал сохранения в мс
 
     generators = SpatialThetaGenerators(generators_params)
     tnp = np.arange(0, duration, dt, dtype=np.float32).reshape(1, -1, 1)
@@ -34,12 +34,17 @@ def make_simulation(params, result_file, simulation_type):
     n_saves = int(duration / save_interval)
 
     # Первоначальная симуляция для получения начальных состояний
-    npfirings, states = model.predict(generators_firings[:, :100, :], save_states=False)
+    start_simulation_idx = int(duration / dt)
+    npfirings, states = model.predict(generators_firings[:, :start_simulation_idx, :], save_states=False)
+
+
+
+
     initial_states = [s[-1] for s in states]
 
     firing_file = h5py.File(result_file, mode='w')
 
-    for theta_freq in [8, ]:  # range(4, 13):
+    for theta_freq in [8, ]:  # range(4, 13): #
         generators.set_theta_freq(theta_freq)
         generators_firings = generators.call(tnp)
 
@@ -121,7 +126,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file.close()
 #########################################################################
-model_path = './outputs/big_models/theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
+model_path = './outputs/big_models/n_deltas_theta_model.keras'     # theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
 result_file_units = './outputs/firings/units_theta_freq_variation.h5'
 result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
@@ -129,11 +134,14 @@ result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-# params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
-params['dts_non_dim'][:] *= DT_COEFF
 
-# make_simulation(params, result_file_pop, 'meanfield')
-make_simulation(params, result_file_units, 'units')
+
+#params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
+params['dts_non_dim'][:] *= DT_COEFF
+# params['I_ext'][:] = 0.0
+
+make_simulation(params, result_file_pop, 'meanfield')
+# make_simulation(params, result_file_units, 'units')
 
 
 # params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300

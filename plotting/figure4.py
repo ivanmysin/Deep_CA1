@@ -27,9 +27,9 @@ neurons_params = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Nam
 for neuron_name in plotting_colors["neurons_order"]:
     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
-T_st_idx = 200000 # start of t
+T_st_idx = 0 # start of t
 
-source_hfile = h5py.File('../outputs/firings/theta_freq_variation.h5', mode='r')
+source_hfile = h5py.File('../outputs/firings/pop_theta_freq_variation.h5', mode='r')
 
 theta_freqs = sorted( source_hfile.keys(),  key=lambda x: float(x) )
 theta_phases4plots = np.linspace(-np.pi, np.pi, 100)

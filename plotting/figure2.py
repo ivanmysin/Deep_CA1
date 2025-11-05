@@ -31,7 +31,7 @@ duration = 2500
 
 fig_name = 'fig2'
 
-path_sim = '../outputs/firings/theta_freq_variation.h5'
+path_sim = '../outputs/firings/pop_theta_freq_variation.h5'
 path_dset = '../outputs/firings/dataset.h5'
 
 hf = h5py.File(path_sim, 'r')

@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import myconfig
+import keras
 
 from tensorflow.keras import ops
 tf.keras.backend.set_floatx(myconfig.DTYPE)
@@ -20,7 +21,7 @@ argmax = tf.math.argmax
 
 PI = np.pi
 
-@tf.keras.saving.register_keras_serializable()
+@keras.saving.register_keras_serializable()
 class WeightedMSE(tf.keras.Loss):
     def __init__(self, weights, **kwargs):
         super(WeightedMSE, self).__init__(**kwargs)

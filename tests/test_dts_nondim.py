@@ -35,9 +35,11 @@ for idx, pop in populations.iterrows():
 
     rst = mean_target_fr / 1000 / dt_non_dim_koeff
 
-    Delta_eta = Cm / 4  # 80 /  (2 * dt_non_dim_koeff) # pop['Delta_eta']  #  mean_target_fr * np.pi * 0.001 * alpha      #
+    # Delta_eta = Cm / 4  # 80 /  (2 * dt_non_dim_koeff) # pop['Delta_eta']  #  mean_target_fr * np.pi * 0.001 * alpha      #
 
-    # Delta_eta = Delta_eta / (k * Vrest**2)
+    Delta_eta = pop['Delta_eta']
+
+    Delta_eta = Delta_eta / (k * Vrest**2)
 
     vst = 0.5*(alpha - Delta_eta/np.pi/rst)
 

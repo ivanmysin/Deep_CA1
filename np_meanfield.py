@@ -13,7 +13,7 @@ class MeanFieldNetwork:
 
     def __init__(self, params, dt_dim=0.01, use_input=False, **kwargs):
 
-        self.v_threshold = 2.0
+        self.v_threshold = 10000.0
         self.dt_dim = dt_dim
         self.use_input = use_input
 
@@ -56,7 +56,7 @@ class MeanFieldNetwork:
 
         synaptic_matrix_shapes = self.gsyn_max.shape
 
-        R = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
+        R = np.ones( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         U = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = np.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
@@ -113,6 +113,10 @@ class MeanFieldNetwork:
         v_avg = v_avg + self.dts_non_dim * (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6.0
         w_avg = w_avg + self.dts_non_dim * (k1_w + 2*k2_w + 2*k3_w + k4_w) / 6.0
 
+        # rates = rates + self.dts_non_dim * k1_rates
+        # v_avg = v_avg + self.dts_non_dim * k1_v
+        # w_avg = w_avg + self.dts_non_dim * k1_w
+
         return rates, v_avg, w_avg
 
     def call(self, inputs, states):
@@ -127,6 +131,7 @@ class MeanFieldNetwork:
 
         rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
+
         firing_probs =  (self.dts_non_dim * rates).T # probability of AP generation
 
         if self.use_input:
@@ -135,11 +140,7 @@ class MeanFieldNetwork:
 
         v_avg[ v_avg > self.v_threshold ] = self.v_threshold
 
-
         FRpre_normed = self.pconn *  firing_probs
-
-
-
 
         a_ = A * self.exp_tau_d
         r_ = 1 + (R - 1 + self.tau1r * A) * self.exp_tau_r  - self.tau1r * A
@@ -221,8 +222,8 @@ class IzhikevichNetwork:
 
 
         # Пороговые значения для ресета
-        self.v_peak = 100 # np.asarray(params['v_peak'], dtype=np.float32)
-        self.v_reset = -100 # np.asarray(params['v_reset'], dtype=np.float32)
+        self.v_peak = 1.2 # np.asarray(params['v_peak'], dtype=np.float32)
+        self.v_reset = -1 # np.asarray(params['v_reset'], dtype=np.float32)
 
         # Синаптические параметры
         self.gsyn_max = np.asarray(params['gsyn_max'], dtype=np.float32)
@@ -261,26 +262,30 @@ class IzhikevichNetwork:
 
         return [rates, v, w, R, U, A]
 
-    def dvdt(self, v, w, I_syn):
+    def dvdt(self, v, w, g_syn):
         """Уравнение для мембранного потенциала"""
+        # Вычисление общего синаптического тока для каждого нейрона
+        I_syn = g_syn * (self.e_r - v)
+        I_syn = np.sum(I_syn, axis=0)
+
         return v * (v - self.alpha) - w + self.I_ext + I_syn
 
     def dwdt(self, v, w):
         """Уравнение для адаптационной переменной"""
         return self.a * (self.b * v - w)
 
-    def runge_kutta_step(self, v, w, I_syn):
+    def runge_kutta_step(self, v, w, g_syn):
         """Шаг интегрирования методом Рунге-Кутты 4-го порядка"""
-        k1v = self.dvdt(v, w, I_syn)
+        k1v = self.dvdt(v, w, g_syn)
         k1w = self.dwdt(v, w)
 
-        k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, I_syn)
+        k2v = self.dvdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w, g_syn)
         k2w = self.dwdt(v + 0.5 * self.dts_non_dim * k1v, w + 0.5 * self.dts_non_dim * k1w)
 
-        k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, I_syn)
+        k3v = self.dvdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w, g_syn)
         k3w = self.dwdt(v + 0.5 * self.dts_non_dim * k2v, w + 0.5 * self.dts_non_dim * k2w)
 
-        k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, I_syn)
+        k4v = self.dvdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w, g_syn)
         k4w = self.dwdt(v + self.dts_non_dim * k3v, w + self.dts_non_dim * k3w)
 
         v_new = v + self.dts_non_dim * (k1v + 2*k2v + 2*k3v + k4v) / 6.0
@@ -304,13 +309,8 @@ class IzhikevichNetwork:
 
         g_syn = np.expand_dims(g_syn, axis=2)
 
-        # Вычисление общего синаптического тока для каждого нейрона
-        I_syn = g_syn * (self.e_r - v)
-        I_syn = np.sum(I_syn, axis=0)
-
-
         # Интегрирование уравнений нейронов
-        v_new, w_new = self.runge_kutta_step(v, w, I_syn)
+        v_new, w_new = self.runge_kutta_step(v, w, g_syn)
 
 
 
