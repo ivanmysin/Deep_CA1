@@ -262,12 +262,12 @@ class MeanFieldNetwork(Layer):
         return initial_state
 
     def get_rate_derivative(self, rates, v_avg, g_syn_tot):
-        drdt = self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates
+        drdt = self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates
         return drdt
 
     def get_v_avg_derivative(self, rates, v_avg, w_avg, g_syn):
-        Isyn = np.sum(g_syn * (self.e_r - v_avg), axis=0)
-        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi * rates)**2
+        Isyn = tf.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
+        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI * rates)**2
         return dvdt
 
     def get_w_avg_derivative(self, rates, v_avg, w_avg):
@@ -275,7 +275,7 @@ class MeanFieldNetwork(Layer):
         return dwdt
 
     def runge_kutta_step(self, rates, v_avg, w_avg, g_syn):
-        g_syn_tot = np.sum(g_syn, axis=0)
+        g_syn_tot = tf.reduce_sum(g_syn, axis=0)
 
         k1_rates = self.get_rate_derivative(rates, v_avg, g_syn_tot)
         k1_v = self.get_v_avg_derivative(rates, v_avg, w_avg, g_syn)
