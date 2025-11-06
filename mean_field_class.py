@@ -127,7 +127,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=0.002),
+                                        regularizer=L2(l2=0.1),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -330,19 +330,19 @@ class MeanFieldNetwork(Layer):
             dgnmda = states[7]
 
         g_syn = self.gsyn_max * A
-        g_syn_tot = tf.math.reduce_sum(g_syn, axis=0)
+        # g_syn_tot = tf.math.reduce_sum(g_syn, axis=0)
+        #
+        #
+        # Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
-
-        Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
-
-        if self.is_nmda:
-            g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * (v_avg - 1.0) ) )
-
-            Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
-
-            g_syn_tot += tf.math.reduce_sum(g_syn_nmda, axis=0)
-
-            Isyn += Inmda
+        # if self.is_nmda:
+        #     g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * (v_avg - 1.0) ) )
+        #
+        #     Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
+        #
+        #     g_syn_tot += tf.math.reduce_sum(g_syn_nmda, axis=0)
+        #
+        #     Isyn += Inmda
 
         # new_rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
         # new_rates = self.update_rates(v_avg, g_syn_tot, rates)
