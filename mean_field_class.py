@@ -183,7 +183,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=0.1),
+                                        regularizer=L2(l2=1.0),
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
