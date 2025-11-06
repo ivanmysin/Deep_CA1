@@ -65,6 +65,60 @@ class ZeroWallReg(Regularizer):
     def from_config(cls, config):
         return cls(**config)
 
+class BoundWallReg(Regularizer):
+    def __init__(self, min_val=None, max_val=None, lw=0.01, close_coeff=100, eps=0.001):
+        self.close_coeff = close_coeff
+        self.lw = lw
+        self.eps = eps
+
+        # Если границы не заданы, используем стандартные 0 и 1
+        if min_val is None:
+            self.min_val = tf.constant(0.0, dtype=myconfig.DTYPE)
+        else:
+            self.min_val = tf.constant(min_val, dtype=myconfig.DTYPE)
+
+        if max_val is None:
+            self.max_val = tf.constant(1.0, dtype=myconfig.DTYPE)
+        else:
+            self.max_val = tf.constant(max_val, dtype=myconfig.DTYPE)
+
+    def __call__(self, x):
+        # Нормализуем x к диапазону [0, 1]
+        x_normalized = (x - self.min_val) / (self.max_val - self.min_val + self.eps)
+
+        x_normalized = tf.clip_by_value(x_normalized, self.eps, 1.0 - self.eps)
+
+        # Применяем регуляризацию как в исходном коде, но к нормализованному тензору
+        reg_term = -self.lw * (
+                tf.reduce_sum(tf.math.log(x_normalized * self.close_coeff)) +
+                tf.reduce_sum(tf.math.log((1.0 - x_normalized) * self.close_coeff))
+        )
+        return reg_term
+
+    def get_config(self):
+        # Пытаемся преобразовать тензоры в сериализуемый формат
+        try:
+            min_val_np = self.min_val.numpy() if hasattr(self.min_val, 'numpy') else self.min_val
+            max_val_np = self.max_val.numpy() if hasattr(self.max_val, 'numpy') else self.max_val
+        except:
+            min_val_np = self.min_val
+            max_val_np = self.max_val
+
+        config = {
+            "min_val": min_val_np,
+            "max_val": max_val_np,
+            "close_coeff": float(self.close_coeff),
+            "lw": float(self.lw),
+            "eps": float(self.eps),
+        }
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+
 @tf.keras.utils.register_keras_serializable(package="ZeroOneWallReg")
 class ZeroOneWallReg(ZeroWallReg):
     def __call__(self, x):
