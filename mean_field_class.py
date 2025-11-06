@@ -101,11 +101,13 @@ class MinMaxWeights(Constraint):
 @tf.keras.utils.register_keras_serializable(package="MeanFieldNetwork")
 class MeanFieldNetwork(Layer):
 
-    def __init__(self, params, dt_dim=0.5, use_input=False, **kwargs):
+    def __init__(self, params, dt_dim=0.5, use_input=False, stability_penalty=1e-3, **kwargs):
         super().__init__(**kwargs)
 
         self.dt_dim = dt_dim
         self.use_input = use_input
+
+        self.stability_penalty = stability_penalty
 
         self.units = len(params['alpha'])
         self.alpha = tf.convert_to_tensor( params['alpha'], dtype=myconfig.DTYPE )
@@ -277,6 +279,7 @@ class MeanFieldNetwork(Layer):
     def runge_kutta_step(self, rates, v_avg, w_avg, g_syn):
         g_syn_tot = tf.reduce_sum(g_syn, axis=0)
 
+        # РК4 шаг
         k1_rates = self.get_rate_derivative(rates, v_avg, g_syn_tot)
         k1_v = self.get_v_avg_derivative(rates, v_avg, w_avg, g_syn)
         k1_w = self.get_w_avg_derivative(rates, v_avg, w_avg)
@@ -285,13 +288,12 @@ class MeanFieldNetwork(Layer):
         half_v = v_avg + 0.5 * self.dts_non_dim * k1_v
         half_w = w_avg + 0.5 * self.dts_non_dim * k1_w
 
-
         k2_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
         k2_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
         k2_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
 
         half_rate = rates + 0.5 * self.dts_non_dim * k2_rates
-        half_v = v_avg + 0.5 * self.dts_non_dim *  k2_v
+        half_v = v_avg + 0.5 * self.dts_non_dim * k2_v
         half_w = w_avg + 0.5 * self.dts_non_dim * k2_w
 
         k3_rates = self.get_rate_derivative(half_rate, half_v, g_syn_tot)
@@ -306,15 +308,29 @@ class MeanFieldNetwork(Layer):
         k4_v = self.get_v_avg_derivative(half_rate, half_v, half_w, g_syn)
         k4_w = self.get_w_avg_derivative(half_rate, half_v, half_w)
 
-        rates = rates + self.dts_non_dim * (k1_rates + 2*k2_rates + 2*k3_rates + k4_rates) / 6.0
-        v_avg = v_avg + self.dts_non_dim * (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6.0
-        w_avg = w_avg + self.dts_non_dim * (k1_w + 2*k2_w + 2*k3_w + k4_w) / 6.0
+        rates_rk4 = rates + self.dts_non_dim * (k1_rates + 2 * k2_rates + 2 * k3_rates + k4_rates) / 6.0
+        v_avg_rk4 = v_avg + self.dts_non_dim * (k1_v + 2 * k2_v + 2 * k3_v + k4_v) / 6.0
+        w_avg_rk4 = w_avg + self.dts_non_dim * (k1_w + 2 * k2_w + 2 * k3_w + k4_w) / 6.0
 
-        # rates = rates + self.dts_non_dim * k1_rates
-        # v_avg = v_avg + self.dts_non_dim * k1_v
-        # w_avg = w_avg + self.dts_non_dim * k1_w
+        # РК2 шаг для оценки ошибки
+        rates_rk2_k1 = self.dts_non_dim * k1_rates
+        v_avg_rk2_k1 = self.dts_non_dim * k1_v
+        w_avg_rk2_k1 = self.dts_non_dim * k1_w
 
-        return rates, v_avg, w_avg
+        rates_rk2_k2 = self.dts_non_dim * self.get_rate_derivative(rates + rates_rk2_k1, v_avg + v_avg_rk2_k1, g_syn_tot)
+        v_avg_rk2_k2 = self.dts_non_dim * self.get_v_avg_derivative(rates + rates_rk2_k1, v_avg + v_avg_rk2_k1, w_avg + w_avg_rk2_k1, g_syn)
+        w_avg_rk2_k2 = self.dts_non_dim * self.get_w_avg_derivative(rates + rates_rk2_k1, v_avg + v_avg_rk2_k1, w_avg + w_avg_rk2_k1)
+
+        rates_rk2 = rates + 0.5 * (rates_rk2_k1 + rates_rk2_k2)
+        v_avg_rk2 = v_avg + 0.5 * (v_avg_rk2_k1 + v_avg_rk2_k2)
+        w_avg_rk2 = w_avg + 0.5 * (w_avg_rk2_k1 + w_avg_rk2_k2)
+
+        # Оценка локальной ошибки
+        error_estimate = tf.reduce_max(tf.abs(rates_rk4 - rates_rk2)) + \
+                         tf.reduce_max(tf.abs(v_avg_rk4 - v_avg_rk2)) + \
+                         tf.reduce_max(tf.abs(w_avg_rk4 - w_avg_rk2))
+
+        return rates_rk4, v_avg_rk4, w_avg_rk4, error_estimate
 
 
     def call(self, inputs, states):
@@ -353,7 +369,9 @@ class MeanFieldNetwork(Layer):
         # new_w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
         # new_w_avg = self.update_w_avg(w_avg, v_avg, rates)
 
-        rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
+        rates, v_avg, w_avg, error_estimate = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
+
+        self.add_loss(self.stability_penalty * error_estimate)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
