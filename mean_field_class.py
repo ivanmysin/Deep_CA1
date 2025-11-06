@@ -425,6 +425,8 @@ class MeanFieldNetwork(Layer):
 
         rates, v_avg, w_avg, error_estimate = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
+        # print(error_estimate.numpy())
+
         self.add_loss(self.stability_penalty * error_estimate)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
