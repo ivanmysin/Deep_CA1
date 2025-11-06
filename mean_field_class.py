@@ -427,7 +427,7 @@ class MeanFieldNetwork(Layer):
 
         # print(error_estimate.numpy())
 
-        self.add_loss(self.stability_penalty * error_estimate)
+        # self.add_loss(self.stability_penalty * error_estimate)
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
