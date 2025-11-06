@@ -95,31 +95,34 @@ if __name__ == '__main__':
     populations['Hippocampome_Neurons_Names'] = populations['Hippocampome_Neurons_Names'].str.strip()
     populations['Model_Neurons_Names'] = populations['Model_Neurons_Names'].str.strip()
     # neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
-    neurons_names = populations[(populations['Npops'] == 1)&(populations['Simulated_Type'] == 'simulated')]['Hippocampome_Neurons_Names'].to_list()
+    populations = populations[(populations['Npops'] == 1)&(populations['Simulated_Type'] == 'simulated')] # ['Hippocampome_Neurons_Names'].to_list()
 
     NN = 2
     Ninps = len(generator_params)
-    dt_dim = 0.1  # ms
+    dt_dim = 0.01  # ms
     duration = 400.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
 
     firings_inputs = get_inputs(generator_params, t) #  np.zeros(shape=(1, t.size, Ninps), dtype=np.float32)
 
-    for neuron_name in neurons_names:
+    for idx, pop in populations.iterrows():
+
+        neuron_name = pop['Hippocampome_Neurons_Names']
+
         print(neuron_name)
         dim_izh_params = neurons_params[neurons_params["Neuron Type"] == neuron_name]
 
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = 10 # 0.01 * dim_izh_params['Cm']
+        dim_izh_params['Iext'] = -4 * pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
         # Словарь с константами
         cauchy_dencity_params = {
-            'Delta_eta': 15, #* dim_izh_params['Cm'],  # 0.02,
+            'Delta_eta': pop['Delta_eta'], #* dim_izh_params['Cm'],  # 0.02,
             'bar_eta': 0.0,  # 0.191,
         }
 
@@ -138,21 +141,25 @@ if __name__ == '__main__':
         Uinc = 0.25
 
         gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        # gsyn_max[0, 1] = 20
-        #gsyn_max[1, 0] = 100
+        gsyn_max[0, 1] = 5
+        gsyn_max[1, 0] = 5
 
-        gsyn_max[Ninps:, 0] = 20
+        gsyn_max[Ninps:, 0] = 10
 
 
 
         pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        # pconn[0, 1] = 1
-        # pconn[1, 0] = 1
+        pconn[0, 1] = 1
+        pconn[1, 0] = 1
 
         pconn[Ninps:, :] = 1
 
-        Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32) # - 75
+        Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)  - 75
         #Erev[:, :] = 0.0
+
+        Erev[Ninps:, :] = 0.0
+
+
         e_r = izhs_lib.transform_e_r(Erev, dim_izh_params['Vrest'])
 
         izh_params['gsyn_max'] = gsyn_max
@@ -181,7 +188,7 @@ if __name__ == '__main__':
 
         t = t.ravel()
 
-        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 10))
+        fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 10))
         for i, (rates, hist_states) in enumerate( zip(rates_list, hist_states_list) ):
             #hist_states = hist_states_units
             A = hist_states[-1]
@@ -204,19 +211,19 @@ if __name__ == '__main__':
                 v_avg = hist_states[1].reshape(-1, NN)
                 w_avg = hist_states[2].reshape(-1, NN)
 
-            if i != 0:
-                continue
+            # if i != 0:
+            #     continue
 
-            axes[0].plot(t, rates)
-            # axes[1].plot(t, rates[:, 1])
+            axes[0].plot(t, rates[:, 0])
+            axes[1].plot(t, rates[:, 1])
 
 
 
-            axes[1].plot(t, v_avg)
+            # axes[1].plot(t, v_avg)
             #axes[3].plot(t, v_avg[:, 1])
 
 
-            axes[2].plot(t, w_avg)
+            #axes[2].plot(t, w_avg)
 
 
             # axes[4].plot(t, gsyn_12)
