@@ -100,7 +100,7 @@ if __name__ == '__main__':
     NN = 2
     Ninps = len(generator_params)
     dt_dim = 0.01  # ms
-    duration = 400.0
+    duration = 40.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = -4 * pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
+        dim_izh_params['Iext'] = pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
@@ -131,8 +131,13 @@ if __name__ == '__main__':
         izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
 
 
+
+
         for key, val in izh_params.items():
             izh_params[key] = np.zeros(NN, dtype=np.float32) + val
+
+        izh_params['v_peak'][0] = 200
+        izh_params['v_reset'][0] = -200
 
         ## synaptic static variables
         tau_d = 6.02  # ms
@@ -141,18 +146,18 @@ if __name__ == '__main__':
         Uinc = 0.25
 
         gsyn_max = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        gsyn_max[0, 1] = 5
-        gsyn_max[1, 0] = 5
+        gsyn_max[0, 1] = 0
+        gsyn_max[1, 0] = 0
 
         gsyn_max[Ninps:, 0] = 10
 
 
 
         pconn = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)
-        pconn[0, 1] = 1
-        pconn[1, 0] = 1
+        # pconn[0, 1] = 1
+        # pconn[1, 0] = 1
 
-        pconn[Ninps:, :] = 1
+        # pconn[Ninps:, :] = 1
 
         Erev = np.zeros(shape=(NN+Ninps, NN), dtype=np.float32)  - 75
         #Erev[:, :] = 0.0

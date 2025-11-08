@@ -6,7 +6,7 @@ import os
 os.chdir('../')
 from myutils import get_net_params, get_gen_params
 
-model_path = './outputs/big_models/n_deltas_theta_model.keras'
+model_path = './outputs/big_models/nI_theta_model.keras'
 filepath = './outputs/firings/units_theta_freq_variation.h5'
 filepath_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
@@ -129,7 +129,7 @@ for i in range(gsyn_exc.shape[1]):
     # ax[i].set_xlim(1500, 2500)
     # ax[i].set_ylim(-0.2, 1.1)
 
-fig.savefig('./outputs/plots/v_avg.png', dpi=300)
+fig.savefig('./outputs/plots/firings_compare.png', dpi=300)
 
 
 plt.show()

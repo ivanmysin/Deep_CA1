@@ -47,7 +47,7 @@ def get_gen_params(filepath):
     return config_gen_params
 
 
-model_path = '/home/ivan/PycharmProjects/Deep_CA1/outputs/big_models/n_deltas_theta_model.keras'
+model_path = '/home/ivan/PycharmProjects/Deep_CA1/outputs/big_models/nI_theta_model.keras'
 target_path =  '/home/ivan/PycharmProjects/Deep_CA1/outputs/tests/'
 
 generator_params = get_gen_params(model_path)

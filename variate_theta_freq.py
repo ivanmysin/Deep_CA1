@@ -1,11 +1,42 @@
 import numpy as np
-import myconfig
 from myutils import get_net_params, get_gen_params
 from np_meanfield import MeanFieldNetwork, SpatialThetaGenerators, IzhikevichNetwork
 import matplotlib.pyplot as plt
 import h5py
+import pandas as pd
+import myconfig
 
 DT_COEFF = 1.0
+
+
+def load_vpeaks_vreset(neurons_params, populations):
+
+    vpeaks = []
+    vresets = []
+
+    vrests = []
+
+    for pop_idx, pop in populations.iterrows():
+
+        hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
+
+        if pop['Simulated_Type'] == 'generator':
+            continue
+
+        p = neurons_params[neurons_params["Neuron Type"] == hippocampome_pop_type]
+
+        vpeaks.append(p['Vpeak'].values[0])
+        vresets.append(p['Vreset'].values[0])
+        vrests.append(p['Vrest'].values[0])
+
+    vpeaks = np.asarray(vpeaks)
+    vresets = np.asarray(vresets)
+    vrests = np.asarray(vrests)
+
+    vpeaks = 1.0 + vpeaks / np.abs(vrests)
+    vresets = 1.0 + vresets / np.abs(vrests)
+
+    return vpeaks, vresets
 
 
 def make_simulation(params, result_file, simulation_type):
@@ -44,7 +75,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file = h5py.File(result_file, mode='w')
 
-    for theta_freq in [8, ]:  # range(4, 13): #
+    for theta_freq in range(4, 13): # [8, ]:  #
         generators.set_theta_freq(theta_freq)
         generators_firings = generators.call(tnp)
 
@@ -126,22 +157,34 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file.close()
 #########################################################################
-model_path = './outputs/big_models/n_deltas_theta_model.keras'     # theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
+model_path = './outputs/big_models/nI_theta_model.keras'     # theta_model.keras' # '/home/ivanmysin/nice_theta_models/theta_model_5000.keras'   #
 result_file_units = './outputs/firings/units_theta_freq_variation.h5'
 result_file_pop = './outputs/firings/pop_theta_freq_variation.h5'
 
 
+neurons_params = pd.read_csv(myconfig.IZHIKEVICNNEURONSPARAMS)
+neurons_params.rename(
+    {'Izh Vr': 'Vrest', 'Izh Vt': 'Vth_mean', 'Izh C': 'Cm', 'Izh k': 'k', 'Izh a': 'a', 'Izh b': 'b', 'Izh d': 'd',
+     'Izh Vpeak': 'Vpeak', 'Izh Vmin': 'Vreset'}, axis=1, inplace=True)
+
+populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
+# populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
+populations = populations[populations['Npops'] > 0]
+
+vpeaks, vresets = load_vpeaks_vreset(neurons_params, populations)
+
 params = get_net_params(model_path)
 generators_params = get_gen_params(model_path)
 
-
+params['v_peak'] = vpeaks
+params['v_reset'] = vresets
 
 #params['pconn'][:-4, :] = 0.0 # отключаем все тормозные связи
 params['dts_non_dim'][:] *= DT_COEFF
 # params['I_ext'][:] = 0.0
 
 make_simulation(params, result_file_pop, 'meanfield')
-# make_simulation(params, result_file_units, 'units')
+make_simulation(params, result_file_units, 'units')
 
 
 # params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300

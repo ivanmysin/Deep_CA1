@@ -110,7 +110,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
         g_syn = gsyn_full[:, neuron_idx_in_sols[pre_idx], neuron_idx_in_sols[neuron_idx]]
 
 
-        if pre_name in ["Pyramidal (deep)", "Pyramidal (superficial)" , "CA3 Pyramidal", "EC LIII Pyramidal"] :
+        if pre_name in ["Pyramidal (deep)", "Pyramidal (superficial)" , "CA3 Input", "MEC Input"] :
             ax = axes[row_idx, plot_idx]
         else:
             ax = axes[row_idx+1, plot_idx]
