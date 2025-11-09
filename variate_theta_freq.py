@@ -110,7 +110,7 @@ def make_simulation(params, result_file, simulation_type):
         )
         A_ds = theta_freq_group.create_dataset(
             name='A',
-            shape=(n_steps_total,) + initial_states[5],
+            shape=(n_steps_total,) + initial_states[5].shape,
             dtype=np.float32
         )
 
