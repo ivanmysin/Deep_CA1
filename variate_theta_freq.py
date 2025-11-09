@@ -67,10 +67,10 @@ def make_simulation(params, result_file, simulation_type):
     # Первоначальная симуляция для получения начальных состояний
     # start_simulation_idx = int(duration / dt)
     # npfirings, states = model.predict(generators_firings[:, :start_simulation_idx, :], save_states=False)
-    states = model.get_initial_state()
+    initial_states = model.get_initial_state()
 
 
-    initial_states = [s for s in states]
+    # initial_states = [s[-1] for s in states]
 
 
 
