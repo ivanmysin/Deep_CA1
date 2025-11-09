@@ -100,17 +100,17 @@ def make_simulation(params, result_file, simulation_type):
         )
         R_ds = theta_freq_group.create_dataset(
             name='R',
-            shape=(n_steps_total,) + states[3].shape[1:],
+            shape=(n_steps_total,) + initial_states[3].shape,
             dtype=np.float32
         )
         U_ds = theta_freq_group.create_dataset(
             name='U',
-            shape=(n_steps_total,) + states[4].shape[1:],
+            shape=(n_steps_total,) + initial_states[4].shape,
             dtype=np.float32
         )
         A_ds = theta_freq_group.create_dataset(
             name='A',
-            shape=(n_steps_total,) + states[5].shape[1:],
+            shape=(n_steps_total,) + initial_states[5],
             dtype=np.float32
         )
 
