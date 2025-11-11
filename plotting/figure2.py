@@ -116,7 +116,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
 
      ax.plot(t, target, label = "Целевая частота", color='black', linewidth=5)
-     ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=5, label="Сред. поле")
+     ax.plot(t, firings, color=plotting_colors["neuron_colors"][neuron_name], linewidth=5, label="Симуляция")
 
 
      sine_ampls = sine * 0.7*np.max(firings)
@@ -124,7 +124,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
      firings_units = firings_units / np.max(firings_units) * max( [np.max(firings[8000:]), np.max(target)])
 
-     ax.plot(t, firings_units, color=plotting_colors["neuron_colors"][neuron_name], linewidth=1, linestyle="--", label="Точечные нейроны")
+     # ax.plot(t, firings_units, color=plotting_colors["neuron_colors"][neuron_name], linewidth=1, linestyle="--", label="Точечные нейроны")
 
      ax.set_ylim(0, 1.1*max( [np.max(firings[8000:]), np.max(target)]) )
 

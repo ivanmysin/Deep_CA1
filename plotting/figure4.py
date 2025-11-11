@@ -27,7 +27,7 @@ neurons_params = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Nam
 for neuron_name in plotting_colors["neurons_order"]:
     neuron_idx_in_sols.append( neurons_params.index(neuron_name)  )
 
-T_st_idx = 0 # start of t
+
 
 source_hfile = h5py.File('../outputs/firings/pop_theta_freq_variation.h5', mode='r')
 
@@ -37,6 +37,8 @@ sine = 0.5 * (np.cos(theta_phases4plots) + 1)
 
 duration = 2500
 DT = 0.01
+
+T_st_idx = int(500 / DT ) # start of t
 
 fig, axes = plt.subplots(nrows=len(plotting_colors["neurons_order"]), ncols=len(theta_freqs)+1, \
                         constrained_layout=True, figsize=(15, 10)  )
@@ -94,7 +96,7 @@ for freq_idx, freq in enumerate( theta_freqs ):
 
         sine_ampls = sine * 0.7 * np.max(firings_hist)
         ax.plot(theta_phases4plots, sine_ampls, linestyle="--", label="cos", color='black')
-        ax.set_ylim(0, 0.35)
+        ax.set_ylim(0, 0.5)
         ax.set_xlim(-np.pi, np.pi)
 
 
