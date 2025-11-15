@@ -11,8 +11,8 @@ def transform_wk(W_k, k1, V_R):
 def transform_s(s):
     return s
 
-def transform_T(t, C, k1, V_R):
-    return t * (k1 * abs(V_R)) / C
+def transform_T(C, k1, V_R):
+    return  C / (k1 * abs(V_R))
 
 def transform_v_peak(V_peak, V_R):
     return 1 + V_peak / abs(V_R)
@@ -95,12 +95,12 @@ def dimensional_to_dimensionless_all(dimensional_vars):
         pass
 
     try:
-        dimensionless_vars['v_reset'] = transform_v_reset(dimensional_vars['Vmin'], Vrest)
+        dimensionless_vars['v_reset'] = transform_v_reset(dimensional_vars['Vreset'], Vrest)
     except KeyError:
         pass
 
     try:
-        dimensionless_vars['alpha'] = transform_alpha(dimensional_vars['Vth_mean'], Vrest)
+        dimensionless_vars['alpha'] = transform_alpha(dimensional_vars['Vth'], Vrest)
     except KeyError:
         pass
 
@@ -130,7 +130,7 @@ def dimensional_to_dimensionless_all(dimensional_vars):
         pass
 
     try:
-        dimensionless_vars['I_ext'] = transform_I(dimensional_vars['I_ext'], k, Vrest)
+        dimensionless_vars['I_ext'] = transform_I(dimensional_vars['Iext'], k, Vrest)
     except KeyError:
         pass
 
@@ -145,9 +145,16 @@ def dimensional_to_dimensionless_all(dimensional_vars):
         pass
 
     try:
-        dimensionless_vars['dts_non_dim'] = transform_T(dimensional_vars['dt_dim'], Cm, k, Vrest)
+        dimensionless_vars['tau_pop'] = transform_T(Cm, k, Vrest)
     except KeyError:
         pass
+
+
+    try:
+        dimensionless_vars['gsyn_max'] = transform_g_syn(dimensional_vars['gsyn_max'], k, Vrest)
+    except KeyError:
+        pass
+
 
     return dimensionless_vars
 
@@ -162,11 +169,14 @@ def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
     a =  params['a']
     b =  params['b']
     Vpeak = params['Vpeak']
-    Vreset = params['Vmin']
+    Vreset = params['Vreset']
     d =  params['d']
+    gsyn_max =  params['gsyn_max']
 
-    V = np.zeros(NN, dtype=float) + params['V0']
-    U = np.zeros(NN, dtype=float) + params['U0']
+    Erev = 0.0
+
+    V = np.zeros(NN, dtype=float) + Vrest
+    U = np.zeros(NN, dtype=float)
 
     eta = eta_params['bar_eta'] + eta_params['Delta_eta'] * np.tan(np.pi*(np.random.rand(NN) - 0.5) )
     #eta = 1000.1 * eta #* k * Vreset**2
@@ -182,7 +192,8 @@ def izh_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
 
     for ts_idx in range(Nt):
 
-        dVdt = (k * (V - Vrest) * (V - VT) - U + eta + Iext) / Cm
+        Isyn = gsyn_max * (Erev - V)
+        dVdt = (k * (V - Vrest) * (V - VT) - U + eta + Iext + Isyn) / Cm
         dUdt = a * (b * (V - Vrest) - U)
 
         V = V + dt * dVdt
@@ -208,14 +219,15 @@ def izh_nondim_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
     Vpeak = params['v_peak']
     Vreset = params['v_reset']
     d =  params['w_jump']
+    tau_pop =  params['tau_pop']
     Iext =  params['I_ext']
 
     #print(Vreset, Vpeak)
 
-    V = np.zeros(NN, dtype=float) + params['vk']
-    U = np.zeros(NN, dtype=float) + params['wk']
+    V = np.zeros(NN, dtype=float) # + params['vk']
+    U = np.zeros(NN, dtype=float) #+ params['wk']
 
-    eta = eta_params['bar_eta'] + eta_params['Delta_eta'] * np.random.standard_cauchy(NN)  #np.tan(np.pi*(np.random.rand(NN) - 0.5) )
+    eta = eta_params['bar_eta'] + eta_params['Delta_eta'] * np.tan(np.pi*(np.random.rand(NN) - 0.5) ) #np.random.standard_cauchy(NN)  #
     eta = np.sort(eta)
     #print(eta)
 
@@ -227,8 +239,8 @@ def izh_nondim_simulate(params, eta_params, dt=0.1, duration=200, NN=4000):
 
     for ts_idx in range(Nt):
 
-        dVdt = V * (V - alpha) - U + eta + Iext
-        dUdt = a * (b*V - U)
+        dVdt = (V * (V - alpha) - U + eta + Iext) / tau_pop
+        dUdt = (a * (b*V - U))  / tau_pop
 
         #print(dt * dVdt[-1])
 
@@ -264,7 +276,7 @@ if __name__ == '__main__':
         "Vrest": -57.63,  # * mV,
         "Vth": -35.53,  # * mV,
         "Vpeak": 21.72,  # * mV,
-        "Vmin": -48.7,  # * mV,
+        "Vreset": -48.7,  # * mV,
         "a": 0.005,  # * ms ** -1,
         "b": 0.22,  # * nS,
         "d": 2,  # * pA,
@@ -280,8 +292,8 @@ if __name__ == '__main__':
     dim_izh_params = dim_izh_params | cauchy_dencity_params
     non_dim_izh_params = dimensional_to_dimensionless(dim_izh_params)
 
-    dt_non_dim =  transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
-    duration_non_dim = transform_T(duration, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+    dt_non_dim =  dt_dim / transform_T(dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+    duration_non_dim = duration /transform_T(dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
 
     firings_dim, v_avg_dim, u_avg_dim = izh_simulate(dim_izh_params, cauchy_dencity_params, dt=dt_dim, duration=duration, NN=NN)
 

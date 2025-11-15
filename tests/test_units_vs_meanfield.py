@@ -43,7 +43,7 @@ def make_simulation(params, dt_dim, simtype='meanfield'):
     if simtype == 'meanfield':
         model = MeanFieldNetwork(params, dt_dim=dt_dim, use_input=True)
     elif simtype == 'izh':
-        model = IzhikevichNetwork(params, dt_dim=dt_dim, use_input=True)
+        model = IzhikevichNetwork(params, dt_dim=dt_dim, use_input=True, NN=5000)
 
 
     rates, hist_states = model.predict(firings_inputs)
@@ -95,12 +95,12 @@ if __name__ == '__main__':
     populations['Hippocampome_Neurons_Names'] = populations['Hippocampome_Neurons_Names'].str.strip()
     populations['Model_Neurons_Names'] = populations['Model_Neurons_Names'].str.strip()
     # neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
-    populations = populations[(populations['Npops'] == 1)&(populations['Simulated_Type'] == 'simulated')] # ['Hippocampome_Neurons_Names'].to_list()
+    populations = populations[(populations['Npops'] == 1)] #&(populations['Simulated_Type'] == 'simulated')] # ['Hippocampome_Neurons_Names'].to_list()
 
     NN = 2
     Ninps = len(generator_params)
     dt_dim = 0.01  # ms
-    duration = 40.0
+    duration = 500.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
 
@@ -110,19 +110,25 @@ if __name__ == '__main__':
 
         neuron_name = pop['Hippocampome_Neurons_Names']
 
+        if not neuron_name in ['CA1 Axo-Axonic']:
+            continue
+
         print(neuron_name)
+
+
+
         dim_izh_params = neurons_params[neurons_params["Neuron Type"] == neuron_name]
 
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
+        dim_izh_params['Iext'] = 0.0 # pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
         # Словарь с константами
         cauchy_dencity_params = {
-            'Delta_eta': pop['Delta_eta'], #* dim_izh_params['Cm'],  # 0.02,
+            'Delta_eta': 0.02 * dim_izh_params['Cm'],  # 0.02,
             'bar_eta': 0.0,  # 0.191,
         }
 
@@ -130,14 +136,11 @@ if __name__ == '__main__':
         izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
         izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
 
-
+        print(izh_params['I_ext'])
 
 
         for key, val in izh_params.items():
             izh_params[key] = np.zeros(NN, dtype=np.float32) + val
-
-        izh_params['v_peak'][0] = 200
-        izh_params['v_reset'][0] = -200
 
         ## synaptic static variables
         tau_d = 6.02  # ms
@@ -193,7 +196,7 @@ if __name__ == '__main__':
 
         t = t.ravel()
 
-        fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 10))
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(10, 10))
         for i, (rates, hist_states) in enumerate( zip(rates_list, hist_states_list) ):
             #hist_states = hist_states_units
             A = hist_states[-1]
@@ -219,26 +222,24 @@ if __name__ == '__main__':
             # if i != 0:
             #     continue
 
-            axes[0].plot(t, rates[:, 0])
-            axes[1].plot(t, rates[:, 1])
+            axes[0, 0].plot(t, rates[:, 0])
+            axes[1, 0].plot(t, rates[:, 1])
+
+
+            axes[0, 1].plot(t, v_avg[:, 0])
+            axes[1, 1].plot(t, v_avg[:, 1])
+
+            axes[0, 2].plot(t, w_avg[:, 0])
+            axes[1, 2].plot(t, w_avg[:, 1])
 
 
 
-            # axes[1].plot(t, v_avg)
-            #axes[3].plot(t, v_avg[:, 1])
-
-
-            #axes[2].plot(t, w_avg)
-
-
-            # axes[4].plot(t, gsyn_12)
-            # axes[5].plot(t, gsyn_21)
-
-
-        fig.savefig('./outputs/plots/' + neuron_name + '.png', dpi=300, bbox_inches='tight')
+        fig.savefig('./outputs/tests/' + neuron_name + '.png', dpi=300, bbox_inches='tight')
 
         # plt.show(block=False)
         plt.close(fig)
+
+
 
 
 
