@@ -42,8 +42,9 @@ def get_params():
     potential_connections['Presynaptic Neuron Type'] = potential_connections['Presynaptic Neuron Type'].str.strip()
     potential_connections['Postsynaptic Neuron Type'] = potential_connections['Postsynaptic Neuron Type'].str.strip()
 
-    populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
-    # populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
+    # populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='verified_theta_model')
+    populations = pd.read_excel(myconfig.FIRINGSNEURONPARAMS, sheet_name='local_model')
+
     populations = populations[populations['Npops'] > 0]
 
     params = {}
@@ -241,8 +242,8 @@ def get_dataset(target_params, dt, batch_len, nbatches):
 
 ########################################################################
 IS_CREATE_MODEL = True
-checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  # 'add_R_theta_model_{epoch:02d}.keras' # 'verified_theta_model_{epoch:02d}.keras'
-filename_template =  'theta_firings_{epoch:02d}.h5'  # 'add_R_theta_firings_{epoch:02d}.h5'   #'verified_theta_firings_{epoch:02d}.h5'
+checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'theta_model_{epoch:02d}.keras'  #
+filename_template =  'theta_firings_{epoch:02d}.h5'  #
 
 model_path = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 initial_epoch = 5000
@@ -307,7 +308,7 @@ callbacks = [
 history = model.fit(x=Xtrain, y=Ytrain, epochs=Epoches, verbose=2, batch_size=1, callbacks=callbacks, initial_epoch=initial_epoch)
 
 #Ypred = model.predict(Xtrain, batch_size=1)
-with h5py.File(myconfig.OUTPUTSPATH + 'verified_theta_history.h5', mode='w') as dfile:
+with h5py.File(myconfig.OUTPUTSPATH + 'theta_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
 
