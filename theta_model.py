@@ -13,7 +13,7 @@ from tensorflow.keras.layers import Input, RNN, Layer
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
-from mean_field_class import MeanFieldNetwork, SaveFirings
+from mean_field_class import MeanFieldNetwork, SaveFirings, IntegRegLayer
 from genloss import SpatialThetaGenerators, PhaseLockingOutput,  WeightedMSE, WeightedLMSE, FiringsMeanOutRanger
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 
@@ -187,18 +187,23 @@ def get_model(params, generators_params, dt, target_params):
     mean_firings_rates = [fr for fr in target_params['OutPlaceFiringRate'] ]
 
     generators = SpatialThetaGenerators(generators_params)(input)
-    net_layer = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
+    outputs_f = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
                     return_sequences=True, stateful=True,
                     # activity_regularizer=FiringsMeanOutRanger(HighFiringRateBound=200.0),
                     name="firings_outputs")(generators)
+
+    print(outputs_f)
+
+    net_layer = outputs_f[0]
+    integ_error = outputs_f[1]
 
     only_modulation_output = PhaseLockingOutput(
                                     mean_firings_rates,
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                     name='only_modulation_output')(net_layer)
 
-    # outputs = generators # net_layer  #
-    outputs = [net_layer, only_modulation_output]  # generators #
+    integ_output = IntegRegLayer()(integ_error)
+    outputs = [net_layer, only_modulation_output, integ_output]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
     firing_model = Model(inputs=input, outputs=net_layer)
@@ -208,8 +213,8 @@ def get_model(params, generators_params, dt, target_params):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, lmse_loss],
-        loss_weights = [1.0, 0.0],
+        loss = [lmse_loss, lmse_loss, None],
+        loss_weights = [1.0, 0.0, 0.0],
     )
 
     return big_model, firing_model

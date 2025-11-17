@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras import ops
 from tensorflow.keras.layers import Layer, RNN, Input
 from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.regularizers import Regularizer, L2
@@ -10,10 +11,15 @@ import izhs_lib
 import h5py
 
 import sys
+
+
 sys.path.append('../')
 import myconfig
 
-#
+class IntegRegLayer(Layer):
+    def call(self, x):
+        self.add_loss(ops.sum(x))
+        return x
 
 PI = pi = tf.constant(3.141592653589793, dtype=myconfig.DTYPE)
 exp = tf.math.exp
@@ -380,9 +386,12 @@ class MeanFieldNetwork(Layer):
         w_avg_rk2 = w_avg + 0.5 * (w_avg_rk2_k1 + w_avg_rk2_k2)
 
         # Оценка локальной ошибки
-        error_estimate = tf.reduce_max(tf.abs(rates_rk4 - rates_rk2)) + \
-                         tf.reduce_max(tf.abs(v_avg_rk4 - v_avg_rk2)) + \
-                         tf.reduce_max(tf.abs(w_avg_rk4 - w_avg_rk2))
+        if self.stability_penalty > 0.0:
+            error_estimate = tf.reduce_mean(ops.square(rates_rk4 - rates_rk2), axis=0) + \
+                         tf.reduce_mean(ops.square(v_avg_rk4 - v_avg_rk2), axis=0) + \
+                         tf.reduce_mean(ops.square(w_avg_rk4 - w_avg_rk2), axis=0)
+        else:
+            error_estimate = tf.zeros([1, 1], dtype=myconfig.DTYPE)
 
         return rates_rk4, v_avg_rk4, w_avg_rk4, error_estimate
 
@@ -394,6 +403,7 @@ class MeanFieldNetwork(Layer):
         R = states[3]
         U = states[4]
         A = states[5]
+        integ_error = states[-1]
 
         if self.is_nmda:
             gnmda = states[6]
@@ -425,9 +435,7 @@ class MeanFieldNetwork(Layer):
 
         rates, v_avg, w_avg, error_estimate = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
-        # print(error_estimate.numpy())
-
-        # self.add_loss(self.stability_penalty * error_estimate)
+        error_estimate = self.stability_penalty * error_estimate
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
@@ -460,15 +468,14 @@ class MeanFieldNetwork(Layer):
             dgnmda = dgnmda + self.dt_dim * (released_mediator - gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
             gnmda = gnmda + self.dt_dim * dgnmda
 
-            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
+            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda, integ_error]
 
         else:
-            new_states = [rates, v_avg, w_avg, R, U, A]
+            new_states = [rates, v_avg, w_avg, R, U, A, integ_error]
 
-        output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
+        firings_output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
 
-        #output = gnmda
-
+        output = [firings_output, error_estimate]
 
         return output, new_states
 
