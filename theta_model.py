@@ -236,9 +236,9 @@ def get_dataset(target_params, dt, batch_len, nbatches):
     Rs =  target_params['R'].values.astype(myconfig.DTYPE).reshape(1, 1, Y.shape[-1])
     Ytrain_R = np.zeros(shape=(nbatches, 1, Y.shape[-1]), dtype=myconfig.DTYPE) + Rs
 
-    Yinters = np.zeros(shape=(nbatches, 1), dtype=myconfig.DTYPE)
+    # Yinters = np.zeros(shape=(nbatches, 1), dtype=myconfig.DTYPE)
 
-    Y = [Y, Ytrain_R, Yinters]
+    Y = [Y, Ytrain_R]
 
     return X, Y
 
