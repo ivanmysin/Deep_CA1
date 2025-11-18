@@ -187,13 +187,9 @@ def get_model(params, generators_params, dt, target_params):
     mean_firings_rates = [fr for fr in target_params['OutPlaceFiringRate'] ]
 
     generators = SpatialThetaGenerators(generators_params)(input)
-    firings_outputs, *final_states = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
-                    return_sequences=True, stateful=True, return_state=True,
+    firings_outputs = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
+                    return_sequences=True, stateful=True, return_state=False,
                     name="firings_outputs")(generators)
-
-
-    # firings_outputs = IntegRegLayer()(net_layer)
-    # firings_outputs = net_layer
 
 
 
@@ -202,21 +198,21 @@ def get_model(params, generators_params, dt, target_params):
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
                                     name='only_modulation_output')(firings_outputs)
 
-    interg_error = final_states[-1]
+    # interg_error = final_states[-1]
 
-    outputs = [firings_outputs, only_modulation_output, interg_error]  # generators #
+    outputs = [firings_outputs, only_modulation_output]  # , interg_error
     big_model = Model(inputs=input, outputs=outputs)
 
     firing_model = Model(inputs=input, outputs=firings_outputs)
 
     lmse_loss = tf.keras.losses.MeanSquaredLogarithmicError()   # # WeightedLMSE(output_masks['full_target'])
-    mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
+    # mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
 
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, lmse_loss, mse_loss],
-        loss_weights = [1.0, 0.0, 1.0],
+        loss = [lmse_loss, lmse_loss],
+        loss_weights = [1.0, 0.0],
     )
 
     return big_model, firing_model
