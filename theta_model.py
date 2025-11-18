@@ -187,7 +187,7 @@ def get_model(params, generators_params, dt, target_params):
     mean_firings_rates = [fr for fr in target_params['OutPlaceFiringRate'] ]
 
     generators = SpatialThetaGenerators(generators_params)(input)
-    firings_outputs = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
+    firings_outputs = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True, stability_penalty=0.0),
                     return_sequences=True, stateful=True, return_state=False,
                     name="firings_outputs")(generators)
 
