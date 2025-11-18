@@ -16,14 +16,10 @@ import sys
 sys.path.append('../')
 import myconfig
 
-class IntegRegLayer(Layer):
-    def call(self, x):
-        self.add_loss(ops.sum(x))
-        return x
-
 PI = pi = tf.constant(3.141592653589793, dtype=myconfig.DTYPE)
 exp = tf.math.exp
 tf.keras.backend.set_floatx(myconfig.DTYPE)
+
 
 #@tf.keras.utils.register_keras_serializable(package="SaveFirings")
 class SaveFirings(Callback):
@@ -313,13 +309,15 @@ class MeanFieldNetwork(Layer):
         U = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
+        error_estimate = tf.zeros( [1, 1], dtype=myconfig.DTYPE)
+
         if self.is_nmda:
             dgnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
             gnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
-            initial_state = [r, v, w, R, U, A, gnmda, dgnmda]
+            initial_state = [r, v, w, R, U, A, gnmda, dgnmda, error_estimate]
         else:
-            initial_state = [r, v, w, R, U, A]
+            initial_state = [r, v, w, R, U, A, error_estimate]
 
         return initial_state
 
@@ -387,11 +385,14 @@ class MeanFieldNetwork(Layer):
 
         # Оценка локальной ошибки
         if self.stability_penalty > 0.0:
-            error_estimate = tf.reduce_mean(ops.square(rates_rk4 - rates_rk2), axis=0) + \
-                         tf.reduce_mean(ops.square(v_avg_rk4 - v_avg_rk2), axis=0) + \
-                         tf.reduce_mean(ops.square(w_avg_rk4 - w_avg_rk2), axis=0)
+            error_estimate = tf.reduce_mean(ops.square(rates_rk4 - rates_rk2), axis=1, keepdims=True) + \
+                         tf.reduce_mean(ops.square(v_avg_rk4 - v_avg_rk2), axis=1, keepdims=True) + \
+                         tf.reduce_mean(ops.square(w_avg_rk4 - w_avg_rk2), axis=1, keepdims=True)
+
         else:
-            error_estimate = tf.zeros([1, 1], dtype=myconfig.DTYPE)
+            error_estimate = tf.zeros([1], dtype=myconfig.DTYPE)
+
+
 
         return rates_rk4, v_avg_rk4, w_avg_rk4, error_estimate
 
@@ -403,11 +404,14 @@ class MeanFieldNetwork(Layer):
         R = states[3]
         U = states[4]
         A = states[5]
-        integ_error = states[-1]
+
 
         if self.is_nmda:
             gnmda = states[6]
             dgnmda = states[7]
+
+        integ_error = states[-1]
+
 
         g_syn = self.gsyn_max * A
         # g_syn_tot = tf.math.reduce_sum(g_syn, axis=0)
@@ -436,6 +440,8 @@ class MeanFieldNetwork(Layer):
         rates, v_avg, w_avg, error_estimate = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
         error_estimate = self.stability_penalty * error_estimate
+
+        integ_error = 0.2 * integ_error + 0.8 * error_estimate
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
@@ -475,67 +481,67 @@ class MeanFieldNetwork(Layer):
 
         firings_output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
 
-        output = [firings_output, error_estimate]
+        output = firings_output
 
         return output, new_states
 
-    def update_rates(self, v_avg, g_syn_tot, rates0):
-        """
-        """
-
-
-        # Вычисляем показатель экспоненты: shape (N, 1)
-        exponent_base = -self.alpha - g_syn_tot + 2.0 * v_avg
-        # exponent_base = tf.expand_dims(exponent_base, axis=1)  # (N, 1)
-
-        # Экспонента: exp(t * exponent_base) → shape (N, T)
-        exponent = exponent_base * self.dts_non_dim  #
-        exp_term = tf.exp(exponent)  # (N, T)
-
-        # Стационарная часть: Delta_eta / (pi * (alpha + g_syn_tot - 2*v_avg))
-        denominator = self.alpha + g_syn_tot - 2.0 * v_avg
-        # denominator = tf.expand_dims(denominator, axis=1)  # (N, 1)
-
-        # Защита от деления на ноль
-        safe_denominator = tf.where(
-            tf.abs(denominator) < 1e-10,
-            tf.ones_like(denominator),  # временное значение, чтобы не было NaN
-            denominator
-        )
-
-        stationary = self.Delta_eta / (PI * safe_denominator)  # (N, 1)
-
-        # C1 = r0 - stationary; r0 уже (N,), расширяем до (N, 1)
-        C1 = rates0 - stationary  # (N, 1)
-
-        # Итоговое решение: C1 * exp_term + stationary
-        new_rates = C1 * exp_term + stationary  # (N, T)
-
-        return new_rates
-
-
-    def update_w_avg(self, w_avg, v_avg, r):
-        """
-
-        """
-
-        # Вычисляем стационарную часть: b*v_avg + (r*w_jump)/a
-        stationary_term_1 = self.b * v_avg  # (N,)
-
-        stationary_term_2 = (r * self.w_jump) / self.a
-
-        stationary = stationary_term_1 + stationary_term_2  # (N,)
-
-        # C1 = w0 - stationary
-        C1 = w_avg - stationary  # (N, 1)
-
-        # Экспоненциальный множитель: exp(-a*t)
-        exp_term = exp(-self.a * self.dts_non_dim)  # (N, T)
-
-        # Итоговое решение
-        new_w_avg = C1 * exp_term + stationary  # (N, T)
-
-        return new_w_avg
+    # def update_rates(self, v_avg, g_syn_tot, rates0):
+    #     """
+    #     """
+    #
+    #
+    #     # Вычисляем показатель экспоненты: shape (N, 1)
+    #     exponent_base = -self.alpha - g_syn_tot + 2.0 * v_avg
+    #     # exponent_base = tf.expand_dims(exponent_base, axis=1)  # (N, 1)
+    #
+    #     # Экспонента: exp(t * exponent_base) → shape (N, T)
+    #     exponent = exponent_base * self.dts_non_dim  #
+    #     exp_term = tf.exp(exponent)  # (N, T)
+    #
+    #     # Стационарная часть: Delta_eta / (pi * (alpha + g_syn_tot - 2*v_avg))
+    #     denominator = self.alpha + g_syn_tot - 2.0 * v_avg
+    #     # denominator = tf.expand_dims(denominator, axis=1)  # (N, 1)
+    #
+    #     # Защита от деления на ноль
+    #     safe_denominator = tf.where(
+    #         tf.abs(denominator) < 1e-10,
+    #         tf.ones_like(denominator),  # временное значение, чтобы не было NaN
+    #         denominator
+    #     )
+    #
+    #     stationary = self.Delta_eta / (PI * safe_denominator)  # (N, 1)
+    #
+    #     # C1 = r0 - stationary; r0 уже (N,), расширяем до (N, 1)
+    #     C1 = rates0 - stationary  # (N, 1)
+    #
+    #     # Итоговое решение: C1 * exp_term + stationary
+    #     new_rates = C1 * exp_term + stationary  # (N, T)
+    #
+    #     return new_rates
+    #
+    #
+    # def update_w_avg(self, w_avg, v_avg, r):
+    #     """
+    #
+    #     """
+    #
+    #     # Вычисляем стационарную часть: b*v_avg + (r*w_jump)/a
+    #     stationary_term_1 = self.b * v_avg  # (N,)
+    #
+    #     stationary_term_2 = (r * self.w_jump) / self.a
+    #
+    #     stationary = stationary_term_1 + stationary_term_2  # (N,)
+    #
+    #     # C1 = w0 - stationary
+    #     C1 = w_avg - stationary  # (N, 1)
+    #
+    #     # Экспоненциальный множитель: exp(-a*t)
+    #     exp_term = exp(-self.a * self.dts_non_dim)  # (N, T)
+    #
+    #     # Итоговое решение
+    #     new_w_avg = C1 * exp_term + stationary  # (N, T)
+    #
+    #     return new_w_avg
 
     def get_config(self):
         config = super().get_config()
@@ -683,6 +689,8 @@ if __name__ == '__main__':
     input_layer = Input(shape=(None, Ninps), batch_size=1)
     output = meanfieldlayer_rnn(input_layer)
 
+    # output = IntegRegLayer()(output)
+
     model = Model(inputs=input_layer, outputs=output)
 
     # model.save(f'test_model.keras')
@@ -691,8 +699,14 @@ if __name__ == '__main__':
 
     rates = model.predict(firings_inputs)
 
+    print(rates.shape)
+    #integ_error = rates[0, :, -1]
+    # rates = rates[:, :, :-1].reshape(-1, NN)
     rates = rates.reshape(-1, NN)
     t = t.numpy().ravel()
 
     plt.plot(t, rates)
     plt.show()
+
+    # plt.plot(t, integ_error)
+    # plt.show()

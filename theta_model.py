@@ -13,7 +13,7 @@ from tensorflow.keras.layers import Input, RNN, Layer
 from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
-from mean_field_class import MeanFieldNetwork, SaveFirings, IntegRegLayer
+from mean_field_class import MeanFieldNetwork, SaveFirings
 from genloss import SpatialThetaGenerators, PhaseLockingOutput,  WeightedMSE, WeightedLMSE, FiringsMeanOutRanger
 # from genloss import SpatialThetaGenerators, CommonOutProcessing, PhaseLockingOutputWithPhase, PhaseLockingOutput, RobastMeanOut, FiringsMeanOutRanger, Decorrelator
 
@@ -187,34 +187,36 @@ def get_model(params, generators_params, dt, target_params):
     mean_firings_rates = [fr for fr in target_params['OutPlaceFiringRate'] ]
 
     generators = SpatialThetaGenerators(generators_params)(input)
-    outputs_f = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
-                    return_sequences=True, stateful=True,
-                    # activity_regularizer=FiringsMeanOutRanger(HighFiringRateBound=200.0),
+    firings_outputs, *final_states = RNN(MeanFieldNetwork(params, dt_dim=dt, use_input=True),
+                    return_sequences=True, stateful=True, return_state=True,
                     name="firings_outputs")(generators)
 
-    print(outputs_f)
 
-    net_layer = outputs_f[0]
-    integ_error = outputs_f[1]
+    # firings_outputs = IntegRegLayer()(net_layer)
+    # firings_outputs = net_layer
+
+
 
     only_modulation_output = PhaseLockingOutput(
                                     mean_firings_rates,
                                     ThetaFreq=myconfig.ThetaFreq, dt=myconfig.DT,
-                                    name='only_modulation_output')(net_layer)
+                                    name='only_modulation_output')(firings_outputs)
 
-    integ_output = IntegRegLayer()(integ_error)
-    outputs = [net_layer, only_modulation_output, integ_output]  # generators #
+    interg_error = final_states[-1]
+
+    outputs = [firings_outputs, only_modulation_output, interg_error]  # generators #
     big_model = Model(inputs=input, outputs=outputs)
 
-    firing_model = Model(inputs=input, outputs=net_layer)
+    firing_model = Model(inputs=input, outputs=firings_outputs)
 
     lmse_loss = tf.keras.losses.MeanSquaredLogarithmicError()   # # WeightedLMSE(output_masks['full_target'])
-    # mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
+    mse_loss = tf.keras.losses.MeanSquaredError() # WeightedMSE(output_masks['only_R'])
+
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [lmse_loss, lmse_loss, None],
-        loss_weights = [1.0, 0.0, 0.0],
+        loss = [lmse_loss, lmse_loss, mse_loss],
+        loss_weights = [1.0, 0.0, 1.0],
     )
 
     return big_model, firing_model
@@ -238,7 +240,9 @@ def get_dataset(target_params, dt, batch_len, nbatches):
     Rs =  target_params['R'].values.astype(myconfig.DTYPE).reshape(1, 1, Y.shape[-1])
     Ytrain_R = np.zeros(shape=(nbatches, 1, Y.shape[-1]), dtype=myconfig.DTYPE) + Rs
 
-    Y = [Y, Ytrain_R]
+    Yinters = np.zeros(shape=(nbatches, 1), dtype=myconfig.DTYPE)
+
+    Y = [Y, Ytrain_R, Yinters]
 
     return X, Y
 
