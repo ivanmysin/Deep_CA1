@@ -309,15 +309,15 @@ class MeanFieldNetwork(Layer):
         U = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
         A = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
-        error_estimate = tf.zeros( [1, 1], dtype=myconfig.DTYPE)
+        # error_estimate = tf.zeros( [1, 1], dtype=myconfig.DTYPE)
 
         if self.is_nmda:
             dgnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
             gnmda = tf.zeros( synaptic_matrix_shapes, dtype=myconfig.DTYPE)
 
-            initial_state = [r, v, w, R, U, A, gnmda, dgnmda, error_estimate]
+            initial_state = [r, v, w, R, U, A, gnmda, dgnmda]
         else:
-            initial_state = [r, v, w, R, U, A, error_estimate]
+            initial_state = [r, v, w, R, U, A]
 
         return initial_state
 
@@ -383,18 +383,18 @@ class MeanFieldNetwork(Layer):
         v_avg_rk2 = v_avg + 0.5 * (v_avg_rk2_k1 + v_avg_rk2_k2)
         w_avg_rk2 = w_avg + 0.5 * (w_avg_rk2_k1 + w_avg_rk2_k2)
 
-        # Оценка локальной ошибки
-        if self.stability_penalty > 0.0:
-            error_estimate = tf.reduce_mean(ops.square(rates_rk4 - rates_rk2), axis=1, keepdims=True) + \
-                         tf.reduce_mean(ops.square(v_avg_rk4 - v_avg_rk2), axis=1, keepdims=True) + \
-                         tf.reduce_mean(ops.square(w_avg_rk4 - w_avg_rk2), axis=1, keepdims=True)
+        # # Оценка локальной ошибки
+        # if self.stability_penalty > 0.0:
+        #     error_estimate = tf.reduce_mean(ops.square(rates_rk4 - rates_rk2), axis=1, keepdims=True) + \
+        #                  tf.reduce_mean(ops.square(v_avg_rk4 - v_avg_rk2), axis=1, keepdims=True) + \
+        #                  tf.reduce_mean(ops.square(w_avg_rk4 - w_avg_rk2), axis=1, keepdims=True)
+        #
+        # else:
+        #     error_estimate = tf.zeros([1], dtype=myconfig.DTYPE)
 
-        else:
-            error_estimate = tf.zeros([1], dtype=myconfig.DTYPE)
 
 
-
-        return rates_rk4, v_avg_rk4, w_avg_rk4, error_estimate
+        return rates_rk4, v_avg_rk4, w_avg_rk4 #, error_estimate
 
 
     def call(self, inputs, states):
@@ -437,11 +437,11 @@ class MeanFieldNetwork(Layer):
         # new_w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
         # new_w_avg = self.update_w_avg(w_avg, v_avg, rates)
 
-        rates, v_avg, w_avg, error_estimate = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
+        rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
-        error_estimate = self.stability_penalty * error_estimate
-
-        integ_error = 0.2 * integ_error + 0.8 * error_estimate
+        # error_estimate = self.stability_penalty * error_estimate
+        #
+        # integ_error = 0.2 * integ_error + 0.8 * error_estimate
 
         firing_probs = tf.transpose( self.dts_non_dim * rates) #tf.reshape(rates, shape=(-1, 1))
 
@@ -474,10 +474,10 @@ class MeanFieldNetwork(Layer):
             dgnmda = dgnmda + self.dt_dim * (released_mediator - gnmda - (self.tau1_nmda + self.tau2_nmda )*dgnmda ) / (self.tau1_nmda * self.tau2_nmda)
             gnmda = gnmda + self.dt_dim * dgnmda
 
-            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda, integ_error]
+            new_states = [rates, v_avg, w_avg, R, U, A, gnmda, dgnmda]
 
         else:
-            new_states = [rates, v_avg, w_avg, R, U, A, integ_error]
+            new_states = [rates, v_avg, w_avg, R, U, A]
 
         firings_output = rates * self.dts_non_dim / self.dt_dim * 1000 # convert to spike per second
 
