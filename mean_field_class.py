@@ -410,7 +410,7 @@ class MeanFieldNetwork(Layer):
             gnmda = states[6]
             dgnmda = states[7]
 
-        integ_error = states[-1]
+        # integ_error = states[-1]
 
 
         g_syn = self.gsyn_max * A

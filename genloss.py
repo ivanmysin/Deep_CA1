@@ -51,7 +51,7 @@ class WeightedMSE(tf.keras.Loss):
         return cls(weights, **config)
 
 
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class WeightedLMSE(WeightedMSE):
     def call(self, y_true, y_pred):
 
@@ -124,7 +124,7 @@ class WeightedLMSE(WeightedMSE):
 
 
     #### inputs generators
-@tf.keras.saving.register_keras_serializable()
+# @tf.keras.saving.register_keras_serializable()
 class CommonGenerator(tf.keras.layers.Layer):
     def __init__(self, params, **kwargs):
         super(CommonGenerator, self).__init__(**kwargs)
@@ -155,7 +155,7 @@ class CommonGenerator(tf.keras.layers.Layer):
         config = super().get_config()
         return config
 
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class VonMissesGenerator(CommonGenerator):
     def __init__(self, params):
         super(VonMissesGenerator, self).__init__(params)
@@ -218,7 +218,7 @@ class VonMissesGenerator(CommonGenerator):
     def from_config(cls, config):
         return cls(config)
 
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class SpatialThetaGenerators(CommonGenerator):
     def __init__(self, params, **kwargs):
         super(SpatialThetaGenerators, self).__init__(params, **kwargs)
@@ -473,7 +473,7 @@ class SpatialThetaGenerators(CommonGenerator):
 #         return filtered_firings
 
 #########################################################################
-@tf.keras.saving.register_keras_serializable()
+# @tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutput(tf.keras.layers.Layer):
     def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
         '''
@@ -535,21 +535,14 @@ class PhaseLockingOutput(tf.keras.layers.Layer):
         return cls(MeanFirings, **config)
 
 
-@tf.keras.saving.register_keras_serializable()
+# @tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
-    def __init__(self, mask=None, ThetaFreq=5.0, dt=0.1, **kwargs):
-        super(PhaseLockingOutputWithPhase, self).__init__(mask=mask, ThetaFreq=ThetaFreq, dt=dt, **kwargs)
-
-        # phases = []
-        # for p in params:
-        #     phases.append(p["ThetaPhase"])
-
-        #self.phases = tf.constant(phases, dtype=myconfig.DTYPE)
+    def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
+        super(PhaseLockingOutputWithPhase, self).__init__( MeanFirings, ThetaFreq=ThetaFreq, dt=dt, **kwargs)
 
     def call(self, simulated_firings):
-        selected_firings = tf.boolean_mask(simulated_firings, self.mask, axis=2)
-        real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
+        real_sim, imag_sim = self.compute_fourie_trasform(simulated_firings)
 
         output = tf.stack([real_sim, imag_sim], axis=1)
 
@@ -571,7 +564,7 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
         return cls(**config)
 
 
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class RobastMeanOut(tf.keras.layers.Layer):
 
     def __init__(self, mask=None, **kwargs):
@@ -596,7 +589,7 @@ class RobastMeanOut(tf.keras.layers.Layer):
 
 ########################################################################################################################
 ##### outputs regulizers
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def __init__(self, LowFiringRateBound=0.1, HighFiringRateBound=90.0, strength=10):
         self.LowFiringRateBound = tf.convert_to_tensor(LowFiringRateBound)
@@ -627,7 +620,7 @@ class FiringsMeanOutRanger(tf.keras.regularizers.Regularizer):
     def from_config(cls, config):
         return cls(**config)
 
-@tf.keras.saving.register_keras_serializable()
+#@tf.keras.saving.register_keras_serializable()
 class Decorrelator(tf.keras.regularizers.Regularizer):
     def __init__(self, strength=0.1):
         self.strength = strength
