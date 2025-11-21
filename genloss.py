@@ -546,6 +546,8 @@ class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
         output = tf.stack([real_sim, imag_sim], axis=1)
 
+        output = output / self.MeanFirings
+
         output = tf.reshape(output, shape=(1, 2, -1))
         return output
 
