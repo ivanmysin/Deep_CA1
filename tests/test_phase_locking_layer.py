@@ -16,7 +16,7 @@ params = [
         {
                 "R": 0.25,
                 "OutPlaceFiringRate": 0.5,
-                "OutPlaceThetaPhase": 3.14,
+                "OutPlaceThetaPhase": np.random.uniform(-np.pi, np.pi),
                 "InPlacePeakRate": 8.0,
                 "CenterPlaceField": -5000.0,
                 "SigmaPlaceField": 500,
@@ -28,7 +28,7 @@ params = [
         {
                 "R": 0.3,
                 "OutPlaceFiringRate": 20.0,
-                "OutPlaceThetaPhase": 3.14,
+                "OutPlaceThetaPhase": np.random.uniform(-np.pi, np.pi),
                 "InPlacePeakRate": 8.0,
                 "CenterPlaceField": -5000.0,
                 "SigmaPlaceField": 500,
@@ -41,7 +41,7 @@ params = [
         {
                 "R": 0.45,
                 "OutPlaceFiringRate": 5.0,
-                "OutPlaceThetaPhase": 1.57,
+                "OutPlaceThetaPhase": np.random.uniform(-np.pi, np.pi),
                 "InPlacePeakRate": 8.0,
                 "CenterPlaceField": -5000.0,
                 "SigmaPlaceField": 500,
@@ -55,7 +55,7 @@ generators = SpatialThetaGenerators(params)
 
 
 dt = 0.1
-t = np.arange(0, 240, dt).reshape(-1, 1)
+t = np.arange(0, 120, dt).reshape(-1, 1)
 
 firings = generators.call(t.reshape(1, -1, 1))
 #
@@ -67,11 +67,14 @@ firings = generators.call(t.reshape(1, -1, 1))
 MeanFirings = [p['OutPlaceFiringRate'] for p in params]
 MeanFirings = np.asarray(MeanFirings).reshape(1, 1, -1)
 
-# firings = firings * MeanFirings
-#
-# firings = firings.reshape(1, firings.shape[0], firings.shape[1])
+Rs = [p['R'] for p in params]
+Rs = np.asarray(Rs).reshape(1, -1)
 
-print(firings.shape)
+Phases = [p['OutPlaceThetaPhase'] for p in params]
+Phases = np.asarray(Phases).reshape(1, -1)
+
+furie_trst_targets = np.stack( [Rs * np.cos(Phases), Rs * np.sin(Phases)], axis=1)
+
 
 
 # phase_locking_layer = PhaseLockingOutputWithPhase( MeanFirings, ThetaFreq=8.0, dt=dt)
@@ -90,9 +93,18 @@ furie_trst = model.predict(firings)
 
 
 print(furie_trst.shape)
+print(furie_trst_targets.shape)
 
-furie_abs = np.sqrt(furie_trst[0, 0, :]**2 +  furie_trst[0, 1, :]**2)
+# furie_abs = np.sqrt(furie_trst[0, 0, :]**2 +  furie_trst[0, 1, :]**2)
 
-print(furie_abs)
+print(furie_trst_targets)
+print('=====================')
+print(furie_trst)
+
+print('=====================')
+
+L = np.mean( np.log(  (furie_trst_targets+1) / (furie_trst+1) )**2 )
+
+print(L)
 #plt.plot(t, firings[0])
 #plt.show()
