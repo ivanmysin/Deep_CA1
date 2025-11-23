@@ -475,7 +475,7 @@ class SpatialThetaGenerators(CommonGenerator):
 #########################################################################
 # @tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutput(tf.keras.layers.Layer):
-    def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
+    def __init__(self, ThetaFreq=5.0, dt=0.1, **kwargs):
         '''
         Класс возращает  степень фазовой модуляции по заданной выборке переменных
 
@@ -490,7 +490,7 @@ class PhaseLockingOutput(tf.keras.layers.Layer):
 
 
         self.ThetaFreq = tf.constant(ThetaFreq, dtype=myconfig.DTYPE)
-        self.MeanFirings = tf.constant(MeanFirings, dtype=myconfig.DTYPE)
+        # self.MeanFirings = tf.constant(MeanFirings, dtype=myconfig.DTYPE)
         self.dt = tf.constant(dt, dtype=myconfig.DTYPE)
 
 
@@ -515,14 +515,14 @@ class PhaseLockingOutput(tf.keras.layers.Layer):
     def call(self, simulated_firings):
         selected_firings = simulated_firings #   tf.boolean_mask(simulated_firings, self.mask, axis=2)
         real_sim, imag_sim = self.compute_fourie_trasform(selected_firings)
-        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001) / self.MeanFirings
+        Rsim = sqrt(real_sim**2 + imag_sim**2 + 0.0000001) # / self.MeanFirings
         Rsim = tf.reshape(Rsim, shape=(1, 1, -1))
         return Rsim
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            'MeanFirings' :  self.MeanFirings.numpy().tolist(),
+            # 'MeanFirings' :  self.MeanFirings.numpy().tolist(),
             'ThetaFreq': self.ThetaFreq.numpy().tolist(),
             'dt': self.dt.numpy().tolist(),
         })
@@ -538,15 +538,15 @@ class PhaseLockingOutput(tf.keras.layers.Layer):
 # @tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
-    def __init__(self, MeanFirings, ThetaFreq=5.0, dt=0.1, **kwargs):
-        super(PhaseLockingOutputWithPhase, self).__init__( MeanFirings, ThetaFreq=ThetaFreq, dt=dt, **kwargs)
+    def __init__(self, ThetaFreq=5.0, dt=0.1, **kwargs):
+        super(PhaseLockingOutputWithPhase, self).__init__(ThetaFreq=ThetaFreq, dt=dt, **kwargs)
 
     def call(self, simulated_firings):
         real_sim, imag_sim = self.compute_fourie_trasform(simulated_firings)
 
         output = tf.stack([real_sim, imag_sim], axis=1)
 
-        output = output / self.MeanFirings
+        # output = output / self.MeanFirings
 
         output = tf.reshape(output, shape=(1, 2, -1))
         return output

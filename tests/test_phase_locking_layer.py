@@ -73,7 +73,7 @@ Rs = np.asarray(Rs).reshape(1, -1)
 Phases = [p['OutPlaceThetaPhase'] for p in params]
 Phases = np.asarray(Phases).reshape(1, -1)
 
-furie_trst_targets = np.stack( [Rs * np.cos(Phases), Rs * np.sin(Phases)], axis=1)
+furie_trst_targets = np.stack( [Rs * np.cos(Phases), Rs * np.sin(Phases)], axis=1) * MeanFirings
 
 
 
@@ -82,7 +82,7 @@ furie_trst_targets = np.stack( [Rs * np.cos(Phases), Rs * np.sin(Phases)], axis=
 
 input = Input(shape=(None, 3), batch_size=1)
 
-phase_locking_layer = PhaseLockingOutputWithPhase( MeanFirings, ThetaFreq=8.0, dt=dt)(input)
+phase_locking_layer = PhaseLockingOutputWithPhase(ThetaFreq=8.0, dt=dt)(input)
 model = Model(inputs=input, outputs=phase_locking_layer)
 model.compile(
         optimizer='adam',

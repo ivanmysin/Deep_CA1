@@ -61,6 +61,8 @@ PCONN_THRESHOLD = 0.05
 #####
 ThetaFreq = 8.0
 
+V_AN = 20 # cm/sec
+
 ##############################################
 ######### fit whole model of CA1 net #########
 LEARNING_RATE = 0.001 #5e1
