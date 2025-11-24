@@ -300,18 +300,19 @@ def get_dataset(target_params, dt, batch_len, nbatches, output_masks):
 
 ########################################################################
 SOURCE_MODEL = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
-batch_len = 12000
-nbatches = 50
+
+duration = 6000
+myconfig.DT = 0.025
+batch_len = int(120 / myconfig.DT)
+nbatches = int(duration / batch_len / myconfig.DT)
+
+
 
 optim_parameters_connection, optim_parameters_neurons = get_base_params(SOURCE_MODEL, 'local_model')
 params, generators_params, target_params, output_masks = get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name='full_local_model')
 
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches, output_masks)
 
-
-# print("Xtrain", Xtrain.shape)
-# for key, val in Ytrain.items():
-#     print(key, val.shape)
 
 
 with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
@@ -358,5 +359,4 @@ history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, c
 #
 with h5py.File(myconfig.OUTPUTSPATH + 'full_local_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
-
 
