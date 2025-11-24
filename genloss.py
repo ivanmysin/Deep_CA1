@@ -61,6 +61,15 @@ class WeightedLMSE(WeightedMSE):
 
         return loss
 
+class WeightedLogCoshError(WeightedMSE):
+    def call(self, y_true, y_pred):
+
+        error = (y_pred - y_true) * self.weights
+
+        loss = ops.mean(ops.log((ops.exp(error) + ops.exp(-error))/2), axis=-1)
+
+        return loss
+
 
 
 #####################################################################
@@ -538,7 +547,7 @@ class PhaseLockingOutput(tf.keras.layers.Layer):
 # @tf.keras.saving.register_keras_serializable()
 class PhaseLockingOutputWithPhase(PhaseLockingOutput):
 
-    def __init__(self, ThetaFreq=5.0, dt=0.1, **kwargs):
+    def __init__(self, ThetaFreq=8.0, dt=0.1, **kwargs):
         super(PhaseLockingOutputWithPhase, self).__init__(ThetaFreq=ThetaFreq, dt=dt, **kwargs)
 
     def call(self, simulated_firings):

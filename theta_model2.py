@@ -14,7 +14,7 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, PhaseLockingOutputWithPhase, WeightedLMSE
+from genloss import SpatialThetaGenerators, PhaseLockingOutputWithPhase, WeightedLMSE, WeightedMSE, WeightedLogCoshError
 import myconfig
 
 from myutils import get_net_params
@@ -96,7 +96,15 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
     for pop_idx, pop in populations.iterrows():
 
         if pop['Simulated_Type'] == 'generator':
-            generators_params.append(pop.to_dict())
+
+            gen = pop.to_dict()
+
+            gen['SlopePhasePrecession'] = gen['SlopePhasePrecession'] / 360 * 2 * np.pi * myconfig.V_AN / 1000
+
+            gen['CenterPlaceField'] = gen['CenterPlaceField'] / myconfig.V_AN  * 1000
+            gen['SigmaPlaceField'] = gen['SigmaPlaceField'] / myconfig.V_AN  * 1000
+
+            generators_params.append(gen)
             continue
 
         hippocampome_pop_type = pop['Hippocampome_Neurons_Names']
@@ -164,7 +172,7 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
 
 
 
-            if (pre_type == 'Pyramidal (deep)' and post_type == 'Pyramidal (deep)') or (pre_type == 'Pyramidal (superficial)' and post_type == 'Pyramidal (superficial)'):
+            if ('Pyramidal' in pre_type) and ('Pyramidal' in post_type):
                 dist_anat = np.sqrt(  (pre_pop['x_anat'] - post_pop['x_anat'])**2 + (pre_pop['y_anat'] - post_pop['y_anat'])**2 )
                 params['pconn'][pre_idx, post_idx] = np.exp(  -0.5  * (dist_anat / SIGMA_PYR2PYR_CONNECTIONS)**2  )
 
@@ -221,16 +229,29 @@ def get_model(params, generators_params, dt, output_masks):
 
     phase_locking_layer = PhaseLockingOutputWithPhase(ThetaFreq=myconfig.ThetaFreq, dt=dt)(net_layer)
 
-    outputs = [net_layer, phase_locking_layer]
+    outputs = {
+        "full_output" : net_layer,
+        "phase_output": phase_locking_layer,
+    }
     big_model = Model(inputs=input, outputs=outputs)
 
     mse_full_output = WeightedLMSE(output_masks['full_output'])
-    phase_locking_output = WeightedLMSE(output_masks['phase_output'])
+    # mse_full_output = WeightedLogCoshError(output_masks['full_output'])
+    phase_locking_output = WeightedMSE(output_masks['phase_output'])
+    # phase_locking_output = WeightedLogCoshError(output_masks['phase_output'])
+
+    loss_funcs = {
+        "full_output" : mse_full_output,
+        "phase_output": phase_locking_output,
+    }
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = [mse_full_output, phase_locking_output],
-        loss_weights = [1.0, 1.0]
+        loss = loss_funcs,
+        loss_weights = {
+            "full_output" : 1.0,
+            "phase_output": 0.05,
+        }
     )
 
     return big_model
@@ -259,10 +280,10 @@ def get_dataset(target_params, dt, batch_len, nbatches, output_masks):
 
     Yphase_output = np.stack( [Rs * np.cos(phases), Rs * np.sin(phases)], axis=1) * MeanFirings
 
+
+    Yphase_output = np.tile(Yphase_output, (nbatches, 1, 1))
+
     # Yphase_output = Yphase_output[:, :, output_masks['phase_output']]
-
-
-    print(Yphase_output.shape)
 
     Y = {
         'full_output' : target_firings.numpy().reshape(nbatches, batch_len, -1),
@@ -288,16 +309,15 @@ params, generators_params, target_params, output_masks = get_params(optim_parame
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches, output_masks)
 
 
-
-
-'''
+# print("Xtrain", Xtrain.shape)
+# for key, val in Ytrain.items():
+#     print(key, val.shape)
 
 
 with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Xtrain', data=Xtrain)
-    dfile.create_dataset('Ytrain', data=Ytrain)
-'''
-
+    dfile.create_dataset('Y_full_outputs', data=Ytrain['full_output'])
+    dfile.create_dataset('Y_phase_output', data=Ytrain['phase_output'])
 
 
 model = get_model(params, generators_params, myconfig.DT, output_masks)
@@ -329,7 +349,13 @@ callbacks = [
 
 history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
 
-#Ypred = model.predict(Xtrain, batch_size=1)
+# Ypred = model.predict(Xtrain, batch_size=1)
+# print(Ypred['phase_output'])
+
+# L = np.log(Ypred['phase_output'] + 1.0) - np.log(Ytrain['phase_output'] + 1.0)
+#
+# print(L)
+#
 with h5py.File(myconfig.OUTPUTSPATH + 'full_local_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
