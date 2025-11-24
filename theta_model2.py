@@ -63,7 +63,6 @@ def get_base_params(path_to_base_model, sheet_name):
 
 
 
-
     return optim_parameters_connection, optim_parameters_neurons
 
 
@@ -115,9 +114,9 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
         p = neurons_params[neurons_params["Neuron Type"] == hippocampome_pop_type]
 
         try:
-            Iext_pop = optim_parameters_neurons['I_ext'][optim_parameters_neurons['Neuron Type'] == model_pop_type][0]
+            Iext_pop = optim_parameters_neurons['I_ext'][optim_parameters_neurons['Neuron Type'] == model_pop_type].values[0]
             params['I_ext'].append(Iext_pop)
-        except KeyError:
+        except IndexError or KeyError:
             params['I_ext'].append(0.0)
 
         try:
@@ -187,15 +186,22 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
             tau_f = syn['tau_f'].values[0]
             tau_d = syn['tau_d'].values[0]
 
-            gsyn = syn['gsyn_max'].values[0]
-            Erev = syn['Erev'].values[0]
+
+
 
             params['Uinc'][pre_idx, post_idx] = Uinc
             params['tau_r'][pre_idx, post_idx] = tau_r
             params['tau_f'][pre_idx, post_idx] = tau_f
             params['tau_d'][pre_idx, post_idx] = tau_d
 
+
+            Erev = syn['Erev'].values[0]
+
+            if Erev > 0:
+                gsyn = 0.01 * syn['gsyn_max'].values[0]
             params['gsyn_max'][pre_idx, post_idx] = gsyn
+
+
             params['e_r'][pre_idx, post_idx] = Erev
 
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
@@ -323,8 +329,10 @@ with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
 
 model = get_model(params, generators_params, myconfig.DT, output_masks)
 
+model.save(myconfig.OUTPUTSPATH_MODELS + 'full_local_model.keras')
 
 
+"""
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'full_local_model_{epoch:02d}.keras'
 # filename_template = 'full_local_firings_{epoch:02d}.h5'
 
@@ -360,3 +368,4 @@ history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, c
 with h5py.File(myconfig.OUTPUTSPATH + 'full_local_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
+"""

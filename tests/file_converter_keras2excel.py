@@ -47,13 +47,13 @@ def get_gen_params(filepath):
     return config_gen_params
 
 
-model_path = '/home/ivan/PycharmProjects/Deep_CA1/outputs/big_models/theta_model_744.keras'
-target_path =  '/home/ivan/PycharmProjects/Deep_CA1/outputs/tests/'
+model_path = '/home/ivan/Projects/Deep_CA1/outputs/big_models/full_local_model.keras'     #theta_model_5000.keras'
+target_path =  '/home/ivan/Projects/Deep_CA1/outputs/tests/'
 
 generator_params = get_gen_params(model_path)
 net_params = get_net_params(model_path)
 
-populations = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='local_model')
+populations = pd.read_excel('../parameters/neurons_parameters.xlsx', sheet_name='full_local_model')
 populations.rename( {'neurons' : 'type'}, axis=1, inplace=True)
 populations = populations[populations['Npops'] > 0]
 
