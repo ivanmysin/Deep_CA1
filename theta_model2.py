@@ -256,7 +256,7 @@ def get_model(params, generators_params, dt, output_masks):
         loss = loss_funcs,
         loss_weights = {
             "full_output" : 1.0,
-            "phase_output": 0.0001,
+            "phase_output": 0.25,
         }
     )
 
