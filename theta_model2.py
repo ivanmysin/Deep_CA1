@@ -332,7 +332,7 @@ model = get_model(params, generators_params, myconfig.DT, output_masks)
 model.save(myconfig.OUTPUTSPATH_MODELS + 'full_local_model.keras')
 
 
-"""
+
 checkpoint_filepath = myconfig.OUTPUTSPATH_MODELS + 'full_local_model_{epoch:02d}.keras'
 # filename_template = 'full_local_firings_{epoch:02d}.h5'
 
@@ -368,4 +368,3 @@ history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, c
 with h5py.File(myconfig.OUTPUTSPATH + 'full_local_history.h5', mode='w') as dfile:
     dfile.create_dataset('loss', data=history.history['loss'])
 
-"""
