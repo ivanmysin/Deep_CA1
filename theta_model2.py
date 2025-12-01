@@ -357,7 +357,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain['Y_full_outputs'], epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain['full_output'], epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
 
 # Ypred = model.predict(Xtrain, batch_size=1)
 # print(Ypred['phase_output'])
