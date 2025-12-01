@@ -330,12 +330,6 @@ class IzhikevichNetwork:
 
         spike_mask = spike_mask.reshape((self.Npops, self.NN))
 
-        # print('spike_mask', spike_mask.shape)
-        # print('self.w_jump', self.w_jump.shape)
-
-        # print(self.w_jump.shape)
-        ## !!!! Начать отсюда!!!!
-
         v_new[spike_mask] = self.v_reset[spike_mask]
         w_new[spike_mask] += self.w_jump[spike_mask]
 

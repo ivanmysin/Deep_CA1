@@ -233,31 +233,32 @@ def get_model(params, generators_params, dt, output_masks):
                     name="firings_outputs")(generators)
 
 
-    phase_locking_layer = PhaseLockingOutputWithPhase(ThetaFreq=myconfig.ThetaFreq, dt=dt)(net_layer)
+    # phase_locking_layer = PhaseLockingOutputWithPhase(ThetaFreq=myconfig.ThetaFreq, dt=dt)(net_layer)
+    #
+    # outputs = {
+    #     "full_output" : net_layer,
+    #     "phase_output": phase_locking_layer,
+    # }
+    big_model = Model(inputs=input, outputs=net_layer)
 
-    outputs = {
-        "full_output" : net_layer,
-        "phase_output": phase_locking_layer,
-    }
-    big_model = Model(inputs=input, outputs=outputs)
-
-    mse_full_output = WeightedLMSE(output_masks['full_output'])
+    # mse_full_output = tf.keras.losses.MeanSquaredLogarithmicError()
+    # mse_full_output = WeightedLMSE(output_masks['full_output'])
     # mse_full_output = WeightedLogCoshError(output_masks['full_output'])
-    phase_locking_output = WeightedMSE(output_masks['phase_output'])
+    # phase_locking_output = WeightedMSE(output_masks['phase_output'])
     # phase_locking_output = WeightedLogCoshError(output_masks['phase_output'])
 
-    loss_funcs = {
-        "full_output" : mse_full_output,
-        "phase_output": phase_locking_output,
-    }
+    # loss_funcs = {
+    #     "full_output" : mse_full_output,
+    #     "phase_output": phase_locking_output,
+    # }
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = loss_funcs,
-        loss_weights = {
-            "full_output" : 1.0,
-            "phase_output": 0.25,
-        }
+        loss = tf.keras.losses.MeanSquaredLogarithmicError() # loss_funcs,
+        # loss_weights = {
+        #     "full_output" : 1.0,
+        #     "phase_output": 0.25,
+        # }
     )
 
     return big_model
@@ -356,7 +357,7 @@ callbacks = [
         TerminateOnNaN(),
 ]
 
-history = model.fit(x=Xtrain, y=Ytrain, epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain['Y_full_outputs'], epochs=10000, verbose=2, batch_size=1, callbacks=callbacks)
 
 # Ypred = model.predict(Xtrain, batch_size=1)
 # print(Ypred['phase_output'])
