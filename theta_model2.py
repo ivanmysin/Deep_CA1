@@ -14,7 +14,7 @@ from tensorflow.keras.saving import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, TerminateOnNaN
 
 from mean_field_class import MeanFieldNetwork, SaveFirings
-from genloss import SpatialThetaGenerators, PhaseLockingOutputWithPhase, WeightedLMSE, WeightedMSE, WeightedLogCoshError
+from genloss import SpatialThetaGenerators, MultiLoss,  PhaseLockingOutputWithPhase, WeightedLMSE, WeightedMSE, WeightedLogCoshError
 import myconfig
 
 from myutils import get_net_params
@@ -254,7 +254,7 @@ def get_model(params, generators_params, dt, output_masks):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = tf.keras.losses.MeanSquaredLogarithmicError() # loss_funcs,
+        loss = MultiLoss(), # tf.keras.losses.MeanSquaredLogarithmicError() # loss_funcs,
         # loss_weights = {
         #     "full_output" : 1.0,
         #     "phase_output": 0.25,

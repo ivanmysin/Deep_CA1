@@ -21,6 +21,22 @@ argmax = tf.math.argmax
 
 PI = np.pi
 
+class MultiLoss(tf.keras.losses.Loss):
+    def __init__(self, alpha=0.5, beta=0.5, name='multi_loss'):
+        super().__init__(name=name)
+        self.alpha = alpha
+        self.beta = beta
+        self.lmse = tf.keras.losses.MeanSquaredLogarithmicError()
+        self.cos_sim = tf.keras.losses.CosineSimilarity()
+
+    def call(self, y_true, y_pred):
+        return self.alpha * self.lmse(y_true, y_pred) + \
+            self.beta * self.cos_sim(y_true, y_pred)
+
+    def get_config(self):
+        return {'alpha': self.alpha, 'beta': self.beta}
+
+
 @keras.saving.register_keras_serializable()
 class WeightedMSE(tf.keras.Loss):
     def __init__(self, weights, **kwargs):
