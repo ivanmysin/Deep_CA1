@@ -140,6 +140,16 @@ def dimensional_to_dimensionless_all(dimensional_vars):
         pass
 
     try:
+        dimensionless_vars['Delta_eta_min'] = transform_I(dimensional_vars['Delta_eta_min'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
+        dimensionless_vars['Delta_eta_max'] = transform_I(dimensional_vars['Delta_eta_max'], k, Vrest)
+    except KeyError:
+        pass
+
+    try:
         dimensionless_vars['bar_eta'] = transform_I(dimensional_vars['bar_eta'], k, Vrest)
     except KeyError:
         pass

@@ -88,6 +88,9 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
     dimpopparams = {
         'dt_dim' : myconfig.DT,
         'Delta_eta' : [],
+        'Delta_eta_min' : [],
+        'Delta_eta_max' : [],
+
     }
 
     generators_params = []
@@ -121,8 +124,13 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
 
         try:
             dimpopparams['Delta_eta'].append(pop['Delta_eta'])
+            dimpopparams['Delta_eta_min'].append(pop['Delta_eta_min'])
+            dimpopparams['Delta_eta_max'].append(pop['Delta_eta_max'])
+
         except KeyError:
             dimpopparams['Delta_eta'].append(myconfig.DELTA_ETA)
+            dimpopparams['Delta_eta_min'].append(1.0)
+            dimpopparams['Delta_eta_max'].append(20.0)
 
         for key in p:
             val = p[key].values[0]
