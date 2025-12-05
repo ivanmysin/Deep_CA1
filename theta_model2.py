@@ -212,6 +212,8 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
 
             params['e_r'][pre_idx, post_idx] = Erev
 
+
+
     params_dimless = izhs_lib.dimensional_to_dimensionless_all(dimpopparams)
 
     params = params | params_dimless
