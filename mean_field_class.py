@@ -211,8 +211,8 @@ class MeanFieldNetwork(Layer):
 
 
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
-                                        initializer=tf.keras.initializers.Constant(gsyn_max),
-                                        # regularizer=self.gmax_regulizer,  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                        initializer = tf.keras.initializers.Constant(gsyn_max),
+                                        regularizer = L2(l2=0.01),  #
                                         # regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
@@ -277,7 +277,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
+                                     constraint=MinMaxWeights(min_val=dt_dim),  #tf.keras.constraints.NonNeg(),
                                      name=f"tau1_nmda")
 
             tau2_nmda = tf.convert_to_tensor(params['nmda']['tau2_nmda'], dtype=myconfig.DTYPE)
@@ -286,7 +286,7 @@ class MeanFieldNetwork(Layer):
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
                                      trainable=True,
                                      dtype=myconfig.DTYPE,
-                                     constraint=MinMaxWeights(min=dt_dim),  #tf.keras.constraints.NonNeg(),
+                                     constraint=MinMaxWeights(min_val=dt_dim),  #tf.keras.constraints.NonNeg(),
                                      name=f"tau2_nmda")
 
         if self.is_nmda:
