@@ -330,11 +330,14 @@ class IzhikevichNetwork:
 
         spike_mask = spike_mask.reshape((self.Npops, self.NN))
 
+        # Вычисление доли спайков в каждой популяции (вероятность генерации ПД)
+        firing_probs = np.mean(spike_mask, axis=1, keepdims=True).T  # форма: (1, units)
+
         v_new[spike_mask] = self.v_reset[spike_mask]
         w_new[spike_mask] += self.w_jump[spike_mask]
 
-        # Вычисление доли спайков в каждой популяции (вероятность генерации ПД)
-        firing_probs = np.mean(spike_mask, axis=1, keepdims=True).T  # форма: (1, units)
+
+
 
         # Обновление синаптических переменных (без изменений)
         if self.use_input:

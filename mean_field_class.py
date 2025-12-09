@@ -178,17 +178,21 @@ class MeanFieldNetwork(Layer):
 
         self.Delta_eta = self.add_weight(shape=tf.keras.ops.shape(Delta_eta),
                                         initializer=tf.keras.initializers.Constant(Delta_eta),
+                                        regularizer=BoundWallReg(min_val=Delta_eta_min, max_val=Delta_eta_max),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
-                                        constraint=MinMaxWeights(min_val=Delta_eta_min, max_val=Delta_eta_max),
-                                        name=f"Delta_eta")
+                                        # constraint=MinMaxWeights(min_val=Delta_eta_min, max_val=Delta_eta_max),
+                                        name="Delta_eta")
+
+        print(Delta_eta.numpy(), Delta_eta_min.numpy(), Delta_eta_max.numpy())
+        print("===" * 20)
+        print( np.mean( (Delta_eta.numpy() >= Delta_eta_min.numpy()) & (Delta_eta.numpy() <= Delta_eta_max.numpy())  ) )
 
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        # regularizer=L2(l2=25.0), #!!!!!!!!!!!!!!!!!
-                                        regularizer=L2(l2=10.0),
+                                        regularizer=L2(l2=1.0), # l2=25.0)
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -212,7 +216,7 @@ class MeanFieldNetwork(Layer):
 
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer = tf.keras.initializers.Constant(gsyn_max),
-                                        regularizer = L2(l2=0.0001),  #
+                                        regularizer = L2(l2=0.00001),  #
                                         # regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,

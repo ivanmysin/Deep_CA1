@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from plots_config import plotting_colors
+from sklearn.metrics import r2_score, d2_absolute_error_score
+
+from myutils import get_phase_shift
 
 import sys
 sys.path.append('../')
@@ -105,7 +108,7 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
      if row_idx == int(nrows//2) :
          ax.set_ylabel("имп./сек.")
 
-     print(neuron_name)
+     # print(neuron_name)
 
 
 
@@ -132,6 +135,13 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
 
      ax.legend( bbox_to_anchor=(1.7, 1.1), loc="upper right")
      ax.set_xlim(800, 1200)
+
+
+     r2 = r2_score(target, firings)
+     d2 = d2_absolute_error_score(target, firings)
+     dPhi = get_phase_shift(target, firings, deg=True)
+
+     print(f"{neuron_name} &  {r2:.2f} & {d2:.2f} & {dPhi:.0f}  " + r"\\\hline")
 
 if len(neurons_order)%2 != 0:
     axes[-1, -1].axis('off')

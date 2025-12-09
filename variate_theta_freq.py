@@ -6,7 +6,9 @@ import h5py
 import pandas as pd
 import myconfig
 
-DT_COEFF = 0.01
+myconfig.DT = 0.01
+
+DT_COEFF = 1.0
 
 
 def load_vpeaks_vreset(neurons_params, populations):
@@ -75,7 +77,7 @@ def make_simulation(params, result_file, simulation_type):
 
     firing_file = h5py.File(result_file, mode='w')
 
-    for theta_freq in range(4, 13): # [8, ]:  #
+    for theta_freq in [8, ]:  # range(4, 13): #
         generators.set_theta_freq(theta_freq)
         generators_firings = generators.call(tnp)
 
@@ -184,7 +186,7 @@ params['dts_non_dim'][:] *= DT_COEFF
 # params['I_ext'][:] = 0.0
 
 make_simulation(params, result_file_pop, 'meanfield')
-make_simulation(params, result_file_units, 'units')
+# make_simulation(params, result_file_units, 'units')
 
 
 # params['v_peak'] = np.zeros((10, 10), dtype=np.float32) + 300

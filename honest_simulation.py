@@ -132,11 +132,15 @@ class HonestNetwork:
         v = np.where(fired, self.v_reset, v)
         w = np.where(fired, w + self.w_jump, w)
 
-        rates = np.mean(fired, axis=1)  # dt_dim # mean rate per ms
-        gen_rates = inputs  #np.hstack((inputs[:,0], inputs[:,1], inputs[:,2], inputs[:,3])) # , inputs[:,2], inputs[:,3]
+        rates = np.mean(fired, axis=1, keepdims=True)  # dt_dim # mean rate per ms
+        gen_rates = inputs * 0.001 * self.dt  #np.hstack((inputs[:,0], inputs[:,1], inputs[:,2], inputs[:,3])) # , inputs[:,2], inputs[:,3]
 
-        full_rates = np.hstack((rates, gen_rates))
-        firing_prob = full_rates[:, np.newaxis, np.newaxis] # * dt_dim
+        # print(rates.shape, gen_rates.shape)
+        # full_rates = np.hstack((rates, gen_rates.T))
+        # # * dt_dim
+
+        full_rates = np.concatenate( [rates, gen_rates.T], axis=0)
+        firing_prob = full_rates[:, np.newaxis]
 
         # print('input: ', gen_rates.shape)
         # print('rates: ', full_rates.shape)
@@ -221,7 +225,7 @@ class HonestNetwork:
                     output, hist_states = self.call(batch[:, j], states)
 
                     # сохраняем данные
-                    hf['rate'][step] = output #hist_states[0]  # rates (NN)
+                    hf['rate'][step] = output.ravel()  #hist_states[0]  # rates (NN)
                     # hf['v'][step] = hist_states[1]
                     # hf['Isyn'][step] = hist_states[7]
                     # hf['Amean'][step] = hist_states[6]
@@ -270,37 +274,12 @@ if __name__ == '__main__':
 
 
 
-    types_from_table = {
-        0: 'CA1 Pyramidal',
-        1: 'CA1 Pyramidal',
-        2: 'CA1 Axo-Axonic',
-        3: 'CA1 Basket',
-        4: 'CA1 Basket CCK+',
-        5: 'CA1 Bistratified',
-        6: 'CA1 Ivy',
-        7: 'CA1 Neurogliaform',
-        8: 'CA1 O-LM',
-        9: 'CA1 Perforant Path-Associated',
-        10: 'CA1 Interneuron Specific R-O',
-        11: 'CA1 Interneuron Specific RO-O',
-        12: 'CA1 Trilaminar'
-    }
 
-    types_from_table_4 = {
-        0: 'CA1 Axo-Axonic',
-        1: 'CA1 Basket',
-        2: 'CA1 Basket CCK+',
-        3: 'CA1 Bistratified',
-        4: 'CA1 Ivy',
-        5: 'CA1 Neurogliaform',
-        6: 'CA1 O-LM',
-        7: 'CA1 Perforant Path-Associated',
-        8: 'CA1 Interneuron Specific R-O',
-        9: 'CA1 Interneuron Specific RO-O',
-        10: 'CA1 Trilaminar',
-        11: 'CA1 Pyramidal',
-        12: 'CA1 Pyramidal'
-    }
+    neurons_params = pd.read_excel('./parameters/neurons_parameters.xlsx', sheet_name='verified_theta_model')
+    neurons_params['Hippocampome_Neurons_Names'] = neurons_params['Hippocampome_Neurons_Names'].str.strip()
+    neurons_params['Model_Neurons_Names'] = neurons_params['Model_Neurons_Names'].str.strip()
+    # neurons_params['Simulated_Type'] = neurons_params['Simulated_Type'].str.strip()
+    neurons_names = neurons_params[neurons_params['Npops'] == 1]['Model_Neurons_Names'].to_list()
 
 
 
@@ -308,7 +287,7 @@ if __name__ == '__main__':
     NN = len(params_list['net_params']['I_ext'])
     net_params = params_list['net_params']
     Ninps = 4
-    pop_size = 2000 # Количество нейронов в каждой популяции
+    pop_size = 100 # Количество нейронов в каждой популяции
     dt_dim = 0.01  # ms
 
 
@@ -338,7 +317,7 @@ if __name__ == '__main__':
         izh_params[key] = np.zeros((NN, pop_size), dtype=np.float32)
         if key == 'Izh C': izh_params[key] = np.ones((NN, pop_size), dtype=np.float32) # емкости где нет связи - единицы
         for i in range(NN):
-            type = types_from_table_4[i]  # types_from_table !!!
+            type = neurons_names[i]  # types_from_table !!!
             neuron_param = neuron_types[neuron_types['Neuron Type'] == type]
 
             if not neuron_param.empty:
@@ -374,7 +353,7 @@ if __name__ == '__main__':
     syn_params['tau_f'] = np.where(syn_params['tau_f'] == 0.0, 100.0, syn_params['tau_f'])
     syn_params['tau_r'] = np.where(syn_params['tau_r'] == 0.0, 100.0, syn_params['tau_r'])
 
-    syn_params['e_r'] = (syn_params['e_r'] -1)*np.abs(izh_params['Izh Vr'])
+    syn_params['e_r'] = (syn_params['e_r'] - 1)*np.abs(izh_params['Izh Vr'])
 
 
     #print(syn_params)
@@ -394,7 +373,7 @@ if __name__ == '__main__':
     dt_mean = 0.01
     t_mean = np.arange(0, duration, dt_mean, dtype=np.float32)
 
-    for freq in range(4, 13):
+    for freq in [8, ]: #  range(4, 13):
 
         save_file=f'outputs/results_freq_{freq}.h5'
 

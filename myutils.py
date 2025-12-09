@@ -1,6 +1,7 @@
 import numpy as np
 import zipfile
 import json
+from scipy.signal import hilbert
 
 def get_net_params(filepath):
     with zipfile.ZipFile(filepath, mode='r') as zipped_file:
@@ -64,3 +65,25 @@ def parzen_filter(arr, window_size=3, axis=0):
     result = np.apply_along_axis(lambda x: np.convolve(x, kernel, mode='same'), axis, arr)
 
     return result
+
+def get_phase_shift(x1, x2, deg=False):
+    """
+    Рассчитывает средний сдвиг фазы между двумя сигналами с помощью преобразования Гильберта.
+
+    :param x1: первый сигнал (1D array)
+    :param x2: второй сигнал (1D array)
+    :return: средний сдвиг фазы в радианах
+    """
+    x1 = x1 - np.mean(x1)
+    x2 = x2 - np.mean(x2)
+
+    # Применяем преобразование Гильберта для получения аналитических сигналов
+    analytic_x1 = hilbert(x1)
+    analytic_x2 = hilbert(x2)
+
+    z = analytic_x1 * np.conj(analytic_x2)
+
+    # Вычисляем разность фаз
+    mean_phase_shift = np.angle( np.mean(z), deg=deg )
+
+    return mean_phase_shift

@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     NN = 2
     Ninps = len(generator_params)
-    dt_dim = 0.01  # ms
+    dt_dim = 0.05  # ms
     duration = 500.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
@@ -122,19 +122,22 @@ if __name__ == '__main__':
         dim_izh_params = dim_izh_params.to_dict(orient='records')[0]
 
 
-        dim_izh_params['Iext'] = 0.0 # pop['Delta_eta']  # 0.01 * dim_izh_params['Cm']
+        dim_izh_params['Iext'] = np.asarray([0.01 * dim_izh_params['Cm'], 0.1 * dim_izh_params['Cm']])  # pop['Delta_eta']  #
         dim_izh_params['V0'] = dim_izh_params['Vrest']
         dim_izh_params['U0'] = 0.0
 
         # Словарь с константами
         cauchy_dencity_params = {
-            'Delta_eta': 0.02 * dim_izh_params['Cm'],  # 0.02,
+            'Delta_eta': 0.2 * dim_izh_params['Cm'],  # 0.02,
             'bar_eta': 0.0,  # 0.191,
         }
 
         dim_izh_params = dim_izh_params | cauchy_dencity_params
         izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
-        izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+
+
+
+        izh_params['dts_non_dim'] = dt_dim / izhs_lib.transform_T(dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
 
         print(izh_params['I_ext'])
 
@@ -152,7 +155,7 @@ if __name__ == '__main__':
         gsyn_max[0, 1] = 0
         gsyn_max[1, 0] = 0
 
-        gsyn_max[Ninps:, 0] = 10
+        # gsyn_max[Ninps:, 0] = 10
 
 
 
@@ -185,7 +188,6 @@ if __name__ == '__main__':
         #     print(key, "\n", val)
 
         rates_pops, hist_states_pops = make_simulation(izh_params, dt_dim, simtype='meanfield')
-
         rates_units, hist_states_units = make_simulation(izh_params, dt_dim, simtype='izh')
         rates = parzen_filter(rates_units, window_size=105, axis=0)
 
@@ -213,8 +215,8 @@ if __name__ == '__main__':
 
 
             if i == 0:
-                v_avg = np.mean(hist_states[1], axis=2)
-                w_avg = np.mean(hist_states[2], axis=2)
+                v_avg = np.mean(hist_states[1], axis=1)
+                w_avg = np.mean(hist_states[2], axis=1)
             else:
                 v_avg = hist_states[1].reshape(-1, NN)
                 w_avg = hist_states[2].reshape(-1, NN)
