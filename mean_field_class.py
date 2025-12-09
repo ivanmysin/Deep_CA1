@@ -178,7 +178,7 @@ class MeanFieldNetwork(Layer):
 
         self.Delta_eta = self.add_weight(shape=tf.keras.ops.shape(Delta_eta),
                                         initializer=tf.keras.initializers.Constant(Delta_eta),
-                                        regularizer=BoundWallReg(min_val=Delta_eta_min, max_val=Delta_eta_max),
+                                        # regularizer=BoundWallReg(min_val=Delta_eta_min, max_val=Delta_eta_max),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
                                         constraint=MinMaxWeights(min_val=Delta_eta_min, max_val=Delta_eta_max), # tf.keras.constraints.NonNeg(), #
