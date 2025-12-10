@@ -252,7 +252,7 @@ print('Class is ready')
 if __name__ == '__main__':
 
 
-    neuron_types = pd.read_csv('./parameters/DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv', delimiter=',')
+    neuron_types = pd.read_csv('./outputs/old_DG_CA2_Sub_CA3_CA1_EC_neuron_parameters06-30-2024_10_52_20.csv', delimiter=',')
     synapse_types = pd.read_csv('./parameters/DG_CA2_Sub_CA3_CA1_EC_conn_parameters06-30-2024_10_52_20.csv')
 
 
@@ -310,8 +310,8 @@ if __name__ == '__main__':
     NN = len(params_list['net_params']['I_ext'])
     net_params = params_list['net_params']
     Ninps = 4
-    pop_size = 2000 # 12000 #  Количество нейронов в каждой популяции
-    dt_dim = 0.002  # ms
+    pop_size = 4000 # 12000 #  Количество нейронов в каждой популяции
+    dt_dim = 0.01  # ms
 
 
     izh_params = {
@@ -430,12 +430,12 @@ if __name__ == '__main__':
 
 
 
-    duration = 1800.0
+    duration = 1200.0
     t = np.arange(0, duration, dt_dim, dtype=np.float32)
     t = t.reshape(1, -1, 1)
     t = t.ravel()
 
-    dt_mean = 0.002
+    dt_mean = 0.01
     t_mean = np.arange(0, duration, dt_mean, dtype=np.float32)
 
 

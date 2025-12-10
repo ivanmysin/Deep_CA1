@@ -192,7 +192,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=5.0), # l2=25.0)
+                                        regularizer=L2(l2=1.0), # l2=25.0)
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -216,7 +216,7 @@ class MeanFieldNetwork(Layer):
 
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer = tf.keras.initializers.Constant(gsyn_max),
-                                        regularizer = L2(l2=0.0005),  #
+                                        regularizer = L2(l2=0.00005),  #
                                         # regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
@@ -268,7 +268,7 @@ class MeanFieldNetwork(Layer):
             gsyn_max_nmda = tf.convert_to_tensor(params['nmda']['gsyn_max_nmda'], dtype=myconfig.DTYPE)
             self.gsyn_max_nmda = self.add_weight(shape=tf.keras.ops.shape(gsyn_max_nmda),
                                     initializer=tf.keras.initializers.Constant(gsyn_max_nmda),
-                                    # regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
+                                    regularizer=L2(l2=0.00005),
                                     trainable=True,
                                     dtype=myconfig.DTYPE,
                                     constraint=tf.keras.constraints.NonNeg(),
@@ -279,7 +279,7 @@ class MeanFieldNetwork(Layer):
             self.tau1_nmda = self.add_weight(shape=tf.keras.ops.shape(tau1_nmda),
                                      initializer=tf.keras.initializers.Constant(tau1_nmda),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=True,
+                                     trainable=False,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min_val=dt_dim),  #tf.keras.constraints.NonNeg(),
                                      name=f"tau1_nmda")
@@ -288,7 +288,7 @@ class MeanFieldNetwork(Layer):
             self.tau2_nmda = self.add_weight(shape=tf.keras.ops.shape(tau2_nmda),
                                      initializer=tf.keras.initializers.Constant(tau2_nmda),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=True,
+                                     trainable=False,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min_val=dt_dim),  #tf.keras.constraints.NonNeg(),
                                      name=f"tau2_nmda")
@@ -386,9 +386,9 @@ class MeanFieldNetwork(Layer):
         v_avg_rk2_k2 = self.dts_non_dim * self.get_v_avg_derivative(rates + rates_rk2_k1, v_avg + v_avg_rk2_k1, w_avg + w_avg_rk2_k1, g_syn)
         w_avg_rk2_k2 = self.dts_non_dim * self.get_w_avg_derivative(rates + rates_rk2_k1, v_avg + v_avg_rk2_k1, w_avg + w_avg_rk2_k1)
 
-        rates_rk2 = rates + 0.5 * (rates_rk2_k1 + rates_rk2_k2)
-        v_avg_rk2 = v_avg + 0.5 * (v_avg_rk2_k1 + v_avg_rk2_k2)
-        w_avg_rk2 = w_avg + 0.5 * (w_avg_rk2_k1 + w_avg_rk2_k2)
+        # rates_rk2 = rates + 0.5 * (rates_rk2_k1 + rates_rk2_k2)
+        # v_avg_rk2 = v_avg + 0.5 * (v_avg_rk2_k1 + v_avg_rk2_k2)
+        # w_avg_rk2 = w_avg + 0.5 * (w_avg_rk2_k1 + w_avg_rk2_k2)
 
         # # Оценка локальной ошибки
         # if self.stability_penalty > 0.0:
@@ -426,14 +426,19 @@ class MeanFieldNetwork(Layer):
         #
         # Isyn = tf.math.reduce_sum(g_syn * (self.e_r - v_avg), axis=0)
 
-        # if self.is_nmda:
-        #     g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * (v_avg - 1.0) ) )
+        if self.is_nmda:
+            g_syn_nmda = self.gsyn_max_nmda * gnmda / (1 + self.Mgb * exp(-self.av_nmda * (v_avg - 1.0) ) )
+
+            g_syn += g_syn_nmda
         #
         #     Inmda = tf.math.reduce_sum(g_syn_nmda * (self.e_r - v_avg), axis=0)
         #
         #     g_syn_tot += tf.math.reduce_sum(g_syn_nmda, axis=0)
         #
         #     Isyn += Inmda
+
+
+
 
         # new_rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
         # new_rates = self.update_rates(v_avg, g_syn_tot, rates)

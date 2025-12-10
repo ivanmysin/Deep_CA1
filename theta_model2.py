@@ -163,6 +163,16 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
     params['tau_f'] = np.zeros_like(gsyn_max) + 5  # + tau_f
     params['Uinc'] = np.zeros_like(gsyn_max) + 0.5  # + Uinc
 
+    params['nmda'] = {
+        'pconn_nmda' : np.zeros_like(gsyn_max),
+        'Mgb' : 0.27027027027027023,
+        'av_nmda' : np.zeros_like(gsyn_max),
+        'gsyn_max_nmda' : np.zeros_like(gsyn_max),
+        'tau1_nmda' : 2.0,
+        'tau2_nmda' : 89.0,
+
+    }
+
     for pre_idx, (_, pre_pop) in enumerate(populations.iterrows()):
         for post_idx, (_, post_pop) in enumerate(populations.iterrows()):
             if post_pop['Simulated_Type'] == 'generator':
@@ -207,6 +217,17 @@ def get_params(optim_parameters_connection, optim_parameters_neurons, sheet_name
 
             if Erev > 0:
                 gsyn = 0.01 * syn['gsyn_max'].values[0]
+
+                params['nmda']['pconn_nmda'][pre_idx, post_idx] = 1.0
+                params['nmda']['gsyn_max_nmda'][pre_idx, post_idx] = np.random.uniform(0.05, 0.5)
+
+                post_name = post_pop['Hippocampome_Neurons_Names']
+                vpost_rest = neurons_params[neurons_params['Neuron Type'] == post_name]['Vrest'].values[0]
+
+                params['nmda']['av_nmda'][pre_idx, post_idx] = 0.062 * np.abs(vpost_rest)
+
+
+
             params['gsyn_max'][pre_idx, post_idx] = gsyn
 
 
