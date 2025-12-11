@@ -285,7 +285,7 @@ def get_model(params, generators_params, dt, output_masks):
 
     big_model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=myconfig.LEARNING_RATE, clipvalue=10.0),
-        loss = MultiLoss(), # tf.keras.losses.MeanSquaredLogarithmicError() # loss_funcs,
+        loss = tf.keras.losses.MeanSquaredLogarithmicError() # loss_funcs, # MultiLoss(), #
         # loss_weights = {
         #     "full_output" : 1.0,
         #     "phase_output": 0.25,
