@@ -87,7 +87,7 @@ full_firings_units = hf_units['rate'][:]   #['8']['firings'][:]
 
 # full_firings_units = full_firings_units.reshape(-1, len(neurons_order))
 
-full_firings_units = parzen_filter(full_firings_units, window_size=505, axis=0)
+full_firings_units = parzen_filter(full_firings_units, window_size=2005, axis=0)
 
 full_targets = full_targets.reshape(-1, len(neurons_order))
 full_targets = full_targets[: int(duration/dt), :]
@@ -157,10 +157,16 @@ for neuron_idx, neuron_name in enumerate(neurons_order):
      ax.plot(t_units, firings_units, color=plotting_colors["neuron_colors"][neuron_name], linewidth=2, linestyle="--", label="Точечные нейроны")
 
 
-     f_max = 1.1* max( [np.max(firings[8000:]), np.max(target), np.quantile(firings_units[8000:], 0.85)])
+     f_max = 1.5 * max( [np.max(firings[8000:]), np.max(target), np.quantile(firings_units[8000:], 0.99)])
 
      if f_max > 2 * np.max(target):
          f_max = 2 * np.max(target)
+
+     if neuron_name == 'Perforant Path-Associated':
+         f_max *= 1.5
+
+     if neuron_name == 'Neurogliaform':
+        f_max *= 1.2
 
      ax.set_ylim(0, f_max)
 
