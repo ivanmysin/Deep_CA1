@@ -3,6 +3,8 @@ import tensorflow as tf
 import myconfig
 import keras
 
+from mean_field_class import MinMaxWeights
+
 from tensorflow.keras import ops
 tf.keras.backend.set_floatx(myconfig.DTYPE)
 
@@ -297,9 +299,34 @@ class SpatialThetaGenerators(CommonGenerator):
         self.OutPlaceFiringRate = tf.reshape( tf.constant(OutPlaceFiringRate, dtype=myconfig.DTYPE), [1, -1])
         self.OutPlaceThetaPhase = tf.reshape( tf.constant(OutPlaceThetaPhase, dtype=myconfig.DTYPE), [1, -1])
         self.R = tf.reshape( tf.constant(Rs, dtype=myconfig.DTYPE), [1, -1])
-        self.InPlacePeakRate = tf.reshape( tf.constant(InPlacePeakRate, dtype=myconfig.DTYPE), [1, -1])
-        self.CenterPlaceField = tf.reshape(  tf.constant(CenterPlaceField, dtype=myconfig.DTYPE), [1, -1])
-        self.SigmaPlaceField = tf.reshape( tf.constant(SigmaPlaceField, dtype=myconfig.DTYPE), [1, -1])
+
+
+        InPlacePeakRate = tf.reshape( tf.constant(InPlacePeakRate, dtype=myconfig.DTYPE), [1, -1])
+        self.InPlacePeakRate = self.add_weight(shape=tf.keras.ops.shape(InPlacePeakRate),
+                                               initializer=tf.keras.initializers.Constant(InPlacePeakRate),
+                                               # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                               trainable=True,
+                                               dtype=myconfig.DTYPE,
+                                               constraint=MinMaxWeights(min_val=1.0, max_val=25.0),
+                                               name=f"InPlacePeakRate")
+
+        CenterPlaceField = tf.reshape(  tf.constant(CenterPlaceField, dtype=myconfig.DTYPE), [1, -1])
+        self.CenterPlaceField = self.add_weight(shape=tf.keras.ops.shape(CenterPlaceField),
+                                     initializer=tf.keras.initializers.Constant(CenterPlaceField),
+                                     # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                     trainable=True,
+                                     dtype=myconfig.DTYPE,
+                                     # constraint=MinMaxWeights(min_val=2.0, max_val=15.0),
+                                     name=f"CenterPlaceField")
+
+        SigmaPlaceField = tf.reshape( tf.constant(SigmaPlaceField, dtype=myconfig.DTYPE), [1, -1])
+        self.SigmaPlaceField = self.add_weight(shape=tf.keras.ops.shape(SigmaPlaceField),
+                                                 initializer=tf.keras.initializers.Constant(SigmaPlaceField),
+                                                 # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
+                                                 trainable=True,
+                                                 dtype=myconfig.DTYPE,
+                                                 constraint=MinMaxWeights(min_val=20.0, max_val=1500.0),
+                                                 name=f"SigmaPlaceField")
         self.SlopePhasePrecession = tf.reshape( tf.constant(SlopePhasePrecession, dtype=myconfig.DTYPE), [1, -1])
         self.PrecessionOnset = tf.reshape( tf.constant(PrecessionOnset, dtype=myconfig.DTYPE), [1, -1])
 
