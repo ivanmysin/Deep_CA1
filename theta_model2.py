@@ -347,7 +347,7 @@ SOURCE_MODEL = myconfig.OUTPUTSPATH_MODELS + 'theta_model_5000.keras'
 duration = 6000
 myconfig.DT = 0.025
 batch_len = int(120 / myconfig.DT)
-nbatches = int(duration / batch_len / myconfig.DT)
+nbatches = int(duration / (batch_len * myconfig.DT))
 
 
 
