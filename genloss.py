@@ -305,7 +305,7 @@ class SpatialThetaGenerators(CommonGenerator):
         self.InPlacePeakRate = self.add_weight(shape=tf.keras.ops.shape(InPlacePeakRate),
                                                initializer=tf.keras.initializers.Constant(InPlacePeakRate),
                                                # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                               trainable=True,
+                                               trainable=False,
                                                dtype=myconfig.DTYPE,
                                                constraint=MinMaxWeights(min_val=1.0, max_val=25.0),
                                                name=f"InPlacePeakRate")
@@ -314,7 +314,7 @@ class SpatialThetaGenerators(CommonGenerator):
         self.CenterPlaceField = self.add_weight(shape=tf.keras.ops.shape(CenterPlaceField),
                                      initializer=tf.keras.initializers.Constant(CenterPlaceField),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=True,
+                                     trainable=False,
                                      dtype=myconfig.DTYPE,
                                      # constraint=MinMaxWeights(min_val=2.0, max_val=15.0),
                                      name=f"CenterPlaceField")
@@ -323,7 +323,7 @@ class SpatialThetaGenerators(CommonGenerator):
         self.SigmaPlaceField = self.add_weight(shape=tf.keras.ops.shape(SigmaPlaceField),
                                                  initializer=tf.keras.initializers.Constant(SigmaPlaceField),
                                                  # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                                 trainable=True,
+                                                 trainable=False,
                                                  dtype=myconfig.DTYPE,
                                                  constraint=MinMaxWeights(min_val=20.0, max_val=1500.0),
                                                  name=f"SigmaPlaceField")

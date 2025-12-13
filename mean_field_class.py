@@ -226,7 +226,7 @@ class MeanFieldNetwork(Layer):
         self.tau_f = self.add_weight(shape=tf.keras.ops.shape(tau_f),
                                      initializer=tf.keras.initializers.Constant(tau_f),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min_val=6.0, max_val=240.0),
                                      name=f"tau_f")
@@ -234,7 +234,7 @@ class MeanFieldNetwork(Layer):
         self.tau_d = self.add_weight(shape=tf.keras.ops.shape(tau_d),
                                      initializer=tf.keras.initializers.Constant(tau_d),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min_val=2.0, max_val=15.0),
                                      name=f"tau_d")
@@ -242,7 +242,7 @@ class MeanFieldNetwork(Layer):
         self.tau_r = self.add_weight(shape=tf.keras.ops.shape(tau_r),
                                      initializer=tf.keras.initializers.Constant(tau_r),
                                      # regularizer=ZeroWallReg(lw=0.001, close_coeff=1000),
-                                     trainable=False,
+                                     trainable=True,
                                      dtype=myconfig.DTYPE,
                                      constraint=MinMaxWeights(min_val=91.0, max_val=1300.0),
                                      name=f"tau_r")
@@ -250,7 +250,7 @@ class MeanFieldNetwork(Layer):
         self.Uinc = self.add_weight(shape=tf.keras.ops.shape(Uinc),
                                     initializer=tf.keras.initializers.Constant(Uinc),
                                     # regularizer=ZeroOneWallReg(lw=0.001, close_coeff=1000),
-                                    trainable=False,
+                                    trainable=True,
                                     dtype=myconfig.DTYPE,
                                     constraint=MinMaxWeights(min_val=0.04, max_val=0.7),
                                     name=f"Uinc")
