@@ -179,7 +179,7 @@ class MeanFieldNetwork(Layer):
         self.Delta_eta = self.add_weight(shape=tf.keras.ops.shape(Delta_eta),
                                         initializer=tf.keras.initializers.Constant(Delta_eta),
                                         # regularizer=BoundWallReg(min_val=Delta_eta_min, max_val=Delta_eta_max),
-                                        trainable=True,
+                                        trainable=False,
                                         dtype=myconfig.DTYPE,
                                         constraint=MinMaxWeights(min_val=Delta_eta_min, max_val=Delta_eta_max), # tf.keras.constraints.NonNeg(), #
                                         name="Delta_eta")
@@ -192,7 +192,7 @@ class MeanFieldNetwork(Layer):
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
                                         initializer=tf.keras.initializers.Constant(I_ext),
                                         trainable=True,
-                                        regularizer=L2(l2=1.0), # l2=25.0)
+                                        regularizer=L2(l2=0.01), # l2=25.0)
                                         dtype=myconfig.DTYPE,
                                         name=f"I_ext")
 
@@ -216,7 +216,7 @@ class MeanFieldNetwork(Layer):
 
         self.gsyn_max = self.add_weight(shape=tf.keras.ops.shape(gsyn_max),
                                         initializer = tf.keras.initializers.Constant(gsyn_max),
-                                        regularizer = L2(l2=0.00005),  #
+                                        # regularizer = L2(l2=0.00005),  #
                                         # regularizer=ZeroWallReg(lw=0.00001, close_coeff=100000),
                                         trainable=True,
                                         dtype=myconfig.DTYPE,
