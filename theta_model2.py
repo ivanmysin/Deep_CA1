@@ -399,7 +399,7 @@ callbacks = [
 # print("До обучения:", model.layers[2].cell.Delta_eta.numpy())
 
 
-history = model.fit(x=Xtrain, y=Ytrain['full_output'], epochs=5000, verbose=2, batch_size=1, callbacks=callbacks)
+history = model.fit(x=Xtrain, y=Ytrain['full_output'], epochs=15000, verbose=2, batch_size=1, callbacks=callbacks)
 
 # После обучения
 # print("После обучения:", model.layers[2].cell.Delta_eta.numpy())
