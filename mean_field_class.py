@@ -434,17 +434,6 @@ class MeanFieldNetwork(Layer):
         #     Isyn += Inmda
 
 
-
-
-        # new_rates = rates + self.dts_non_dim * (self.Delta_eta / PI + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates)
-        # new_rates = self.update_rates(v_avg, g_syn_tot, rates)
-        # new_rates = tf.where(new_rates < 0, 0.0, new_rates)
-        # new_v_avg = v_avg + self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
-
-
-        # new_w_avg = w_avg + self.dts_non_dim * (self.a * (self.b * v_avg - w_avg) + self.w_jump * rates)
-        # new_w_avg = self.update_w_avg(w_avg, v_avg, rates)
-
         rates, v_avg, w_avg = self.runge_kutta_step(rates, v_avg, w_avg, g_syn)
 
         # error_estimate = self.stability_penalty * error_estimate
