@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
-from sympy.printing.pretty.pretty_symbology import line_width
+
 
 
 def runge_kutta_4(f, y0, t0, h):
@@ -61,16 +61,26 @@ class SimplestMeanField:
 
         return np.asarray([drdt, dvdt, dwdt])
 #####################################################################
-dt = 0.5 ##
+import h5py
+
+with h5py.File('/home/ivan/Projects/neuraltide/examples/izhikevich_simulation_data.h5', 'r') as f:
+
+    nt_r = f['fr_dim_hist'][:]
+    nt_v = f['v_dim_hist'][:]
+    nt_w = f['w_dim_hist'][:]
+
+
+
+dt = 0.05 ##
 duration = 200
 
-alpha = 0.38348082595870203
-a = 0.008311497425623033
-b = 0.003207946374801873
-Delta_eta = 0.02024164418659393
-dt_non_dim = 0.30078815789473684 # 0.06015763157894737
-w_jump = 0.0005060411046648482
-I_ext = 0.17711438663269688
+alpha = 0.38348085
+a = 0.0083115
+b = 0.00320795
+Delta_eta = 0.00632551
+dt_non_dim = dt * 1 / 1.6622994
+w_jump = 0.00050604
+I_ext = 0.12651026
 mean_field = SimplestMeanField(alpha, a, b, w_jump, dt_non_dim, Delta_eta, I_ext)
 
 y0 = [0.0, 0.0, 0.0]
@@ -86,12 +96,17 @@ mysol = simulate(mean_field, y0, 0.0, dt_non_dim, duration_non_dim)
 fig, axes = plt.subplots(nrows=3)
 
 axes[0].plot(t, sol.y[0, :], linewidth=5)
-axes[0].plot(t, mysol[0, :], linewidth=1)
+# axes[0].plot(t, mysol[0, :], linewidth=1)
+axes[0].plot(t, nt_r, linewidth=1)
+
+
 
 axes[1].plot(t, sol.y[1, :], linewidth=5)
-axes[1].plot(t, mysol[1, :])
+# axes[1].plot(t, mysol[1, :])
+axes[1].plot(t, nt_v, linewidth=1)
 
 axes[2].plot(t, sol.y[2, :], linewidth=5)
-axes[2].plot(t, mysol[2, :], linewidth=1)
+# axes[2].plot(t, mysol[2, :], linewidth=1)
+axes[2].plot(t, nt_w, linewidth=1)
 
 plt.show()
