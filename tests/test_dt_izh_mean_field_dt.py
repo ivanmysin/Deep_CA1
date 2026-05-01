@@ -45,6 +45,8 @@ class SimplestMeanField:
         self.dts_non_dim = dts_non_dim
         self.Delta_eta = Delta_eta
 
+        self.v_reset = -0.15
+
         self.I_ext = I_ext
 
     def __call__(self, t, state):
@@ -54,9 +56,19 @@ class SimplestMeanField:
         g_syn_tot = 0.0
         Isyn = 0.0
 
+
+        V_max = 10
+        tau_ref= 0.5
+        gamma =  1.0 / tau_ref
+
         drdt = self.Delta_eta / np.pi + 2 * rates * v_avg - (self.alpha + g_syn_tot) * rates
-        dvdt = v_avg ** 2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi * rates) ** 2
-        dwdt = self.a * (self.b * v_avg - w_avg) + self.w_jump * rates
+
+        r_eff = rates  # / (1 + tau_ref * rates)
+
+        #print(rates, r_eff)
+
+        dvdt = (v_avg ** 2) / (1 + (v_avg/V_max)**2 ) - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (np.pi * r_eff) ** 2  #+  gamma * r_eff * (self.v_reset - v_avg)
+        dwdt = self.a * (self.b * v_avg - w_avg) + self.w_jump * r_eff
 
 
         return np.asarray([drdt, dvdt, dwdt])
@@ -71,7 +83,7 @@ with h5py.File('/home/ivan/Projects/neuraltide/examples/izhikevich_simulation_da
 
 
 
-dt = 0.05 ##
+dt = 0.1 ##
 duration = 200
 
 alpha = 0.38348085
@@ -83,30 +95,33 @@ w_jump = 0.00050604
 I_ext = 0.12651026
 mean_field = SimplestMeanField(alpha, a, b, w_jump, dt_non_dim, Delta_eta, I_ext)
 
-y0 = [0.0, 0.0, 0.0]
+y0 = [0.0, 1.0, 0.0]
 t = np.arange(0, duration, dt)
 duration_non_dim = duration / dt * dt_non_dim
 
 t_non_dim = np.arange(0, duration_non_dim, dt_non_dim)
-sol = solve_ivp(mean_field, [0, duration_non_dim], y0, method='RK45', t_eval=t_non_dim)
+sol = solve_ivp(mean_field, [0, duration_non_dim], y0, method='RK23', t_eval=t_non_dim)
 
 
 mysol = simulate(mean_field, y0, 0.0, dt_non_dim, duration_non_dim)
+
+
+t_sp = np.arange(0, duration, 0.05)
 
 fig, axes = plt.subplots(nrows=3)
 
 axes[0].plot(t, sol.y[0, :], linewidth=5)
 # axes[0].plot(t, mysol[0, :], linewidth=1)
-axes[0].plot(t, nt_r, linewidth=1)
+axes[0].plot(t_sp, nt_r, linewidth=1)
 
 
 
 axes[1].plot(t, sol.y[1, :], linewidth=5)
 # axes[1].plot(t, mysol[1, :])
-axes[1].plot(t, nt_v, linewidth=1)
+axes[1].plot(t_sp, nt_v, linewidth=1)
 
 axes[2].plot(t, sol.y[2, :], linewidth=5)
 # axes[2].plot(t, mysol[2, :], linewidth=1)
-axes[2].plot(t, nt_w, linewidth=1)
+axes[2].plot(t_sp, nt_w, linewidth=1)
 
 plt.show()
