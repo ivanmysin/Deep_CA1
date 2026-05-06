@@ -9,6 +9,8 @@ from tensorflow.keras.saving import load_model
 import izhs_lib
 import h5py
 
+from pprint import pprint
+
 import sys
 sys.path.append('../')
 import myconfig
@@ -106,6 +108,8 @@ class MeanFieldNetwork(Layer):
         self.w_jump = tf.convert_to_tensor( params['w_jump'], dtype=myconfig.DTYPE )
         self.dts_non_dim = tf.convert_to_tensor( params['dts_non_dim'], dtype=myconfig.DTYPE )
         self.Delta_eta = tf.convert_to_tensor( params['Delta_eta'], dtype=myconfig.DTYPE)
+
+        self.v_max = 10
 
         I_ext = tf.convert_to_tensor( params['I_ext'], dtype=myconfig.DTYPE )
         self.I_ext = self.add_weight(shape=tf.keras.ops.shape(I_ext),
@@ -212,7 +216,7 @@ class MeanFieldNetwork(Layer):
 
         rates = rates + k1 #(k1 + 2*k2 + 2*k3 + k4) / 6
 
-        k1 = self.dts_non_dim * (v_avg**2 - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
+        k1 = self.dts_non_dim * (  v_avg**2 / (1 + (v_avg/self.v_max)**2) - self.alpha * v_avg - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         # k2 = self.dts_non_dim * ((v_avg+0.5*k1)**2 - self.alpha * (v_avg+0.5*k1) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         # k3 = self.dts_non_dim * ((v_avg+0.5*k2)**2 - self.alpha * (v_avg+0.5*k2) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
         # k4 = self.dts_non_dim * ((v_avg+k3)**2 - self.alpha * (v_avg+k3) - w_avg + self.I_ext + Isyn - (PI*rates)**2)
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     NN = 2
     Ninps = 3
     dt_dim = 0.1  # ms
-    duration = 1000.0
+    duration = 600.0
 
     dim_izh_params = {
         "V0": -57.63,
@@ -320,7 +324,7 @@ if __name__ == '__main__':
         "Vrest": -57.63,  # * mV,
         "Vth": -35.53,  # *mV, # np.random.normal(loc=-35.53, scale=4.0, size=NN) * mV,  # -35.53*mV,
         "Vpeak": 21.72,  # * mV,
-        "Vmin": -48.7,  # * mV,
+        "Vreset": -48.7,  # * mV,
         "a": 0.005,  # * ms ** -1,
         "b": 0.22,  # * mS,
         "d": 2,  # * pA,
@@ -330,13 +334,16 @@ if __name__ == '__main__':
 
     # Словарь с константами
     cauchy_dencity_params = {
-        'Delta_eta': 80,  # 0.02,
+        'Delta_eta': 50,  # 0.02,
         'bar_eta': 0.0,  # 0.191,
     }
 
     dim_izh_params = dim_izh_params | cauchy_dencity_params
     izh_params = izhs_lib.dimensional_to_dimensionless(dim_izh_params)
-    izh_params['dts_non_dim'] = izhs_lib.transform_T(dt_dim, dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+
+    tau_pop = 1 / izhs_lib.transform_T(dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
+    izh_params['tau_pop'] = tau_pop
+    izh_params['dts_non_dim'] = dt_dim * izhs_lib.transform_T(dim_izh_params['Cm'], dim_izh_params['k'], dim_izh_params['Vrest'])
 
     for key, val in izh_params.items():
         izh_params[key] = np.zeros(NN, dtype=np.float32) + val
@@ -374,7 +381,8 @@ if __name__ == '__main__':
 
     firings_inputs = tf.zeros(shape=(1, tf.size(t), Ninps), dtype=tf.float32)
 
-
+    pprint(izh_params)
+    print("=====================================")
     print("gsyn_max", izh_params["gsyn_max"].shape)
     print("alpha", izh_params["alpha"].shape)
     print("e_r", izh_params["e_r"].shape)
