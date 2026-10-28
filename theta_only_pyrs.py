@@ -358,7 +358,7 @@ duration = 6000
 myconfig.DT = 0.05
 batch_len = int(120 / myconfig.DT)
 nbatches = int(duration / (batch_len * myconfig.DT))
-N_EPOCHS = 1 #1500  # Number of training epochs
+N_EPOCHS = 5000  # Number of training epochs
 
 
 if PATH_TO_MODEL is None:
