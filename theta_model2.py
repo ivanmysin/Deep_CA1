@@ -357,7 +357,6 @@ params, generators_params, target_params, output_masks = get_params(optim_parame
 Xtrain, Ytrain = get_dataset(target_params, myconfig.DT, batch_len, nbatches, output_masks)
 
 
-
 with h5py.File(myconfig.OUTPUTSPATH + 'dataset.h5', mode='w') as dfile:
     dfile.create_dataset('Xtrain', data=Xtrain)
     dfile.create_dataset('Y_full_outputs', data=Ytrain['full_output'])

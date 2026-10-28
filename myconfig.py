@@ -46,6 +46,8 @@ IS_SAVE_V = True
 GREST = 0.0000000001
 DURATION = 2000 # ms
 
+BATCH_SIZE = 1
+
 ##############################################
 ######### fit models of populations ##########
 NEPOCHES = 2000
